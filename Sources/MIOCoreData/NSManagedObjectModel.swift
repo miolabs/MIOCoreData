@@ -7,9 +7,9 @@
 
 import Foundation
 
-#if os(Linux)
-import FoundationNetwork
-#endif
+//#if os(Linux)
+//import FoundationNetwork
+//#endif
 
 public class NSManagedObjectModel
 {
@@ -30,13 +30,13 @@ public class NSManagedObjectModel
         self.init()
         self.url = url
         
-        URLSession.shared.dataTask(with: url) {
-            data, response, error in
-            
-            print(data)
-            print(response)
-            print(error)
-        }
+//        URLSession.shared.dataTask(with: url) {
+//            data, response, error in
+//
+//            print(data)
+//            print(response)
+//            print(error)
+//        }
     }
     
     var entitiesByName: [String : NSEntityDescription] = [:]
