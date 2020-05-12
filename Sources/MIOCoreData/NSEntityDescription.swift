@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum NSAttributeType {
+public enum NSAttributeType {
     case Undefined
     case Boolean
     case Integer
@@ -21,17 +21,17 @@ enum NSAttributeType {
     case Date
 }
 
-class NSEntityDescription {
+public class NSEntityDescription {
     
-    static func entity(entityName:String, context:MIOManagedObjectContext?) -> NSEntityDescription? {
-        let entity = MIOManagedObjectModel.entity(entityName: entityName, inManagedObjectContext: context)
-        return entity;
-    }
+//    static func entity(entityName:String, context:NSManagedObjectContext?) -> NSEntityDescription? {
+//        let entity = NSManagedObjectModel.entity(entityName: entityName, inManagedObjectContext: context)
+//        return entity;
+//    }
 
     var name:String!
     var managedObjectClassName:String!
     
-    init(entityName:String, parentEntity:MIOEntityDescription?) {
+    init(entityName:String, parentEntity:NSEntityDescription?) {
         name = entityName
         managedObjectClassName = entityName;
     }
@@ -39,23 +39,23 @@ class NSEntityDescription {
     var properties:[NSPropertyDescription] = []
     var propertiesByName:[String:NSPropertyDescription] = [:]
     
-    var attributes:[MIOAttributeDescription] = []
+    var attributes:[NSAttributeDescription] = []
     var attributesByName:[String:NSAttributeDescription] = [:]
     
     func addAttribute(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, syncable:Bool) {
-        let attr = MIOAttributeDescription(name: name, type: type, defaultValue: defaultValue, optional: optional, syncable: syncable)
+        let attr = NSAttributeDescription(name: name, type: type, defaultValue: defaultValue, optional: optional, syncable: syncable)
         attributes.append(attr)
         attributesByName[name] = attr;
         properties.append(attr)
         propertiesByName[name] = attr;
     }
     
-    var relationships:[MIORelationshipDescription] = []
-    var relationshipsByName:[String:MIORelationshipDescription] = [:]
+    var relationships:[NSRelationshipDescription] = []
+    var relationshipsByName:[String:NSRelationshipDescription] = [:]
     
     func addRelationship(name:String, destinationEntityName:String, toMany:Bool, inverseName:String?, inverseEntityName:String?) {
     
-        let rel = MIORelationshipDescription(name: name, destinationEntityName: destinationEntityName, toMany: toMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
+        let rel = NSRelationshipDescription(name: name, destinationEntityName: destinationEntityName, toMany: toMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
         relationships.append(rel)
         relationshipsByName[name] = rel
         properties.append(rel)

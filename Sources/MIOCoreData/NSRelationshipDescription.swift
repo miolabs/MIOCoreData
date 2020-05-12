@@ -7,20 +7,20 @@
 
 import Foundation
 
-enum NSDeleteRule {
+public enum NSDeleteRule {
     case noActionDeleteRule
     case nullifyDeleteRule
     case cascadeDeleteRule
     case denyDeleteRule
 }
 
-class NSRelationshipDescription:NSPropertyDescription {
+public class NSRelationshipDescription:NSPropertyDescription {
     
     var destinationEntityName:String?
     var inverseName:String?
     var inverseEntityName:String?
     var isToMany = false
-    var deleteRule = MIODeleteRule.noActionDeleteRule
+    var deleteRule = NSDeleteRule.noActionDeleteRule
 
     
     init(name:String, destinationEntityName:String, toMany:Bool, inverseName:String?, inverseEntityName:String?){
@@ -32,5 +32,5 @@ class NSRelationshipDescription:NSPropertyDescription {
         self.inverseEntityName = inverseEntityName
     }
     
-    var destinationEntity:MIOEntityDescription?
+    var destinationEntity:NSEntityDescription?
 }

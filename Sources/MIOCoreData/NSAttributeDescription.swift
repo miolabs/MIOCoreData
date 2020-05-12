@@ -7,13 +7,13 @@
 
 import Foundation
 
-class NSAttributeDescription:NSPropertyDescription {
+public class NSAttributeDescription:NSPropertyDescription {
     
-    var type: MIOAttributeType!
+    var type: NSAttributeType!
     var defaultValue:Any?
     var syncable = true
     
-    init(name:String, type:MIOAttributeType, defaultValue:Any?, optional:Bool, syncable:Bool) {
+    init(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, syncable:Bool) {
         super.init()
         self.name = name
         self.type = type
