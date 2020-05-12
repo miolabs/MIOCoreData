@@ -46,7 +46,7 @@ open class NSManagedObjectContext : NSObject
     /* custom label for a context.  NSPrivateQueueConcurrencyType contexts will set the label on their queue */
     open var name: String?
        
-    open var undoManager: UndoManager?
+    //open var undoManager: UndoManager?
 
     var managedObjectChanges:[String:Any] = [:]
     open var hasChanges: Bool { get { return managedObjectChanges.count > 0 } }

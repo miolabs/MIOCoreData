@@ -20,8 +20,8 @@ open class NSPersistentStoreAsynchronousResult : NSPersistentStoreResult
     var _operationError:Error?
     open var operationError: Error? { get { return _operationError } }
 
-    var _progress = Progress()
-    open var progress: Progress? { get { return _progress } }
+//    var _progress = Progress()
+//    open var progress: Progress? { get { return _progress } }
     
     public override init() {
         _managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
