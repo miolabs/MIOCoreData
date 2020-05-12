@@ -6,7 +6,10 @@
 //
 
 import Foundation
-import Network
+
+#if os(Linux)
+import FoundationNetwork
+#endif
 
 public class NSManagedObjectModel
 {
