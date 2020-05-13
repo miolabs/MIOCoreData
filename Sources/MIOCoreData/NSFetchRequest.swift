@@ -20,7 +20,7 @@ public struct NSFetchRequestResultType : OptionSet
     public static var countResultType:NSFetchRequestResultType{ get { return NSFetchRequestResultType(rawValue: 1 << 3) } }
 }
 
-public protocol NSFetchRequestResult : NSObjectProtocol {}
+/*public protocol NSFetchRequestResult : NSObjectProtocol {}
 
 extension NSNumber : NSFetchRequestResult {}
 extension NSDictionary : NSFetchRequestResult {}
@@ -62,3 +62,4 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
 
 
 }
+ */
