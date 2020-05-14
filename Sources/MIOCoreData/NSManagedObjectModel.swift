@@ -11,7 +11,7 @@ import Foundation
 //import FoundationNetwork
 //#endif
 
-public class NSManagedObjectModel
+open class NSManagedObjectModel : NSObject
 {
     static func entity(entityName:String, context:NSManagedObjectContext) -> NSEntityDescription {
            
@@ -24,21 +24,15 @@ public class NSManagedObjectModel
            
         return entity!;
     }
-        
-    private var url:URL?
+    
+    
     public convenience init?(contentsOf url: URL) {
         self.init()
-        self.url = url
         
-//        URLSession.shared.dataTask(with: url) {
-//            data, response, error in
-//
-//            print(data)
-//            print(response)
-//            print(error)
-//        }
+        let parser = ManagedObjectModelParser(url: url, model: self)
+        parser.parse()
     }
-    
+        
     var entitiesByName: [String : NSEntityDescription] = [:]
     
     // MARK - URL Connection Delegate

@@ -57,9 +57,13 @@ open class NSManagedObjectContext : NSObject
     var _concurrencyType = NSManagedObjectContextConcurrencyType.mainQueueConcurrencyType
     open var concurrencyType: NSManagedObjectContextConcurrencyType { get { return _concurrencyType } }
     
-    func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
+    open func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
         
         return NSPersistentStoreResult()
+    }
+    
+    open func insert(_ object: NSManagedObject) {
+        
     }
         
 

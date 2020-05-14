@@ -7,5 +7,9 @@
 
 import Foundation
 
-open class NSManagedObject : NSObject {
+open class NSManagedObject : NSObject
+{
+    public required init(context:NSManagedObjectContext) {
+        
+    }
 }
