@@ -9,14 +9,8 @@ import Foundation
 
 open class NSEntityDescription : NSObject
 {
-    
-//    static func entity(entityName:String, context:NSManagedObjectContext?) -> NSEntityDescription? {
-//        let entity = NSManagedObjectModel.entity(entityName: entityName, inManagedObjectContext: context)
-//        return entity;
-//    }
-
     open class func entity(forEntityName entityName: String, in context: NSManagedObjectContext) -> NSEntityDescription? {
-        return nil
+        return context.persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName]
     }
 
     open class func insertNewObject(forEntityName entityName: String, into context: NSManagedObjectContext) -> NSManagedObject {

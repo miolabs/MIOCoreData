@@ -9,26 +9,47 @@ import Foundation
 
 open class NSManagedObjectModel : NSObject
 {
-    static func entity(entityName:String, context:NSManagedObjectContext) -> NSEntityDescription {
-           
-        let mom = context.persistentStoreCoordinator!.managedObjectModel;
-        let entity = mom.entitiesByName[entityName];
-           
-//        if (entity == nil) {
-//            throw new Error("MIOManagedObjectModel: Unkown entity \(entityName)");
-//        }
-           
-        return entity!;
-    }
-    
-    
+        
     public convenience init?(contentsOf url: URL) {
         self.init()
         
         let parser = ManagedObjectModelParser(url: url, model: self)
         parser.parse()
     }
-        
-    var entitiesByName: [String : NSEntityDescription] = [:]
+            
+    var _entitiesByName: [String : NSEntityDescription]?
+    open var entitiesByName: [String : NSEntityDescription] {
+        get {
+            if _entitiesByName != nil { return _entitiesByName! }
+            
+            _entitiesByName = [:]
+            for e in entities {
+                _entitiesByName![e.name!] = e
+            }
+            
+            return _entitiesByName!
+        }
+    }
+
+    var _entities: [NSEntityDescription] = []
+    open var entities: [NSEntityDescription] {
+        get { return _entities }
+        set {
+            _entities = newValue
+            _entitiesByName = nil
+        }
+    }
+
+    var _configurations:[String] = []
+    open var configurations: [String] { get { return _configurations } } // returns all available configuration names
+
+    open func entities(forConfigurationName configuration: String?) -> [NSEntityDescription]? {
+        return _entities
+    }
+    
+    open func setEntities(_ entities: [NSEntityDescription], forConfigurationName configuration: String) {
+        _entities.append(contentsOf: entities)
+        _entitiesByName = nil
+    }
     
 }

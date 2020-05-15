@@ -40,17 +40,17 @@ open class NSManagedObjectContext : NSObject
     
     /* coordinator which provides model and handles persistency (multiple contexts can share a coordinator) */
     open var persistentStoreCoordinator: NSPersistentStoreCoordinator?
-        
+    
     open var parent: NSManagedObjectContext?
     
     /* custom label for a context.  NSPrivateQueueConcurrencyType contexts will set the label on their queue */
     open var name: String?
-       
+    
     //open var undoManager: UndoManager?
-
+    
     var managedObjectChanges:[String:Any] = [:]
     open var hasChanges: Bool { get { return managedObjectChanges.count > 0 } }
-        
+    
     var _userInfo = NSMutableDictionary()
     open var userInfo: NSMutableDictionary { get { return _userInfo } }
     
@@ -59,38 +59,58 @@ open class NSManagedObjectContext : NSObject
     
     open func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
         
-        return NSPersistentStoreResult()
+        let entityName = request.entityName
+        let entity = NSEntityDescription.entity(forEntityName: entityName, in: self)
+        request.entity = entity;
+        
+        //TODO: Get the store from configuration name
+        let store: NSPersistentStore = persistentStoreCoordinator!.persistentStores[0];
+        let objs = store._executeRequest(request, this);
+        
+        for (let index = 0; index < objs.length; index++) {
+            let o = objs[index];
+            this._registerObject(o);
+        }
+        
+        if (request instanceof MIOFetchRequest) {
+            let fetchRequest = request as MIOFetchRequest;
+            let objects = _MIOPredicateFilterObjects(this.objectsByEntity[entityName], fetchRequest.predicate);
+            objects = _MIOSortDescriptorSortObjects(objects, fetchRequest.sortDescriptors);
+            return objects;
+        }
+        
+        return [];
     }
     
     open func insert(_ object: NSManagedObject) {
         
     }
-        
-
+    
+    
     open func save() throws {
         
     }
     
-//    private managedObjectChanges = {};
-//
-//    private objectsByEntity = {};
-//    private objectsByID = {};
-//
-//    private insertedObjects: MIOSet = MIOSet.set();
-//    private updatedObjects: MIOSet = MIOSet.set();
-//    private deletedObjects: MIOSet = MIOSet.set();
-//
-//    private blockChanges = null;
-
-
-//    var _parent: MIOManagedObjectContext = null;
-//    set parent(value: MIOManagedObjectContext) {
-//        this._parent = value;
-//        if (value != null) {
-//            this.persistentStoreCoordinator = value.persistentStoreCoordinator;
-//        }
-//    }
-//    get parent() { return this._parent; }
-
+    //    private managedObjectChanges = {};
+    //
+    //    private objectsByEntity = {};
+    //    private objectsByID = {};
+    //
+    //    private insertedObjects: MIOSet = MIOSet.set();
+    //    private updatedObjects: MIOSet = MIOSet.set();
+    //    private deletedObjects: MIOSet = MIOSet.set();
+    //
+    //    private blockChanges = null;
+    
+    
+    //    var _parent: MIOManagedObjectContext = null;
+    //    set parent(value: MIOManagedObjectContext) {
+    //        this._parent = value;
+    //        if (value != null) {
+    //            this.persistentStoreCoordinator = value.persistentStoreCoordinator;
+    //        }
+    //    }
+    //    get parent() { return this._parent; }
+    
     
 }

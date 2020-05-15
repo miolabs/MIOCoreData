@@ -84,7 +84,8 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         //console.log("XMLParser: End element (" + element + ")");
         
         if (elementName == "entity") {
-            model.entitiesByName[currentEntity!.managedObjectClassName] = currentEntity
+            //model.entitiesByName[currentEntity!.managedObjectClassName] = currentEntity
+            model.setEntities([currentEntity!], forConfigurationName: "Default")
             currentEntity = nil;
         }
     }
