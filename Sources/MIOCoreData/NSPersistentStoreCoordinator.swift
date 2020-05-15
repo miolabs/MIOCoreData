@@ -15,7 +15,7 @@ open class NSPersistentStoreCoordinator : NSObject
         self.managedObjectModel = managedObjectModel
     }
     
-    var _persistentStores:[NSPersistentStore] = ()
+    var _persistentStores:[NSPersistentStore] = []
     open var persistentStores: [NSPersistentStore] { get { return _persistentStores } }
 
     open var name: String?
@@ -29,12 +29,12 @@ open class NSPersistentStoreCoordinator : NSObject
 //    }
 
     open func setURL(_ url: URL, for store: NSPersistentStore) -> Bool {
-        
+        return true
     }
 
-    open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
-    
-    }
+//    open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
+//
+//    }
     
     open func addPersistentStore(with storeDescription: NSPersistentStoreDescription, completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {
         

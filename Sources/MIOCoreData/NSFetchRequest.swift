@@ -31,7 +31,7 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
 {
     public convenience init(entityName:String) {
         self.init()
-        _entityName = entityName;
+        _entityName = entityName        
     }
  
     open func execute() throws -> [ResultType] {
@@ -40,11 +40,12 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
     
     open var entity: NSEntityDescription?
     
+    var _entityName:String?
     open var entityName: String? { get { return _entityName } }
     
     open var predicate: NSPredicate?
     
-    open var sortDescriptors: [NSSortDescriptor]?
+    //open var sortDescriptors: [NSSortDescriptor]?
     
     open var fetchLimit: Int = 0
     
@@ -96,11 +97,10 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
     
     /* This breaks the result set into batches.  The entire request will be evaluated, and the identities of all matching objects will be recorded, but no more than batchSize objects' data will be fetched from the persistent store at a time.  The array returned from executing the request will be a subclass that transparently faults batches on demand.  For purposes of thread safety, the returned array proxy is owned by the NSManagedObjectContext the request is executed against, and should be treated as if it were a managed object registered with that context.  A batch size of 0 is treated as infinite, which disables the batch faulting behavior.  The default is 0. */
     
-    open var fetchBatchSize: Int
+    open var fetchBatchSize: Int = 0
 
-    
-    @available(iOS 5.0, *)
-    open var shouldRefreshRefetchedObjects: Bool
+        
+    open var shouldRefreshRefetchedObjects: Bool = false
 
     
     /* Specifies the way in which data should be grouped before a select statement is run in an SQL database.
@@ -108,12 +108,12 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
      any to-many steps.
      If GROUP BY is used, then you must set the resultsType to NSDictionaryResultsType, and the SELECT values must be literals, aggregates,
      or columns specified in the GROUP BY. Aggregates will operate on the groups specified in the GROUP BY rather than the whole table. */
-    @available(iOS 5.0, *)
+    
     open var propertiesToGroupBy: [Any]?
 
     
     /* Specifies a predicate that will be used to filter rows being returned by a query containing a GROUP BY. If a having predicate is
      supplied, it will be run after the GROUP BY.  Specifying a HAVING predicate requires that a GROUP BY also be specified. */
-    @available(iOS 5.0, *)
+    
     open var havingPredicate: NSPredicate?
 }

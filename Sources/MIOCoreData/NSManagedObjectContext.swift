@@ -59,27 +59,29 @@ open class NSManagedObjectContext : NSObject
     
     open func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
         
-        let entityName = request.entityName
-        let entity = NSEntityDescription.entity(forEntityName: entityName, in: self)
-        request.entity = entity;
+//        let entityName = request.entityName
+//        let entity = NSEntityDescription.entity(forEntityName: entityName, in: self)
+//        request.entity = entity;
+//
+//        //TODO: Get the store from configuration name
+//        let store: NSPersistentStore = persistentStoreCoordinator!.persistentStores[0];
+//        let objs = store._executeRequest(request, this);
+//
+//        for (let index = 0; index < objs.length; index++) {
+//            let o = objs[index];
+//            this._registerObject(o);
+//        }
+//
+//        if (request instanceof MIOFetchRequest) {
+//            let fetchRequest = request as MIOFetchRequest;
+//            let objects = _MIOPredicateFilterObjects(this.objectsByEntity[entityName], fetchRequest.predicate);
+//            objects = _MIOSortDescriptorSortObjects(objects, fetchRequest.sortDescriptors);
+//            return objects;
+//        }
+//
+//        return [];
         
-        //TODO: Get the store from configuration name
-        let store: NSPersistentStore = persistentStoreCoordinator!.persistentStores[0];
-        let objs = store._executeRequest(request, this);
-        
-        for (let index = 0; index < objs.length; index++) {
-            let o = objs[index];
-            this._registerObject(o);
-        }
-        
-        if (request instanceof MIOFetchRequest) {
-            let fetchRequest = request as MIOFetchRequest;
-            let objects = _MIOPredicateFilterObjects(this.objectsByEntity[entityName], fetchRequest.predicate);
-            objects = _MIOSortDescriptorSortObjects(objects, fetchRequest.sortDescriptors);
-            return objects;
-        }
-        
-        return [];
+        return NSPersistentStoreResult()
     }
     
     open func insert(_ object: NSManagedObject) {
