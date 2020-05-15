@@ -7,10 +7,6 @@
 
 import Foundation
 
-//#if os(Linux)
-//import FoundationNetwork
-//#endif
-
 open class NSManagedObjectModel : NSObject
 {
     static func entity(entityName:String, context:NSManagedObjectContext) -> NSEntityDescription {
@@ -34,7 +30,5 @@ open class NSManagedObjectModel : NSObject
     }
         
     var entitiesByName: [String : NSEntityDescription] = [:]
-    
-    // MARK - URL Connection Delegate
     
 }

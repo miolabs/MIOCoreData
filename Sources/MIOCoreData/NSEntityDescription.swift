@@ -57,8 +57,17 @@ open class NSEntityDescription : NSObject
     var _relationshipsByName:[String : NSRelationshipDescription] = [:]
     open var relationshipsByName: [String : NSRelationshipDescription] { get { return _relationshipsByName } }
 
-    var _relationships:[NSRelationshipDescription] = []
-    open func relationships(forDestination entity: NSEntityDescription) -> [NSRelationshipDescription]{ return _relationships }
+    open func relationships(forDestination entity: NSEntityDescription) -> [NSRelationshipDescription]{
+        
+        var relations = [NSRelationshipDescription]()
+        for (_, rel) in relationshipsByName {
+            if rel.destinationEntityName == entity.name {
+                relations.append(rel)
+            }
+        }
+            
+        return relations
+    }
     
     init(entityName:String, parentEntity:NSEntityDescription?, managedObjectModel model:NSManagedObjectModel) {
         name = entityName
@@ -78,7 +87,6 @@ open class NSEntityDescription : NSObject
         let rel = NSRelationshipDescription(name: name, destinationEntityName: destinationEntityName, toMany: toMany, inverseName:inverseName, inverseEntityName: inverseEntityName)
         properties.append(rel)
         _propertiesByName[name] = rel
-        _relationships.append(rel)
         _relationshipsByName[name] = rel
     }
 }

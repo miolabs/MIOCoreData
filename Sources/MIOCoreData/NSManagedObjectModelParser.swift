@@ -7,6 +7,10 @@
 
 import Foundation
 
+#if os(Linux)
+import FoundationXML
+#endif
+
 class ManagedObjectModelParser : NSObject, XMLParserDelegate
 {
     let url:URL!
@@ -88,18 +92,20 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     func parserDidEndDocument(_ parser: XMLParser) {
         
         // Check every relation ship and assign the right destination entity
-//        for let entityName in model.entitiesByName) {
-//            
-//            let e:MIOEntityDescription = this._entitiesByName[entityName];
-//            for (var index = 0; index < e.relationships.length; index++) {
-//                let r:MIORelationshipDescription = e.relationships[index];
-//            
-//                if (r.destinationEntity == null){
-//                    let de = this._entitiesByName[r.destinationEntityName];
-//                    r.destinationEntity = de;
-//                }
-//            }
-//        }
+        for (_, entity) in model.entitiesByName {
+            for (_, rel) in entity.relationshipsByName {
+                if rel.destinationEntity == nil {
+                    let destinationEntity = model.entitiesByName[rel.destinationEntityName]
+                    rel.destinationEntity = destinationEntity;
+                }
+                
+                if rel.inverseName != nil && rel.inverseEntityName != nil {
+                    let inverseEntity = model.entitiesByName[rel.inverseEntityName!]
+                    let inverseRelation = inverseEntity?.relationshipsByName[rel.inverseName!]
+                    rel.inverseRelationship = inverseRelation
+                }
+            }
+        }
         
         //console.log("datamodel.xml parser finished");
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
