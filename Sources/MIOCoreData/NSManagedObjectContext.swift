@@ -59,13 +59,16 @@ open class NSManagedObjectContext : NSObject
     
     open func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
         
-//        let entityName = request.entityName
+        //let entityName = request.entityName
 //        let entity = NSEntityDescription.entity(forEntityName: entityName, in: self)
 //        request.entity = entity;
 //
 //        //TODO: Get the store from configuration name
-//        let store: NSPersistentStore = persistentStoreCoordinator!.persistentStores[0];
-//        let objs = store._executeRequest(request, this);
+        guard let store = persistentStoreCoordinator!.persistentStores[0] as? NSIncrementalStore else {
+            return NSPersistentStoreResult()
+        }
+        
+        let objs = try store.execute(request, with: self) as! NSPersistentStoreResult
 //
 //        for (let index = 0; index < objs.length; index++) {
 //            let o = objs[index];
@@ -81,7 +84,7 @@ open class NSManagedObjectContext : NSObject
 //
 //        return [];
         
-        return NSPersistentStoreResult()
+        return objs
     }
     
     open func insert(_ object: NSManagedObject) {

@@ -31,7 +31,7 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
 {
     public convenience init(entityName:String) {
         self.init()
-        _entityName = entityName        
+        _entityName = entityName
     }
  
     open func execute() throws -> [ResultType] {
