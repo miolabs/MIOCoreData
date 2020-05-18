@@ -87,7 +87,7 @@ open class NSIncrementalStore : NSPersistentStore
     
     // Returns a new objectID with retain count 1 that uses data as the key.
     open func newObjectID(for entity: NSEntityDescription, referenceObject data: Any) -> NSManagedObjectID {
-        return NSManagedObjectID()
+        return NSManagedObjectID(WithEntity: entity, referenceObject: nil)
     }
 
     // Returns the reference data used to construct the objectID. Will raise an NSInvalidArgumentException if the objectID was not created
