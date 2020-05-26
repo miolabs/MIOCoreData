@@ -7,16 +7,23 @@
 
 import Foundation
 
-public class NSPersistentContainer : NSObject
+open class NSPersistentContainer : NSObject
 {
+    //open class func defaultDirectoryURL() -> URL
+    
     let _name: String
-    var name:String { get { return _name } }
+    open var name:String { get { return _name } }
+
+    let _managedObjectContext:NSManagedObjectContext?
+    open var viewContext: NSManagedObjectContext { get { return _managedObjectContext! } }
     
     let _managedObjectModel: NSManagedObjectModel
-    var managedObjectModel:NSManagedObjectModel { get { return _managedObjectModel } }
+    open var managedObjectModel:NSManagedObjectModel { get { return _managedObjectModel } }
     
-    let _managedObjectContext:NSManagedObjectContext?
-    public var viewContext: NSManagedObjectContext { get { return _managedObjectContext! } }
+    let _coordinator:NSPersistentStoreCoordinator
+    open var persistentStoreCoordinator: NSPersistentStoreCoordinator { get { return _coordinator } }
+
+    open var persistentStoreDescriptions: [NSPersistentStoreDescription] = []
     
     public convenience init(name: String){
 //        let url = URL(fileURLWithPath: name)
@@ -25,14 +32,25 @@ public class NSPersistentContainer : NSObject
     }
     
     public init(name: String, managedObjectModel model: NSManagedObjectModel) {
-        self._name = name
-        self._managedObjectModel = model
-        self._managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        _name = name
+        _managedObjectModel = model
+        _coordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
+        _managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        _managedObjectContext?.persistentStoreCoordinator = _coordinator
         super.init()
     }
     
     public func loadPersistentStores(completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {
-        
+                        
+        for desc in persistentStoreDescriptions {
+            do {
+                try _ = _coordinator.addPersistentStore(ofType: desc.type, configurationName: nil, at: desc.url)
+            }
+            catch _ {
+            }
+            
+            block(desc, nil)
+        }
     }
     
 }

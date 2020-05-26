@@ -20,6 +20,8 @@ open class NSPropertyDescription : NSObject
     // The transient flag specifies whether a property's value is persisted or ignored when an object is persisted - transient properties are still managed for undo/redo, validation, etc.
     open var isTransient: Bool
     
+    open var userInfo: [AnyHashable : Any]?
+    
     init(name:String, optional:Bool, transient:Bool) {
         self.name = name
         isOptional = optional

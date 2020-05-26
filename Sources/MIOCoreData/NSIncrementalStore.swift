@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  NSIncrementalStore.swift
 //  
 //
 //  Created by Javier Segura Perez on 15/05/2020.
@@ -17,9 +17,9 @@ open class NSIncrementalStore : NSPersistentStore
     // with a URL pointing to a zero-length file. This serves as an indicator that a new store is to be
     // constructed at the specified location and allows applications using the store to securly create
     // reservation files in known locations.
-//    open func loadMetadata() throws {
-//
-//    }
+    open override func loadMetadata() throws {
+
+    }
 
     
     // API methods that must be overriden by a subclass:

@@ -41,9 +41,13 @@ open class NSPersistentStoreCoordinator : NSObject
         return true
     }
 
-//    open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
-//
-//    }
+    open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
+        let newClass = NSClassFromString(storeType) as! NSPersistentStore.Type
+        let store = newClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
+        _persistentStores.append(store)
+        
+        return store
+    }
     
     open func addPersistentStore(with storeDescription: NSPersistentStoreDescription, completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {
         

@@ -29,7 +29,7 @@ open class NSPersistentStore : NSObject
 
     
     /* the designated initializer for object stores. */
-    public init(persistentStoreCoordinator root: NSPersistentStoreCoordinator?, configurationName name: String?, at url: URL, options: [AnyHashable : Any]? = nil) {
+    public required init(persistentStoreCoordinator root: NSPersistentStoreCoordinator?, configurationName name: String?, at url: URL, options: [AnyHashable : Any]? = nil) {
         _persistentStoreCoordinator = root
         _configurationName = name ?? "Default"
         self.url = url

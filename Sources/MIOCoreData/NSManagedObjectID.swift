@@ -11,14 +11,34 @@ open class NSManagedObjectID : NSObject
 {
     var _entity:NSEntityDescription
     open var entity: NSEntityDescription { get { return _entity } } // entity for the object identified by an ID
-//
-//    weak open var persistentStore: NSPersistentStore? { get } // persistent store that fetched the object identified by an ID
-//
-//    open var isTemporaryID: Bool { get } // indicates whether or not this ID will be replaced later, such as after a save operation (temporary IDs are assigned to newly inserted objects and replaced with permanent IDs when an object is written to a persistent store); most IDs return NO
-//
-//    open func uriRepresentation() -> URL // URI which provides an archivable reference to the object which this ID refers
+
+    weak var _persistentStore:NSPersistentStore?
+    weak open var persistentStore: NSPersistentStore? { get { return _persistentStore } } // persistent store that fetched the object identified by an ID
+
+    // indicates whether or not this ID will be replaced later, such as after a save operation (temporary IDs are assigned to newly inserted objects and replaced with permanent IDs when an object is written to a persistent store); most IDs return NO
+    var _isTemporaryID = true
+    open var isTemporaryID: Bool { get { return _isTemporaryID } }
+
+    var _storeIdentifier:String?
+    var _referenceObject:String
+    
+    // URI which provides an archivable reference to the object which this ID refers
+    open func uriRepresentation() -> URL {
+        
+        let host = isTemporaryID ? "": "/\(_storeIdentifier!)"
+        
+        let url = URL(string: "x-coredata://\(host)\(_referenceObject)")
+        return url!
+                
+//        var components = URLComponents()
+//        components.scheme = "x-coredata"
+//        components.host = isTemporaryID ? "localhost" : _storeIdentifier!
+//        components.path = "path" //entity.name!.appending("/\(_referenceObject)")
+                
+    }
 
     init(WithEntity entity:NSEntityDescription, referenceObject:String?){
         _entity = entity
+        _referenceObject = referenceObject ?? UUID().uuidString
     }
 }

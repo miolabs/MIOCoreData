@@ -14,8 +14,9 @@ open class NSEntityDescription : NSObject
     }
 
     open class func insertNewObject(forEntityName entityName: String, into context: NSManagedObjectContext) -> NSManagedObject {
+        let model = context.persistentStoreCoordinator!.managedObjectModel
         let objectClass = NSClassFromString(entityName) as! NSManagedObject.Type
-        let object = objectClass.init(context:context)
+        let object = objectClass.init(entity: model.entitiesByName[entityName]!, insertInto: context)
         context.insert(object)
         return object
     }
