@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class NSPersistentStoreDescription : NSObject
+open class NSPersistentStoreDescription : NSObject
 {
     open var type: String
 
