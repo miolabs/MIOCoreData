@@ -159,15 +159,15 @@ open class NSManagedObject : NSObject
     // value access (includes key-value coding methods)
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-    open override func value(forKey key: String) -> Any? {
-        return nil
-    }
+//    open override func value(forKey key: String) -> Any? {
+//        return nil
+//    }
 
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-    open override func setValue(_ value: Any?, forKey key: String) {
-        
-    }
+//    open override func setValue(_ value: Any?, forKey key: String) {
+//
+//    }
 
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
@@ -196,8 +196,8 @@ open class NSManagedObject : NSObject
 
     
     // validation - in addition to KVC validation managed objects have hooks to validate their lifecycle state; validation is a critical piece of functionality and the following methods are likely the most commonly overridden methods in custom subclasses
-    open override func validateValue(_ value: AutoreleasingUnsafeMutablePointer<AnyObject?>, forKey key: String) throws { // KVC
-    }
+//    open override func validateValue(_ value: AutoreleasingUnsafeMutablePointer<AnyObject?>, forKey key: String) throws { // KVC
+//    }
 
     open func validateForDelete() throws {
         
