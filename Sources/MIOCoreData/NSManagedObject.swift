@@ -99,13 +99,10 @@ open class NSManagedObject : NSObject
     }
     
     // KVO change notification
-//    open func willChangeValue(forKey key: String) {
-//
-//    }
-//
-//    open func didChangeValue(forKey key: String) {
-//
-//    }
+    #if os(Linux)
+    open func willChangeValue(forKey key: String) {}
+    open func didChangeValue(forKey key: String) {}
+    #endif
 
 //    open func willChangeValue(forKey inKey: String, withSetMutation inMutationKind: NSKeyValueSetMutationKind, using inObjects: Set<AnyHashable>)
 //
@@ -160,10 +157,20 @@ open class NSManagedObject : NSObject
     // value access (includes key-value coding methods)
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-    open override func value(forKey key: String) -> Any? {
+    #if os(Linux)
+    open func value(forKey key: String) -> Any? { return _value(forKey:key)}
+    #else
+    open override func value(forKey key: String) -> Any? { return _value(forKey:key) }
+    #endif
+    
+    open func _value(forKey key: String) -> Any? {
 
         guard let property = entity.propertiesByName[key] else {
+            #if os(Linux)
+            return nil
+            #else
             return super.value(forKey:key)
+            #endif
         }
               
         willAccessValue(forKey:key)
