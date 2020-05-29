@@ -15,11 +15,16 @@ open class NSPersistentStoreDescription : NSObject
 
     open var url: URL?
 
-    //open var options: [String : NSObject] { get }
-
+    open var options: [String : NSObject] { get { return _options } }
     
+    var _options:[String: NSObject] = [:]
     open func setOption(_ option: NSObject?, forKey key: String) {
         
+        if option == nil {
+            _options.removeValue(forKey: key)
+        }
+        
+        _options[key] = option!
     }
 
     
@@ -28,12 +33,11 @@ open class NSPersistentStoreDescription : NSObject
 
     //open var timeout: TimeInterval
 
-    //open var sqlitePragmas: [String : NSObject] { get }
-
-    
-    open func setValue(_ value: NSObject?, forPragmaNamed name: String) {
-        
-    }
+//    open var sqlitePragmas: [String : NSObject] { get }
+//
+//    open func setValue(_ value: NSObject?, forPragmaNamed name: String) {
+//
+//    }
     
     // addPersistentStore-time behaviours
 //    open var shouldAddStoreAsynchronously: Bool

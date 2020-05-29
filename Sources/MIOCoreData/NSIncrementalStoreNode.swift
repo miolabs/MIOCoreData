@@ -29,13 +29,16 @@ open class NSIncrementalStoreNode : NSObject
     public init(objectID: NSManagedObjectID, withValues values: [String : Any], version: UInt64) {
         _objectID = objectID
         _version = version
+        _values = values
     }
 
     
     // Update the values and version to reflect new data being saved to or loaded from the external store.
     // The values dictionary is in the same format as the initializer
+    var _values:[String:Any]
     open func update(withValues values: [String : Any], version: UInt64) {
-        
+        _values = values.merging(_values, uniquingKeysWith: { (first, _) in first })
+        _version = version
     }
 
     var _objectID:NSManagedObjectID
@@ -50,6 +53,76 @@ open class NSIncrementalStoreNode : NSObject
     
     // May return NSNull for to-one relationships.  If a relationship is nil, clients should  invoke -newValueForRelationship:forObjectWithID:withContext:error: on the NSPersistentStore
     open func value(for prop: NSPropertyDescription) -> Any? {
+
+        if prop is NSAttributeDescription {
+            return value(for: prop as! NSAttributeDescription)
+        }
+        
         return nil
     }
+    
+    
+    func value(for attr: NSAttributeDescription) -> Any? {
+                        
+        guard let value = _values[attr.name] else {
+            return nil
+        }
+        
+        return value
+    }
 }
+
+/*
+ 
+ let value = this._values[property.name];
+
+        if (property instanceof MIORelationshipDescription) {
+            let rel = property as MIORelationshipDescription;
+            if (value == null) {
+                value = this._values[rel.serverName];
+            }
+            return value;
+        }
+        else if (property instanceof MIOAttributeDescription) {
+            let attr = property as MIOAttributeDescription;
+            let type = attr.attributeType;
+
+            if (value == null){
+                value = this._values[attr.serverName];
+            }
+    
+            if (type == MIOAttributeType.Boolean) {
+                if (typeof (value) === "boolean") {
+                    return value;
+                }
+                else if (typeof (value) === "string") {
+                    let lwValue = value.toLocaleLowerCase();
+                    if (lwValue == "yes" || lwValue == "true" || lwValue == "1")
+                        return true;
+                    else
+                        return false;
+                }
+                else {
+                    let v = value > 0 ? true : false;
+                    return v;
+                }
+            }
+            else if (type == MIOAttributeType.Integer) {
+                let v = parseInt(value);
+                return isNaN(v) ? null : v;
+            }
+            else if (type == MIOAttributeType.Float || type == MIOAttributeType.Number) {
+                let v = parseFloat(value);
+                return isNaN(v) ? null : v;
+            }
+            else if (type == MIOAttributeType.String) {
+                return value;
+            }
+            else if (type == MIOAttributeType.Date) {
+                let date = _MIOIncrementalStoreNodeDateTransformer.sdf.dateFromString(value);
+                return date;
+            }
+        }
+        
+        return value;
+ */

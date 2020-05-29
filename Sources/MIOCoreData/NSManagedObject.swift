@@ -13,8 +13,7 @@ open class NSManagedObject : NSObject
     /*    Similarly, transient attributes may be individually flagged as not dirtying the object by adding +(BOOL)contextShouldIgnoreChangesFor<key> where <key> is the property name. */
     //open class var contextShouldIgnoreUnmodeledPropertyChanges: Bool { get }
 
-    
-    var _entity:NSEntityDescription
+        
     /* The Entity represented by this subclass. This method is only legal to call on subclasses of NSManagedObject that represent a single entity in the model.
      */
 //    open class func entity() -> NSEntityDescription {
@@ -30,11 +29,13 @@ open class NSManagedObject : NSObject
     
     /* The designated initializer. */
     public required init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
-        _entity = entity
         _managedObjectContext = context
         _objectID = NSManagedObjectID(WithEntity: entity, referenceObject: nil)
     }
-
+    
+    public required override init() {
+        super.init()
+    }
     
     /* Returns a new object, inserted into managedObjectContext. This method is only legal to call on subclasses of NSManagedObject that represent a single entity in the model.
      */
@@ -45,10 +46,10 @@ open class NSManagedObject : NSObject
     var _managedObjectContext:NSManagedObjectContext?
     // identity
     unowned(unsafe) open var managedObjectContext: NSManagedObjectContext? { get { return _managedObjectContext } }
+    
+    open var entity: NSEntityDescription { get {return objectID.entity } }
 
-    open var entity: NSEntityDescription { get {return _entity } }
-
-    var _objectID:NSManagedObjectID
+    var _objectID:NSManagedObjectID!
     open var objectID: NSManagedObjectID { get { return _objectID } }
 
     
@@ -159,9 +160,53 @@ open class NSManagedObject : NSObject
     // value access (includes key-value coding methods)
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-//    open override func value(forKey key: String) -> Any? {
-//        return nil
-//    }
+    open override func value(forKey key: String) -> Any? {
+
+        guard let property = entity.propertiesByName[key] else {
+            return super.value(forKey:key)
+        }
+              
+        willAccessValue(forKey:key)
+
+        var value:Any?
+
+        if property is NSAttributeDescription {
+                  
+            if _changedValues.keys.contains(key) {
+                value = _changedValues[key]
+            }
+            else {
+                value = storedValues[key]
+            }
+        }
+              
+//        else if (property instanceof MIORelationshipDescription){
+//                  let relationship = property as MIORelationshipDescription;
+//                  if (relationship.isToMany == false){
+//                      if (key in this._changedValues) {
+//                          let objID:MIOManagedObjectID = this._changedValues[key];
+//                          if (objID != null) {
+//                              value = this.managedObjectContext.objectWithID(objID);
+//                          }
+//                      }
+//                      else {
+//                          value = this.primitiveValueForKey(key);
+//                      }
+//                  }
+//                  else {
+//                      if (key in this._changedValues) {
+//                          value = this._changedValues[key];
+//                      }
+//                      else {
+//                          value = this.primitiveValueForKey(key);
+//                      }
+//                  }
+//              }
+        
+        didAccessValue(forKey:key)
+              
+        return value
+    }
 
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
@@ -171,24 +216,26 @@ open class NSManagedObject : NSObject
 
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
+    var _primitiveValues = [String : Any]()
     open func primitiveValue(forKey key: String) -> Any? {
-        return nil
+        return _primitiveValues[key]
     }
 
     open func setPrimitiveValue(_ value: Any?, forKey key: String) {
-        
+        _primitiveValues[key] = value
     }
-
     
     // returns a dictionary of the last fetched or saved keys and values of this object.  Pass nil to get all persistent modeled properties.
+    var _commitedValues = [String : Any]()
     open func committedValues(forKeys keys: [String]?) -> [String : Any] {
-        return [:]
+        return _commitedValues
     }
 
     
     // returns a dictionary with the keys and (new) values that have been changed since last fetching or saving the object (this is implemented efficiently without firing relationship faults)
+    var _changedValues:[String: Any] = [:]
     open func changedValues() -> [String : Any] {
-        return [:]
+        return _changedValues
     }
 
         
@@ -217,5 +264,103 @@ open class NSManagedObject : NSObject
         
     func setIsFault(_ value:Bool) {
         
+        if value == _isFault { return }
+                        
+        willChangeValue(forKey: "hasChanges")
+        willChangeValue(forKey:"isFault")
+        _isFault = value
+        if value == true { _storedValues = nil }
+        didChangeValue(forKey: "isFault")
+        didChangeValue(forKey: "hasChanges")
     }
+    
+    var _storedValues: [String:Any]?
+    var storedValues: [String : Any] {
+        get {
+            
+            if _storedValues != nil { return _storedValues! }
+            
+            if objectID.isTemporaryID == true { return [:] }
+            
+            if objectID.persistentStore is NSIncrementalStore {
+                _storedValues = valueFromIncrementalPersistentStore(objectID.persistentStore as? NSIncrementalStore)
+            }
+            else {
+                NSLog("MIOManagedObject: Only Incremental store is supported.")
+                return [:]
+            }
+            setIsFault(false)
+            
+            return _storedValues!
+        }
+    }
+    
+    func valueFromIncrementalPersistentStore(_ store:NSIncrementalStore?) -> [String:Any] {
+
+        if store == nil { return [:] }
+        
+        var storedValues:[String:Any] = [:]
+                
+        for property in entity.properties {
+            
+            if property is NSAttributeDescription {
+                let attr = property as! NSAttributeDescription
+                let node = try? store!.newValuesForObject(with: objectID, with: managedObjectContext!)
+                if node == nil { continue }
+                
+                let value = node!.value(for: attr)
+                storedValues[attr.name] = value
+            }
+            
+        }
+        
+        return storedValues
+    }
+    
 }
+
+/*
+
+    private storeValuesFromIncrementalStore(store:MIOIncrementalStore){
+        let storedValues = {};
+        let properties = this.entity.properties;
+        
+        for(let index = 0; index < properties.length; index++){
+            let property = properties[index];
+            if (property instanceof MIOAttributeDescription) {
+                let attribute = property as MIOAttributeDescription;
+                let node = store.newValuesForObjectWithID(this.objectID, this.managedObjectContext);
+                if (node == null) continue;
+                let value = node.valueForPropertyDescription(attribute);
+                storedValues[attribute.name] = value;
+            }
+            else if (property instanceof MIORelationshipDescription) {
+                let relationship = property as MIORelationshipDescription;
+                
+                if (relationship.isToMany == false) {
+                    let objectID = store.newValueForRelationship(relationship, this.objectID, this.managedObjectContext);
+                    if (objectID != null){
+                        storedValues[relationship.name] = objectID;
+                    }
+                }
+                else {
+                    // Tick. I store the value in a private property when the object is temporary
+                    let set:MIOManagedObjectSet = MIOManagedObjectSet._setWithManagedObject(this, relationship);
+                    //storedValues[relationship.name] = set;
+                    
+                    let objectIDs = store.newValueForRelationship(relationship, this.objectID, this.managedObjectContext);
+                    if (objectIDs == null) continue;
+                    
+                    for(let count = 0; count < objectIDs.length; count++){
+                        let objID = objectIDs[count];
+                        set._addObjectID(objID);
+                    }
+                    
+                    this["_" + relationship.name] = set;
+                }
+            }
+        }
+        
+        return storedValues;
+    }
+ */

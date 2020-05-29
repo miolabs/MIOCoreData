@@ -18,7 +18,7 @@ open class NSIncrementalStore : NSPersistentStore
     // constructed at the specified location and allows applications using the store to securly create
     // reservation files in known locations.
     open override func loadMetadata() throws {
-
+        
     }
 
     
@@ -87,12 +87,18 @@ open class NSIncrementalStore : NSPersistentStore
     
     // Returns a new objectID with retain count 1 that uses data as the key.
     open func newObjectID(for entity: NSEntityDescription, referenceObject data: Any) -> NSManagedObjectID {
-        return NSManagedObjectID(WithEntity: entity, referenceObject: nil)
+        let objID = NSManagedObjectID(WithEntity: entity, referenceObject: data)
+        objID._persistentStore = self
+        objID._storeIdentifier = identifier
+        
+        NSLog("New REFID: \(String(describing: referenceObject))")
+
+        return objID
     }
 
     // Returns the reference data used to construct the objectID. Will raise an NSInvalidArgumentException if the objectID was not created
     // by this store.
     open func referenceObject(for objectID: NSManagedObjectID) -> Any {
-        return ""
+        return objectID._referenceObject
     }
 }

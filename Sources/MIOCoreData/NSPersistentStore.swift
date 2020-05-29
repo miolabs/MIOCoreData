@@ -32,14 +32,17 @@ open class NSPersistentStore : NSObject
     public required init(persistentStoreCoordinator root: NSPersistentStoreCoordinator?, configurationName name: String?, at url: URL, options: [AnyHashable : Any]? = nil) {
         _persistentStoreCoordinator = root
         _configurationName = name ?? "Default"
-        self.url = url
         _options = options
+        super.init()
+        
+        self.url = url
+        try? loadMetadata()
+        identifier = metadata[NSStoreUUIDKey] as? String
     }
     
     /*  Store metadata must be accessible before -load: is called, but there is no way to return an error if the store is invalid
     */
     open func loadMetadata() throws {
-        
     }
     
     /* the bridge between the control & access layers. */
@@ -55,7 +58,7 @@ open class NSPersistentStore : NSObject
     open var url: URL?
     
     open var identifier: String!
-    
+        
     open var type: String { get { return "NSPersistentStore" } } // stores always know their type
     
     open var isReadOnly = false // Do we know a priori the store is read only?

@@ -73,7 +73,13 @@ open class NSManagedObjectContext : NSObject
         }
         else {
             let objectClass = NSClassFromString(objectID.entity.name!) as! NSManagedObject.Type
-            obj = objectClass.init(entity: objectID.entity, insertInto: self)
+            obj = objectClass.init()
+            obj!._objectID = objectID
+            obj!._managedObjectContext = self
+            obj!._isFault = true;
+            obj!._storedValues = nil
+
+            obj!.awakeFromFetch()
             //this._registerObject(obj);
         }
 
