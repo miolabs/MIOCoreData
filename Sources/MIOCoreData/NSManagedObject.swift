@@ -217,9 +217,11 @@ open class NSManagedObject : NSObject
 
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-//    open override func setValue(_ value: Any?, forKey key: String) {
-//
-//    }
+    #if os(Linux)
+    open func setValue(_ value: Any?, forKey key: String) {
+
+    }
+    #endif
 
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
