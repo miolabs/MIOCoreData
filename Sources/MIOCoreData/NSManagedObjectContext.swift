@@ -7,6 +7,8 @@
 
 import Foundation
 
+import MIOCore
+
 enum NSManagedObjectContextError: Error
 {
     case fetchRequestEntityInvalid
@@ -77,7 +79,9 @@ open class NSManagedObjectContext : NSObject
             obj!.setIsFault(true)
         }
         else {
-            let objectClass = NSClassFromString(objectID.entity.name!) as! NSManagedObject.Type
+            
+            //FIX: let objectClass = NSClassFromString(objectID.entity.name!) as! NSManagedObject.Type -> Doesn't work on Linux
+            let objectClass = _MIOCoreClassFromString(objectID.entity.name!) as! NSManagedObject.Type
             obj = objectClass.init()
             obj!._objectID = objectID
             obj!._managedObjectContext = self

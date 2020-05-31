@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MIOCore
 
 // Persistent store metadata dictionary keys:
 
@@ -45,7 +46,8 @@ open class NSPersistentStoreCoordinator : NSObject
         
         NSLog("NSPersistentStoreCoordinator:addPersistentStore: Loading store type: \(storeType)")
 
-        let newClass = NSClassFromString(storeType) as! NSPersistentStore.Type
+        //FIX: let newClass = NSClassFromString(storeType) as! NSPersistentStore.Type -> Doesn't work on Linux
+        let newClass = _MIOCoreClassFromString(storeType) as! NSPersistentStore.Type 
         let store = newClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
         _persistentStores.append(store)
         

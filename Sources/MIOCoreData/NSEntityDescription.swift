@@ -7,6 +7,8 @@
 
 import Foundation
 
+import MIOCore
+
 open class NSEntityDescription : NSObject
 {
     open class func entity(forEntityName entityName: String, in context: NSManagedObjectContext) -> NSEntityDescription? {
@@ -15,7 +17,8 @@ open class NSEntityDescription : NSObject
 
     open class func insertNewObject(forEntityName entityName: String, into context: NSManagedObjectContext) -> NSManagedObject {
         let model = context.persistentStoreCoordinator!.managedObjectModel
-        let objectClass = NSClassFromString(entityName) as! NSManagedObject.Type
+        //FIX: let objectClass = NSClassFromString(entityName) as! NSManagedObject.Type -> Doesn't work on Linux
+        let objectClass = _MIOCoreClassFromString(entityName) as! NSManagedObject.Type
         let object = objectClass.init(entity: model.entitiesByName[entityName]!, insertInto: context)
         context.insert(object)
         return object
