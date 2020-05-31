@@ -42,6 +42,9 @@ open class NSPersistentStoreCoordinator : NSObject
     }
 
     open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
+        
+        NSLog("NSPersistentStoreCoordinator:addPersistentStore: Loading store type: \(storeType)")
+
         let newClass = NSClassFromString(storeType) as! NSPersistentStore.Type
         let store = newClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
         _persistentStores.append(store)
