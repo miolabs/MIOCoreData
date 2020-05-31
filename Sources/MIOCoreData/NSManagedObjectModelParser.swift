@@ -24,6 +24,8 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     }
     
     public func parse(){
+        NSLog("ManagedObjectModelParser:parse: Parding contents of \(url.absoluteString)")
+        
         let parser = XMLParser(contentsOf: url)
         parser!.delegate = self
         
