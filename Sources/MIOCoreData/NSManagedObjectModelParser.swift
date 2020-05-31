@@ -84,13 +84,16 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         //console.log("XMLParser: End element (" + element + ")");
         
-        if (elementName == "entity") {
+        if elementName == "entity" {
             //model.entitiesByName[currentEntity!.managedObjectClassName] = currentEntity
             //model.setEntities([currentEntity!], forConfigurationName: "Default")
             entitiesByName[currentEntity!.name!] = currentEntity!
             
             NSLog("ManagedObjectModelParser:didEndElement: Entity: " + currentEntity!.name!)
             currentEntity = nil
+        }
+        if elementName == "model" {
+            NSLog("ManagedObjectModelParser:didEndElement: End mode")
         }
     }
     
@@ -174,7 +177,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         let optional = (optional != nil && optional!.lowercased() == "no") ? false : true
         let transient = (syncable != nil && syncable!.lowercased() == "no") ? false : true
         
-        currentEntity?.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: optional, transient: transient)
+        currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: optional, transient: transient)
     }
     
     func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String?){
@@ -183,7 +186,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         
         NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
                 
-        currentEntity?.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
+        currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
     }
     
     /*
