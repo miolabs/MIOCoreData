@@ -24,7 +24,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     }
     
     public func parse(){
-        NSLog("ManagedObjectModelParser:parse: Parding contents of \(url.absoluteString)")
+        NSLog("ManagedObjectModelParser:parse: Parsing contents of \(url.absoluteString)")
         
         let parser = XMLParser(contentsOf: url)
         parser!.delegate = self
@@ -96,11 +96,23 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         }
         if elementName == "model" {
             NSLog("ManagedObjectModelParser:didEndElement: End model")
+            #if os(Linux)
+            checkRelations()
+            #endif
         }
     }
     
     func parserDidEndDocument(_ parser: XMLParser) {
+                
+        #if !os(Linux)
+        checkRelations()
+        #endif
         
+        NSLog("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
+    }
+    
+    func checkRelations(){
         NSLog("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
         
         
@@ -121,9 +133,6 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         }
         
         model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
-        
-        NSLog("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
     }
     
     func addAttribute(name:String, type:String, optional:String?, syncable:String?, defaultValueString:String?){
