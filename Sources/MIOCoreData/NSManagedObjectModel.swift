@@ -49,7 +49,12 @@ open class NSManagedObjectModel : NSObject
     }
     
     open func setEntities(_ entities: [NSEntityDescription], forConfigurationName configuration: String) {
-        _entities.append(contentsOf: entities)
+        
+        for e in entities {
+            _entities.append(e)
+            NSLog("NSManagedObjectModel:setEntities: Adding entity: \(e.name!)")
+        }
+        
         _entitiesByName = nil
     }
     
