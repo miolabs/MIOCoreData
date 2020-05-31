@@ -93,7 +93,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             currentEntity = nil
         }
         if elementName == "model" {
-            NSLog("ManagedObjectModelParser:didEndElement: End mode")
+            NSLog("ManagedObjectModelParser:didEndElement: End model")
         }
     }
     
