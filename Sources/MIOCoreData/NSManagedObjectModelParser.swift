@@ -98,6 +98,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         
         NSLog("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
         
+        /*
         // Check every relation ship and assign the right destination entity
         for (_, entity) in entitiesByName {
             for (_, rel) in entity.relationshipsByName {
@@ -112,7 +113,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
                     rel.inverseRelationship = inverseRelation
                 }
             }
-        }
+        }*/
         
         NSLog("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
