@@ -51,5 +51,6 @@ open class NSPersistentStoreDescription : NSObject
     public init(url: URL){
         self.url = url
         self.type = "None"
+        super.init()
     }
 }
