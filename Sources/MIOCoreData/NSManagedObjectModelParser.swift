@@ -25,12 +25,13 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     
     public func parse(){
         let parser = XMLParser(contentsOf: url)
-        parser?.delegate = self
+        parser!.delegate = self
         
-        parser?.parse()
+        _ = parser!.parse()
     }
     
     // #region XML Parser delegate
+    var entitiesByName:[String:NSEntityDescription] = [:]
     var currentEntity:NSEntityDescription?
     var currentConfigName:String?
         
@@ -85,8 +86,11 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         
         if (elementName == "entity") {
             //model.entitiesByName[currentEntity!.managedObjectClassName] = currentEntity
-            model.setEntities([currentEntity!], forConfigurationName: "Default")
-            currentEntity = nil;
+            //model.setEntities([currentEntity!], forConfigurationName: "Default")
+            entitiesByName[currentEntity!.name!] = currentEntity!
+            
+            NSLog("ManagedObjectModelParser:didEndElement: Entity: " + currentEntity!.name!)
+            currentEntity = nil
         }
     }
     
@@ -95,15 +99,15 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         NSLog("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
         
         // Check every relation ship and assign the right destination entity
-        for (_, entity) in model.entitiesByName {
+        for (_, entity) in entitiesByName {
             for (_, rel) in entity.relationshipsByName {
                 if rel.destinationEntity == nil {
-                    let destinationEntity = model.entitiesByName[rel.destinationEntityName]
+                    let destinationEntity = entitiesByName[rel.destinationEntityName]
                     rel.destinationEntity = destinationEntity;
                 }
                 
                 if rel.inverseName != nil && rel.inverseEntityName != nil {
-                    let inverseEntity = model.entitiesByName[rel.inverseEntityName!]
+                    let inverseEntity = entitiesByName[rel.inverseEntityName!]
                     let inverseRelation = inverseEntity?.relationshipsByName[rel.inverseName!]
                     rel.inverseRelationship = inverseRelation
                 }
@@ -116,7 +120,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     
     func addAttribute(name:String, type:String, optional:String?, syncable:String?, defaultValueString:String?){
         
-        NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type))")
+        NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type)")
         
         var attrType = NSAttributeType.undefinedAttributeType
         var defaultValue:Any?
@@ -176,7 +180,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
                         
         let isToMany = (toMany != nil && toMany?.lowercased() == "yes") ? true : false
         
-        NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO"))")
+        NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
                 
         currentEntity?.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
     }
