@@ -46,7 +46,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
             currentEntity = NSEntityDescription(entityName: name!, parentEntity: parentEntity, managedObjectModel: model)
             
-            NSLog("\n\n--- " + name!)
+            NSLog("ManagedObjectModelParser:didStartElement: Found entity: " + name!)
         }
         else if elementName == "attribute" {
             
@@ -91,6 +91,8 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     }
     
     func parserDidEndDocument(_ parser: XMLParser) {
+        
+        NSLog("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
         
         // Check every relation ship and assign the right destination entity
         for (_, entity) in model.entitiesByName {
