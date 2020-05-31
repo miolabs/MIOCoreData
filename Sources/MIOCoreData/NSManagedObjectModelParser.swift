@@ -116,7 +116,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     
     func addAttribute(name:String, type:String, optional:String?, syncable:String?, defaultValueString:String?){
         
-        //NSLog((serverName != null ? serverName : name) + " (" + type + ", optional=" + optional + (defaultValue != null? ", defaultValue: " + defaultValue : "") + "): ");
+        NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type))")
         
         var attrType = NSAttributeType.undefinedAttributeType
         var defaultValue:Any?
@@ -173,9 +173,10 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     }
     
     func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String?){
-        
-        //let optional = (optional != nil && optional!.lowercased() == "no") ? false : true
+                        
         let isToMany = (toMany != nil && toMany?.lowercased() == "yes") ? true : false
+        
+        NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO"))")
                 
         currentEntity?.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
     }
