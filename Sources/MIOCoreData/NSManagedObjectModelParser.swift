@@ -108,7 +108,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             }
         }
         
-        //console.log("datamodel.xml parser finished");
+        NSLog("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
     }
     
