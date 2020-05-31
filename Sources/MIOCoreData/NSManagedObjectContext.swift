@@ -7,6 +7,11 @@
 
 import Foundation
 
+enum NSManagedObjectContextError: Error
+{
+    case fetchRequestEntityInvalid
+}
+
 public enum NSManagedObjectContextConcurrencyType : UInt
 {
     case confinementConcurrencyType = 0
@@ -96,6 +101,10 @@ open class NSManagedObjectContext : NSObject
         }
 
         request.entity = self.persistentStoreCoordinator?.managedObjectModel.entitiesByName[request.entityName!]
+        if request.entity == nil {
+            throw NSManagedObjectContextError.fetchRequestEntityInvalid
+        }
+        
         let objs = try store.execute(request, with: self) as! [T]
         
         return objs
