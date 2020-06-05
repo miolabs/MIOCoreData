@@ -45,10 +45,13 @@ open class NSPersistentStoreCoordinator : NSObject
     open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
         
         NSLog("NSPersistentStoreCoordinator:addPersistentStore: Loading store type: \(storeType)")
-
-        //FIX: let newClass = NSClassFromString(storeType) as! NSPersistentStore.Type -> Doesn't work on Linux
-        let newClass = _MIOCoreClassFromString(storeType) as! NSPersistentStore.Type 
-        let store = newClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
+        
+        //_MIOCoreRegisterClass(type: MIOPersistentStore.self, forKey: MIOPersistentStore.type)
+        //let newClass = _MIOCoreClassFromString(storeType) as! NSPersistentStore.Type
+        
+        let value = NSPersistentStoreCoordinator.registeredStoreTypes[storeType]
+        let storeClass = value!.nonretainedObjectValue as! NSPersistentStore.Type
+        let store = storeClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
         _persistentStores.append(store)
         
         return store
@@ -57,4 +60,40 @@ open class NSPersistentStoreCoordinator : NSObject
     open func addPersistentStore(with storeDescription: NSPersistentStoreDescription, completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {
         
     }
+    
+    open func remove(_ store: NSPersistentStore) throws {
+        
+    }
+
+    open func setMetadata(_ metadata: [String : Any]?, for store: NSPersistentStore) {
+        
+    }
+
+//    open func metadata(for store: NSPersistentStore) -> [String : Any] {
+//
+//    }
+
+    open func managedObjectID(forURIRepresentation url: URL) -> NSManagedObjectID? {
+        return nil
+    }
+ 
+//    open func execute(_ request: NSPersistentStoreRequest, with context: NSManagedObjectContext) throws -> Any {
+//
+//    }
+    
+    static var _registeredStoreTypes:[String:NSValue] = [:]
+    open class var registeredStoreTypes: [String : NSValue] { get { return _registeredStoreTypes } }
+    
+    open class func registerStoreClass(_ storeClass: AnyClass?, forStoreType storeType: String) {
+        _registeredStoreTypes[storeType] = NSValue(nonretainedObject: storeClass)
+    }
+    
+    open class func metadataForPersistentStore(ofType storeType: String, at url: URL, options: [AnyHashable : Any]? = nil) throws -> [String : Any] {
+        return [:]
+    }
+    
+    open class func setMetadata(_ metadata: [String : Any]?, forPersistentStoreOfType storeType: String, at url: URL, options: [AnyHashable : Any]? = nil) throws {
+        
+    }
+
 }
