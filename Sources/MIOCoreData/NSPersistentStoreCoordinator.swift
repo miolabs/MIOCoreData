@@ -49,8 +49,7 @@ open class NSPersistentStoreCoordinator : NSObject
         //_MIOCoreRegisterClass(type: MIOPersistentStore.self, forKey: MIOPersistentStore.type)
         //let newClass = _MIOCoreClassFromString(storeType) as! NSPersistentStore.Type
         
-        let value = NSPersistentStoreCoordinator.registeredStoreTypes[storeType]
-        let storeClass = value!.nonretainedObjectValue as! NSPersistentStore.Type
+        let storeClass = NSPersistentStoreCoordinator.registeredStoreTypes[storeType] as! NSPersistentStore.Type        
         let store = storeClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
         _persistentStores.append(store)
         
@@ -81,11 +80,11 @@ open class NSPersistentStoreCoordinator : NSObject
 //
 //    }
     
-    static var _registeredStoreTypes:[String:NSValue] = [:]
-    open class var registeredStoreTypes: [String : NSValue] { get { return _registeredStoreTypes } }
+    static var _registeredStoreTypes:[String:Any] = [:]
+    open class var registeredStoreTypes: [String : Any] { get { return _registeredStoreTypes } }
     
     open class func registerStoreClass(_ storeClass: AnyClass?, forStoreType storeType: String) {
-        _registeredStoreTypes[storeType] = NSValue(nonretainedObject: storeClass)
+        _registeredStoreTypes[storeType] = storeClass
     }
     
     open class func metadataForPersistentStore(ofType storeType: String, at url: URL, options: [AnyHashable : Any]? = nil) throws -> [String : Any] {
