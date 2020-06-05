@@ -8,7 +8,8 @@
 import Foundation
 import MIOCore
 
-typealias NSExpression = MIOExpression
+public typealias NSExpression = MIOExpression
+public typealias NSComparisonPredicate = MIOComparisonPredicate
 
 public enum MIOPredicateTokenType: Int
 {
@@ -53,8 +54,12 @@ public enum MIOPredicateTokenType: Int
     case classValue
 }
 
-open class MIOPredicate: NSObject
+@objc open class MIOPredicate: NSObject
 {
+         
+    override init() {
+    }
+    
     public init(format predicateFormat: String, argumentArray arguments: [Any]?) {
         super.init()
         parse(predicateFormat, arguments: arguments)
@@ -132,11 +137,10 @@ open class MIOPredicate: NSObject
 
             case MIOPredicateTokenType.identifier.rawValue:
                       let leftExpression = NSExpression(forKeyPath: token!.value)
-                      let k = leftExpression.keyPath
                       let op = parseOperator()
                       let rightExpression = parseExpresion()
 
-                      //let pi = NSComparisonPredicate(leftExpression: leftExpression, rightExpression: rightExpression, modifier: .direct, type: op, options: [])
+                      //predicate = NSComparisonPredicate(leftExpression: leftExpression, rightExpression: rightExpression, modifier: .direct, type: op, options: [])
                       //predicates.append(pi)
 
 /*                  case MIOPredicateTokenType.AND:
@@ -347,6 +351,7 @@ open class MIOPredicate: NSObject
           return nv;
       }*/
 
+
 }
 
 extension MIOPredicate {
@@ -354,6 +359,7 @@ extension MIOPredicate {
     public convenience init(format predicateFormat: String, _ args: CVarArg...) {
         //let array = getVaList(args)
         self.init(format:predicateFormat, argumentArray:nil)
+        object_setClass(self, MIOComparisonPredicate.self)
     }
 }
 

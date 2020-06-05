@@ -7,10 +7,6 @@
 
 import Foundation
 
-import MIOCore
-public typealias NSPredicate = MIOPredicate
-
-
 public struct NSFetchRequestResultType : OptionSet
 {
     public let rawValue:UInt
