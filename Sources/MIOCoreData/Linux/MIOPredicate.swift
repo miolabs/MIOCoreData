@@ -54,11 +54,9 @@ public enum MIOPredicateTokenType: Int
     case classValue
 }
 
-@objc open class MIOPredicate: NSObject
+open class MIOPredicate: NSObject
 {
-         
-    override init() {
-    }
+    override init() {}
     
     public init(format predicateFormat: String, argumentArray arguments: [Any]?) {
         super.init()
@@ -359,7 +357,8 @@ extension MIOPredicate {
     public convenience init(format predicateFormat: String, _ args: CVarArg...) {
         //let array = getVaList(args)
         self.init(format:predicateFormat, argumentArray:nil)
-        object_setClass(self, MIOComparisonPredicate.self)
+        //object_setClass(self, MIOComparisonPredicate.self)
     }
+    
 }
 
