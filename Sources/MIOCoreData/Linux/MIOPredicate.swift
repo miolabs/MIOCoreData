@@ -352,12 +352,13 @@ open class MIOPredicate: NSObject
 
 }
 
-extension MIOPredicate {
-    
+extension NSPredicate {
+        
     public convenience init(format predicateFormat: String, _ args: CVarArg...) {
         //let array = getVaList(args)
         self.init(format:predicateFormat, argumentArray:nil)
         //object_setClass(self, MIOComparisonPredicate.self)
+        
     }
     
 }
