@@ -76,6 +76,7 @@ open class NSEntityDescription : NSObject
         
     func addAttribute(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, transient:Bool) {
         let attr = NSAttributeDescription(name: name, type: type, defaultValue: defaultValue, optional: optional, transient: transient)
+        attr._entity = self
         properties.append(attr)
         _propertiesByName[name] = attr;
         _attributesByName[name] = attr;
@@ -83,6 +84,7 @@ open class NSEntityDescription : NSObject
 
     func addRelationship(name:String, destinationEntityName:String, toMany:Bool, inverseName:String?, inverseEntityName:String?) {
         let rel = NSRelationshipDescription(name: name, destinationEntityName: destinationEntityName, toMany: toMany, inverseName:inverseName, inverseEntityName: inverseEntityName)
+        rel._entity = self
         properties.append(rel)
         _propertiesByName[name] = rel
         _relationshipsByName[name] = rel

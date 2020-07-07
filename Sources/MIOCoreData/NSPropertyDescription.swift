@@ -9,7 +9,7 @@ import Foundation
 
 open class NSPropertyDescription : NSObject
 {
-    weak var _entity:NSEntityDescription!
+    open weak var _entity:NSEntityDescription!
     unowned(unsafe) open var entity: NSEntityDescription { get { return _entity! } }
     
     open var name: String
