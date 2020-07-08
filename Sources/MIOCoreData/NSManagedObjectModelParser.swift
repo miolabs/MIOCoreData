@@ -49,7 +49,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
             currentEntity = NSEntityDescription(entityName: name!, parentEntity: parentEntity, managedObjectModel: model)
             
-            NSLog("ManagedObjectModelParser:didStartElement: Found entity: " + name!)
+            //NSLog("ManagedObjectModelParser:didStartElement: Found entity: " + name!)
         }
         else if elementName == "attribute" {
             
@@ -91,11 +91,11 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             //model.setEntities([currentEntity!], forConfigurationName: "Default")
             entitiesByName[currentEntity!.name!] = currentEntity!
             
-            NSLog("ManagedObjectModelParser:didEndElement: Entity: " + currentEntity!.name!)
+            //NSLog("ManagedObjectModelParser:didEndElement: Entity: " + currentEntity!.name!)
             currentEntity = nil
         }
         if elementName == "model" {
-            NSLog("ManagedObjectModelParser:didEndElement: End model")
+            //NSLog("ManagedObjectModelParser:didEndElement: End model")
             #if os(Linux)
             checkRelations()
             #endif
@@ -137,7 +137,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     
     func addAttribute(name:String, type:String, optional:String?, syncable:String?, defaultValueString:String?){
         
-        NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type)")
+        //NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type)")
         
         var attrType = NSAttributeType.undefinedAttributeType
         var defaultValue:Any?
@@ -197,7 +197,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
                         
         let isToMany = (toMany != nil && toMany?.lowercased() == "yes") ? true : false
         
-        NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
+        //NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
                 
         currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
     }
