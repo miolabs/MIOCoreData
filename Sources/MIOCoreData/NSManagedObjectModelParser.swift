@@ -35,6 +35,9 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     // #region XML Parser delegate
     var entitiesByName:[String:NSEntityDescription] = [:]
     var currentEntity:NSEntityDescription?
+    var currentAttribute:NSAttributeDescription?
+    var currentRelationship:NSRelationshipDescription?
+    var currentUserInfo:[String:Any]?
     var currentConfigName:String?
         
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
@@ -72,6 +75,17 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
             addRelationship(name:name!, destinationEntityName:destinationEntityName!, toMany:toMany, inverseName:inverseName, inverseEntityName:inverseEntityName, optional:optional);
         }
+        else if elementName == "userInfo" {
+            currentUserInfo = [:]
+        }
+        else if elementName == "entry" {
+            if currentUserInfo != nil {
+                if let key = attributeDict["key"] {
+                    currentUserInfo![key] = attributeDict["value"]
+                }
+            }
+        }
+            
         else if elementName == "configuration" {
             //this.currentConfigName = attributes["name"];
         }
@@ -90,9 +104,22 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             //model.entitiesByName[currentEntity!.managedObjectClassName] = currentEntity
             //model.setEntities([currentEntity!], forConfigurationName: "Default")
             entitiesByName[currentEntity!.name!] = currentEntity!
+            currentEntity!.userInfo = currentUserInfo
             
-            //NSLog("ManagedObjectModelParser:didEndElement: Entity: " + currentEntity!.name!)
             currentEntity = nil
+            currentUserInfo = nil
+        }
+        else if elementName == "attribute" {
+            currentAttribute!.userInfo = currentUserInfo
+            
+            currentAttribute = nil
+            currentUserInfo = nil
+        }
+        else if elementName == "relationship" {
+            currentRelationship!.userInfo = currentUserInfo
+            
+            currentRelationship = nil
+            currentUserInfo = nil
         }
         if elementName == "model" {
             //NSLog("ManagedObjectModelParser:didEndElement: End model")
@@ -190,7 +217,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         let optional = (optional != nil && optional!.lowercased() == "no") ? false : true
         let transient = (syncable != nil && syncable!.lowercased() == "no") ? false : true
         
-        currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: optional, transient: transient)
+        currentAttribute = currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: optional, transient: transient)
     }
     
     func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String?){
@@ -199,7 +226,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         
         //NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
                 
-        currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
+        currentRelationship = currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
     }
     
     /*
