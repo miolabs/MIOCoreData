@@ -24,12 +24,15 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     }
     
     public func parse(){
-        NSLog("ManagedObjectModelParser:parse: Parsing contents of \(url.absoluteString)")
+        print("ManagedObjectModelParser:parse: Parsing contents of \(url.absoluteString)")
         
-        let parser = XMLParser(contentsOf: url)
-        parser!.delegate = self
+        guard let parser = XMLParser(contentsOf: url) else {
+            print("ManagedObjectModelParser:parse: XMLParser is nil. file couldn't be read")
+            return
+        }
         
-        _ = parser!.parse()
+        parser.delegate = self
+        _ = parser.parse()
     }
     
     // #region XML Parser delegate
@@ -135,12 +138,12 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         checkRelations()
         #endif
         
-        NSLog("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
+        print("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
     }
     
     func checkRelations(){
-        NSLog("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
+        print("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
         
         
         // Check every relation ship and assign the right destination entity
@@ -211,7 +214,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             //if (defaultValueString != null) defaultValue = MIODateFromString(defaultValueString);
             
         default:
-            NSLog("MIOManagedObjectModel: Unknown class type: " + type);
+            print("MIOManagedObjectModel: Unknown class type: " + type);
         }
         
         let optional = (optional != nil && optional!.lowercased() == "no") ? false : true

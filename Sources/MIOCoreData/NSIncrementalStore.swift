@@ -91,7 +91,7 @@ open class NSIncrementalStore : NSPersistentStore
         objID._persistentStore = self
         objID._storeIdentifier = identifier
         
-        NSLog("New REFID: \(String(describing: referenceObject))")
+        print("New REFID: \(String(describing: referenceObject))")
 
         return objID
     }

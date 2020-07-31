@@ -52,7 +52,7 @@ open class NSManagedObjectModel : NSObject
         
         for e in entities {
             _entities.append(e)
-            NSLog("NSManagedObjectModel:setEntities: Adding entity: \(e.name!)")
+            print("NSManagedObjectModel:setEntities: Adding entity: \(e.name!)")
         }
         
         _entitiesByName = nil
