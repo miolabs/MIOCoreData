@@ -24,12 +24,15 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     }
     
     public func parse(){
-        NSLog("ManagedObjectModelParser:parse: Parsing contents of \(url.absoluteString)")
+        print("ManagedObjectModelParser:parse: Parsing contents of \(url.absoluteString)")
         
-        let parser = XMLParser(contentsOf: url)
-        parser!.delegate = self
+        guard let parser = XMLParser(contentsOf: url) else {
+            print("ManagedObjectModelParser:parse: XMLParser is nil. file couldn't be read")
+            return
+        }
         
-        _ = parser!.parse()
+        parser.delegate = self
+        _ = parser.parse()
     }
     
     // #region XML Parser delegate
@@ -48,11 +51,9 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
             let name = attributeDict["name"]
             let parentName = attributeDict["parentEntity"]
-            let parentEntity = parentName != nil ? model.entitiesByName[parentName!] : nil
             
-            currentEntity = NSEntityDescription(entityName: name!, parentEntity: parentEntity, managedObjectModel: model)
-            
-            //NSLog("ManagedObjectModelParser:didStartElement: Found entity: " + name!)
+            currentEntity = NSEntityDescription(entityName: name!, parentEntity: nil, managedObjectModel: model)
+            currentEntity!.parentEntityName = parentName
         }
         else if elementName == "attribute" {
             
@@ -124,7 +125,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         if elementName == "model" {
             //NSLog("ManagedObjectModelParser:didEndElement: End model")
             #if os(Linux)
-            checkRelations()
+            buildGraph()
             #endif
         }
     }
@@ -132,34 +133,22 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     func parserDidEndDocument(_ parser: XMLParser) {
                 
         #if !os(Linux)
-        checkRelations()
+        buildGraph()
         #endif
         
-        NSLog("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
+        print("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
     }
     
-    func checkRelations(){
-        NSLog("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
+    func buildGraph(){
+        print("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
         
+        model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
         
         // Check every relation ship and assign the right destination entity
         for (_, entity) in entitiesByName {
-            for (_, rel) in entity.relationshipsByName {
-                if rel.destinationEntity == nil {
-                    let destinationEntity = entitiesByName[rel.destinationEntityName]
-                    rel.destinationEntity = destinationEntity;
-                }
-                
-                if rel.inverseName != nil && rel.inverseEntityName != nil {
-                    let inverseEntity = entitiesByName[rel.inverseEntityName!]
-                    let inverseRelation = inverseEntity?.relationshipsByName[rel.inverseName!]
-                    rel.inverseRelationship = inverseRelation
-                }
-            }
-        }
-
-        model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
+            entity.build()
+        }        
     }
     
     func addAttribute(name:String, type:String, optional:String?, syncable:String?, defaultValueString:String?){
@@ -211,7 +200,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             //if (defaultValueString != null) defaultValue = MIODateFromString(defaultValueString);
             
         default:
-            NSLog("MIOManagedObjectModel: Unknown class type: " + type);
+            print("MIOManagedObjectModel: Unknown class type: " + type);
         }
         
         let optional = (optional != nil && optional!.lowercased() == "no") ? false : true

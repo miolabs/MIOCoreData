@@ -295,7 +295,7 @@ open class NSManagedObject : NSObject
                 _storedValues = valueFromIncrementalPersistentStore(objectID.persistentStore as? NSIncrementalStore)
             }
             else {
-                NSLog("MIOManagedObject: Only Incremental store is supported.")
+                print("MIOManagedObject: Only Incremental store is supported.")
                 return [:]
             }
             setIsFault(false)

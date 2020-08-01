@@ -38,7 +38,7 @@ open class NSEntityDescription : NSObject
 
     open var subentities: [NSEntityDescription] = []
 
-    weak var _superentity:NSEntityDescription?
+    open weak var _superentity:NSEntityDescription?
     unowned(unsafe) open var superentity: NSEntityDescription? { get { return _superentity } }
 
     var _propertiesByName:[String : NSPropertyDescription] = [:]
@@ -55,7 +55,7 @@ open class NSEntityDescription : NSObject
     var _relationshipsByName:[String : NSRelationshipDescription] = [:]
     open var relationshipsByName: [String : NSRelationshipDescription] { get { return _relationshipsByName } }
 
-    open func relationships(forDestination entity: NSEntityDescription) -> [NSRelationshipDescription]{
+    open func relationships(forDestination entity: NSEntityDescription) -> [NSRelationshipDescription] {
         
         var relations = [NSRelationshipDescription]()
         for (_, rel) in relationshipsByName {
@@ -69,10 +69,12 @@ open class NSEntityDescription : NSObject
     
     init(entityName:String, parentEntity:NSEntityDescription?, managedObjectModel model:NSManagedObjectModel) {
         name = entityName
-        managedObjectClassName = entityName;
+        managedObjectClassName = entityName
         _model = model
         super.init()
     }
+    
+    open var parentEntityName:String?
         
     @discardableResult func addAttribute(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, transient:Bool) -> NSAttributeDescription {
         let attr = NSAttributeDescription(name: name, type: type, defaultValue: defaultValue, optional: optional, transient: transient)
@@ -92,5 +94,43 @@ open class NSEntityDescription : NSObject
         _relationshipsByName[name] = rel
         
         return rel
+    }
+    
+    var isBuilt = false
+    open func build() {
+
+        if isBuilt { return }
+        isBuilt = true
+        
+        if let parentEntityName = parentEntityName {
+            let parentEntity = managedObjectModel.entitiesByName[parentEntityName]
+            _superentity = parentEntity
+            parentEntity!.subentities.append(self)
+            parentEntity!.build()
+            
+            for (_, prop) in parentEntity!.propertiesByName {
+
+                if prop is NSAttributeDescription {
+                    let attr = prop as! NSAttributeDescription
+                    addAttribute(name: attr.name, type: attr.attributeType, defaultValue: attr.defaultValue, optional: attr.isOptional, transient: attr.isTransient)
+                }
+                else if prop is NSRelationshipDescription {
+                    let rel = prop as! NSRelationshipDescription
+                    addRelationship(name: rel.name, destinationEntityName: rel.destinationEntityName, toMany: rel.isToMany, inverseName: rel.inverseName, inverseEntityName: rel.inverseEntityName)
+                }
+            }
+        }
+        
+        for (_, rel) in relationshipsByName {
+            if rel.destinationEntity == nil {
+                rel.destinationEntity = managedObjectModel.entitiesByName[rel.destinationEntityName]
+            }
+            
+            if rel.inverseName != nil && rel.inverseEntityName != nil {
+                let inverseEntity = managedObjectModel.entitiesByName[rel.inverseEntityName!]
+                let inverseRelation = inverseEntity?.relationshipsByName[rel.inverseName!]
+                rel.inverseRelationship = inverseRelation
+            }
+        }
     }
 }
