@@ -49,13 +49,14 @@ open class NSManagedObjectModel : NSObject
     }
     
     open func setEntities(_ entities: [NSEntityDescription], forConfigurationName configuration: String) {
-        
+        // NOTE: the getter of entityesByName IS NOT ATOMIC
+        _entitiesByName = [:]
+
         for e in entities {
             _entities.append(e)
+            _entitiesByName![e.name!] = e
             NSLog("NSManagedObjectModel:setEntities: Adding entity: \(e.name!)")
         }
-        
-        _entitiesByName = nil
     }
     
 }

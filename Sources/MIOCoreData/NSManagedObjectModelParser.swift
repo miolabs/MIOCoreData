@@ -158,7 +158,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
                 }
             }
         }
-        
+
         model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
     }
     
@@ -176,31 +176,31 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
         case "Integer":
             attrType = NSAttributeType.integer32AttributeType
-            defaultValue = defaultValueString != nil ? defaultValue = Int(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? Int(defaultValueString!) : nil
             
         case "Integer 8":
             attrType = NSAttributeType.integer16AttributeType
-            defaultValue = defaultValueString != nil ? defaultValue = Int8(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? Int8(defaultValueString!) : nil
             
         case "Integer 16":
             attrType = NSAttributeType.integer16AttributeType
-            defaultValue = defaultValueString != nil ? defaultValue = Int16(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? Int16(defaultValueString!) : nil
             
         case "Integer 32":
             attrType = NSAttributeType.integer32AttributeType
-            defaultValue = defaultValueString != nil ? defaultValue = Int32(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? Int32(defaultValueString!) : nil
             
         case "Integer 64":
             attrType = NSAttributeType.integer64AttributeType
-            defaultValue = defaultValueString != nil ? defaultValue = Int64(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? Int64(defaultValueString!) : nil
             
         case "Float":
             attrType = NSAttributeType.floatAttributeType
-            defaultValue = defaultValueString != nil ? defaultValue = Float(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? Float(defaultValueString!) : nil
             
         case "Decimal":
             attrType = NSAttributeType.decimalAttributeType
-            defaultValue = defaultValueString != nil ? defaultValue = Double(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? Double(defaultValueString!) : nil
             
         case "String":
             attrType = NSAttributeType.stringAttributeType
