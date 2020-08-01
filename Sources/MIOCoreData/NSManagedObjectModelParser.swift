@@ -51,11 +51,9 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
             let name = attributeDict["name"]
             let parentName = attributeDict["parentEntity"]
-            let parentEntity = parentName != nil ? model.entitiesByName[parentName!] : nil
             
-            currentEntity = NSEntityDescription(entityName: name!, parentEntity: parentEntity, managedObjectModel: model)
-            
-            //NSLog("ManagedObjectModelParser:didStartElement: Found entity: " + name!)
+            currentEntity = NSEntityDescription(entityName: name!, parentEntity: nil, managedObjectModel: model)
+            currentEntity!.parentEntityName = parentName
         }
         else if elementName == "attribute" {
             
@@ -127,7 +125,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         if elementName == "model" {
             //NSLog("ManagedObjectModelParser:didEndElement: End model")
             #if os(Linux)
-            checkRelations()
+            buildGraph()
             #endif
         }
     }
@@ -135,34 +133,23 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     func parserDidEndDocument(_ parser: XMLParser) {
                 
         #if !os(Linux)
-        checkRelations()
+        buildGraph()
         #endif
         
         print("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
     }
     
-    func checkRelations(){
+    func buildGraph(){
         print("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
         
+        model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
         
         // Check every relation ship and assign the right destination entity
         for (_, entity) in entitiesByName {
-            for (_, rel) in entity.relationshipsByName {
-                if rel.destinationEntity == nil {
-                    let destinationEntity = entitiesByName[rel.destinationEntityName]
-                    rel.destinationEntity = destinationEntity;
-                }
-                
-                if rel.inverseName != nil && rel.inverseEntityName != nil {
-                    let inverseEntity = entitiesByName[rel.inverseEntityName!]
-                    let inverseRelation = inverseEntity?.relationshipsByName[rel.inverseName!]
-                    rel.inverseRelationship = inverseRelation
-                }
-            }
+            entity.build()
         }
-        
-        model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
+                        
     }
     
     func addAttribute(name:String, type:String, optional:String?, syncable:String?, defaultValueString:String?){
