@@ -108,15 +108,21 @@ open class NSEntityDescription : NSObject
             parentEntity!.subentities.append(self)
             parentEntity!.build()
             
+            if userInfo != nil {
+               userInfo!.merge( parentEntity!.userInfo ?? [:] ){ (old,_new) in old }
+            }
+            
             for (_, prop) in parentEntity!.propertiesByName {
 
                 if prop is NSAttributeDescription {
                     let attr = prop as! NSAttributeDescription
-                    addAttribute(name: attr.name, type: attr.attributeType, defaultValue: attr.defaultValue, optional: attr.isOptional, transient: attr.isTransient)
+                    let new_attr = addAttribute(name: attr.name, type: attr.attributeType, defaultValue: attr.defaultValue, optional: attr.isOptional, transient: attr.isTransient)
+                    new_attr.userInfo = attr.userInfo
                 }
                 else if prop is NSRelationshipDescription {
                     let rel = prop as! NSRelationshipDescription
-                    addRelationship(name: rel.name, destinationEntityName: rel.destinationEntityName, toMany: rel.isToMany, inverseName: rel.inverseName, inverseEntityName: rel.inverseEntityName)
+                    let new_rel = addRelationship(name: rel.name, destinationEntityName: rel.destinationEntityName, toMany: rel.isToMany, inverseName: rel.inverseName, inverseEntityName: rel.inverseEntityName)
+                    new_rel.userInfo = rel.userInfo
                 }
             }
         }
