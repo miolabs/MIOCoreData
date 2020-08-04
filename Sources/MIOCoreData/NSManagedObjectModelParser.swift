@@ -161,7 +161,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         switch(type){
         case "Boolean":
             attrType = NSAttributeType.booleanAttributeType
-            defaultValue = (defaultValueString != nil && defaultValueString!.lowercased() == "true") ? true : false
+            if defaultValueString != nil { defaultValue = defaultValueString!.lowercased() == "true" }
             
         case "Integer":
             attrType = NSAttributeType.integer32AttributeType
