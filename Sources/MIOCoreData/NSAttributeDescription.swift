@@ -35,7 +35,7 @@ open class NSAttributeDescription: NSPropertyDescription
     
     open var defaultValue: Any? // value is retained and not copied
     
-    init(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, transient:Bool){
+    public init(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, transient:Bool){
         self.attributeType = type
         self.defaultValue = defaultValue
         super.init(name: name, optional: optional, transient: transient)

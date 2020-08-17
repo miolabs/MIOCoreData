@@ -17,7 +17,7 @@ open class NSManagedObjectModel : NSObject
         parser = ManagedObjectModelParser(url: url, model: self)
         parser?.parse()
     }
-            
+        
     var _entitiesByName: [String : NSEntityDescription]?
     open var entitiesByName: [String : NSEntityDescription] {
         get {
