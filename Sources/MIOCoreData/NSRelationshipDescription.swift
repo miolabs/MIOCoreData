@@ -33,12 +33,12 @@ public class NSRelationshipDescription : NSPropertyDescription
     var inverseName:String?
     var inverseEntityName:String?
     
-    init(name:String, destinationEntityName:String, toMany:Bool, inverseName:String?, inverseEntityName:String?){
+    init(name:String, destinationEntityName:String, toMany:Bool, optional: Bool, inverseName:String?, inverseEntityName:String?){
         self.maxCount = toMany ? 2 : 1
         self.destinationEntityName = destinationEntityName
         self.inverseName = inverseName
         self.inverseEntityName = inverseEntityName
-        super.init(name: name, optional: true, transient: false)
+        super.init(name: name, optional: optional, transient: false)
     }
         
 }

@@ -59,7 +59,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
             let name = attributeDict["name"]
             let type = attributeDict["attributeType"]
-            let optional = attributeDict["optional"] != nil ? attributeDict["optional"]?.lowercased() : "yes"
+            let optional = attributeDict["optional"] != nil ? attributeDict["optional"]!.lowercased() : "no"
             let syncable = attributeDict["syncable"]
             let defaultValueString = attributeDict["defaultValueString"]
             
@@ -70,7 +70,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             let name = attributeDict["name"]
             let destinationEntityName = attributeDict["destinationEntity"]
             let toMany = attributeDict["toMany"]
-            let optional = attributeDict["optional"] != nil ? attributeDict["optional"]?.lowercased() : "yes"
+            let optional = attributeDict["optional"] != nil ? attributeDict["optional"]!.lowercased() : "no"
             let inverseName = attributeDict["inverseName"]
             let inverseEntityName = attributeDict["inverseEntity"]
             
@@ -151,7 +151,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         }        
     }
     
-    func addAttribute(name:String, type:String, optional:String?, syncable:String?, defaultValueString:String?){
+    func addAttribute(name:String, type:String, optional:String, syncable:String?, defaultValueString:String?){
         
         //NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type)")
         
@@ -203,19 +203,20 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             print("MIOManagedObjectModel: Unknown class type: " + type);
         }
         
-        let optional = (optional != nil && optional!.lowercased() == "no") ? false : true
+        let opt = optional.lowercased() == "yes" ? true : false
         let transient = (syncable != nil && syncable!.lowercased() == "no") ? false : true
         
-        currentAttribute = currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: optional, transient: transient)
+        currentAttribute = currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: opt, transient: transient)
     }
     
-    func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String?){
+    func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String){
                         
         let isToMany = (toMany != nil && toMany?.lowercased() == "yes") ? true : false
+        let opt = optional.lowercased() == "yes" ? true : false
         
         //NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
                 
-        currentRelationship = currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, inverseName: inverseName, inverseEntityName: inverseEntityName)
+        currentRelationship = currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, optional: opt, inverseName: inverseName, inverseEntityName: inverseEntityName)
     }
     
     /*
