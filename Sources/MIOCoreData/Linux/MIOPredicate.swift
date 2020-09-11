@@ -54,8 +54,13 @@ public enum MIOPredicateTokenType: Int
     case classValue
 }
 
-open class MIOPredicate: NSObject
+open class MIOPredicate: NSObject, NSCopying
 {
+    public func copy(with zone: NSZone? = nil) -> Any {
+        let obj = MIOPredicate()
+        return obj
+    }
+    
     override init() {}
     
     public init(format predicateFormat: String, argumentArray arguments: [Any]?) {

@@ -55,6 +55,8 @@ open class NSEntityDescription : NSObject
     var _relationshipsByName:[String : NSRelationshipDescription] = [:]
     open var relationshipsByName: [String : NSRelationshipDescription] { get { return _relationshipsByName } }
 
+    open var indexes: [NSFetchIndexDescription] = []
+    
     open func relationships(forDestination entity: NSEntityDescription) -> [NSRelationshipDescription] {
         
         var relations = [NSRelationshipDescription]()
