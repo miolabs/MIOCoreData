@@ -195,6 +195,10 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             attrType = NSAttributeType.stringAttributeType
             defaultValue = defaultValueString
             
+        case "UUID":
+            attrType = NSAttributeType.UUIDAttributeType
+            defaultValue = defaultValueString
+            
         case "Date":
             attrType = NSAttributeType.dateAttributeType;
             //if (defaultValueString != null) defaultValue = MIODateFromString(defaultValueString);
