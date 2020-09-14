@@ -369,6 +369,13 @@ open class NSManagedObject : NSObject
         return storedValues
     }
     
+    func _didCommit() {
+        _changedValues = [:]
+        _storedValues = nil
+        setIsFault(false)
+    }
+
+    
 }
 
 /*
