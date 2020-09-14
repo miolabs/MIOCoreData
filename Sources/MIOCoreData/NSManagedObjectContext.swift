@@ -150,7 +150,7 @@ open class NSManagedObjectContext : NSObject
         
     // if flag is YES, merges an object with the state of the object available in the persistent store coordinator; if flag is NO, simply refaults an object without merging (which also causes other related managed objects to be released, so you can use this method to trim the portion of your object graph you want to hold in memory)
     open func refresh(_ object: NSManagedObject, mergeChanges flag: Bool) {
-        
+        object.setIsFault(true)
     }
     
     
