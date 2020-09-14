@@ -7,6 +7,10 @@
 
 import Foundation
 
-class NSSortDescriptor {
+#if os(Linux)
+
+open class NSSortDescriptor {
     
 }
+
+#endif
