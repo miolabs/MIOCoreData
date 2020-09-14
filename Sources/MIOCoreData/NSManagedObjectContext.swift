@@ -152,32 +152,117 @@ open class NSManagedObjectContext : NSObject
     open func refresh(_ object: NSManagedObject, mergeChanges flag: Bool) {
         object.setIsFault(true)
     }
-    
+        
+    var insertedObjects: Set<NSManagedObject> = Set()
+    var updatedObjects: Set<NSManagedObject> = Set()
+    var deletedObjects: Set<NSManagedObject> = Set()
     
     open func save() throws {
+    
+        // Check if nothing changed... to avoid unnecessay methods calls
+        if insertedObjects.count == 0 && updatedObjects.count == 0 && deletedObjects.count == 0 { return }
+
+        // There's changes, so keep going...
+        //MIONotificationCenter.defaultCenter().postNotification(MIOManagedObjectContextWillSaveNotification, this);
+
+        // Deleted objects
+        var deletedObjectsByEntityName:[String:[NSManagedObject]] = [:]
+        for delObj in deletedObjects {
+            // Track object for save notification
+            let entityName = delObj.entity.name!
+            var array = deletedObjectsByEntityName[entityName]
+            if array == nil {
+                array = []
+                deletedObjectsByEntityName[entityName] = array
+            }
+            array!.append(delObj)
+        }
+
+        // Inserted objects
+        var insertedObjectsByEntityName:[String:[NSManagedObject]] = [:]
+        for insObj in insertedObjects {
+            _obtainPermanentIDForObject(insObj)
+
+            // Track object for save notification
+            let entityName = insObj.entity.name!
+            var array = insertedObjectsByEntityName[entityName]
+            if array == nil {
+                array = []
+                insertedObjectsByEntityName[entityName] = array
+            }
+            array!.append(insObj)
+        }
+
+        // Updated objects
+        var updatedObjectsByEntityName:[String:[NSManagedObject]] = [:]
+        for updObj in updatedObjects {
+
+            // Track object for save notification
+            let entityName = updObj.entity.name!
+            var array = updatedObjectsByEntityName[entityName]
+            if array == nil {
+                array = []
+                updatedObjectsByEntityName[entityName] = array
+            }
+            array!.append(updObj)
+        }
+
+        if parent == nil {
+            // Save to persistent store
+            let saveRequest = NSSaveChangesRequest(inserted: insertedObjects, updated: updatedObjects, deleted: deletedObjects, locked: nil)
+            
+            //TODO: Execute save per store configuration
+            guard let store = persistentStoreCoordinator?.persistentStores[0] as? NSIncrementalStore else {
+                //TODO: Throws error. No Store
+                return
+            }
+            
+            _ = try store.execute(saveRequest, with: self)
+
+            //Clear values
+            for obj in insertedObjects {
+                obj._didCommit()
+            }
+
+            for obj in updatedObjects {
+                obj._didCommit()
+            }
+
+            for obj in deletedObjects {
+                obj._didCommit()
+            }
+
+            // Clear
+            insertedObjects = Set()
+            updatedObjects = Set()
+            deletedObjects = Set()
+        }
+
+//        let objsChanges = {};
+//        objsChanges[MIOInsertedObjectsKey] = insertedObjectsByEntityName;
+//        objsChanges[MIOUpdatedObjectsKey] = updatedObjectsByEntityName;
+//        objsChanges[MIODeletedObjectsKey] = deletedObjectsByEntityName;
+//
+//        let noty = new MIONotification(MIOManagedObjectContextDidSaveNotification, this, objsChanges);
+//        if (this.parent != null) {
+//            this.parent.mergeChangesFromContextDidSaveNotification(noty);
+//        }
+//
+//        MIONotificationCenter.defaultCenter().postNotification(MIOManagedObjectContextDidSaveNotification, this, objsChanges);
         
     }
     
-    //    private managedObjectChanges = {};
-    //
-    //    private objectsByEntity = {};
-    //    private objectsByID = {};
-    //
-    //    private insertedObjects: MIOSet = MIOSet.set();
-    //    private updatedObjects: MIOSet = MIOSet.set();
-    //    private deletedObjects: MIOSet = MIOSet.set();
-    //
-    //    private blockChanges = null;
-    
-    
-    //    var _parent: MIOManagedObjectContext = null;
-    //    set parent(value: MIOManagedObjectContext) {
-    //        this._parent = value;
-    //        if (value != null) {
-    //            this.persistentStoreCoordinator = value.persistentStoreCoordinator;
-    //        }
-    //    }
-    //    get parent() { return this._parent; }
-    
+    func _obtainPermanentIDForObject(_ object: NSManagedObject) {
+//        let store: NSPersistentStore = object.objectID.persistentStore
+//        let objID = store._obtainPermanentIDForObject(object)
+//
+//        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];
+//
+//        object.objectID._setReferenceObject(objID._getReferenceObject());
+//
+//        this.objectsByID[object.objectID.URIRepresentation.absoluteString] = object;
+    }
+
+        
     
 }
