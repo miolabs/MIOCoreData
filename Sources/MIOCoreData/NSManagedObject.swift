@@ -227,11 +227,45 @@ open class NSManagedObject : NSObject
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
     #if os(Linux)
-    open func setValue(_ value: Any?, forKey key: String) {
-        
-    }
+    open func setValue(_ value: Any?, forKey key: String) { _setValue(value, forKey: key) }
+    #else
+    open override func setValue(_ value: Any?, forKey key: String) { _setValue(value, forKey: key) }
     #endif
     
+    open func _setValue(_ value: Any?, forKey key: String) {
+
+        guard let property = entity.propertiesByName[key] else {
+            #if os(OSX)
+            super.setValue(value, forKey: key)
+            #endif
+            return
+        }
+
+        willChangeValue(forKey: key)
+
+        if (value == nil) {
+            _changedValues[key] = nil
+        }
+        else if property is NSRelationshipDescription {
+            let relationship = property as! NSRelationshipDescription
+            if relationship.isToMany == false {
+                let obj = value as! NSManagedObject
+                _changedValues[key] = obj.objectID
+            }
+            
+            let inverseRelationship = relationship.inverseRelationship
+            if inverseRelationship != nil {
+                // TODO:
+            }
+        }
+        else {
+            _changedValues[key] = value
+        }
+
+        didChangeValue(forKey: key)
+
+        managedObjectContext?.refresh(self, mergeChanges: false)
+    }
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
     var _primitiveValues = [String : Any]()
