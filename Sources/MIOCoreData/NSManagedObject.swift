@@ -31,6 +31,8 @@ open class NSManagedObject : NSObject
     public required init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
         _managedObjectContext = context
         _objectID = NSManagedObjectID(WithEntity: entity, referenceObject: nil)
+        super.init()
+        context?.insert(self)
     }
     
     public required override init() {
@@ -373,6 +375,14 @@ open class NSManagedObject : NSObject
         _changedValues = [:]
         _storedValues = nil
         setIsFault(false)
+    }
+    
+    func _setIsInserted(_ value:Bool) {
+        willChangeValue(forKey: "hasChanges")
+        willChangeValue(forKey: "isInserted")
+        _isInserted = value
+        didChangeValue(forKey: "isInserted")
+        didChangeValue(forKey: "hasChanges")
     }
 
     

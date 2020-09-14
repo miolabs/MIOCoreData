@@ -145,7 +145,19 @@ open class NSManagedObjectContext : NSObject
 //    }
     
     open func insert(_ object: NSManagedObject) {
-        
+        guard let store = persistentStoreCoordinator?.persistentStores[0] as? NSIncrementalStore else {
+            //TODO: Throws error. No Store
+            return
+        }
+
+        let objectID = object.objectID
+
+//        objectID._setStoreIdentifier(store.identifier)
+//        objectID._setPersistentStore(store)
+
+        insertedObjects.insert(object)
+        //this._registerObject(object);
+        object._setIsInserted(true)
     }
         
     // if flag is YES, merges an object with the state of the object available in the persistent store coordinator; if flag is NO, simply refaults an object without merging (which also causes other related managed objects to be released, so you can use this method to trim the portion of your object graph you want to hold in memory)
