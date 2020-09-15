@@ -45,7 +45,7 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
     
     open var predicate: NSPredicate?
     
-    //open var sortDescriptors: [NSSortDescriptor]?
+    open var sortDescriptors: [NSSortDescriptor]?
     
     open var fetchLimit: Int = 0
     

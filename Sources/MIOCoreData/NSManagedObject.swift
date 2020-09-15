@@ -210,11 +210,11 @@ open class NSManagedObject : NSObject
                     values = primitiveValue(forKey:key) as? [NSManagedObjectID]
                 }
                 
-                let objs = NSSet()
+                var objs: [NSManagedObject] = []
                 if values != nil {
                     for objID in values! {
                         let obj = managedObjectContext!.objectsByID[objID.uriRepresentation().absoluteString]
-                        objs.adding(obj!)
+                        objs.append(obj!)
                     }
                 }
                 value = objs
@@ -374,7 +374,7 @@ open class NSManagedObject : NSObject
     func _didCommit() {
         _changedValues = [:]
         _storedValues = nil
-        setIsFault(false)
+        setIsFault(true)
     }
     
     func _setIsInserted(_ value:Bool) {

@@ -27,7 +27,7 @@ open class NSManagedObjectID : NSObject
         
         let host = isTemporaryID ? "": "/\(_storeIdentifier!)"
         
-        let url = URL(string: "x-coredata://\(host)\(_referenceObject)")
+        let url = URL(string: "x-coredata://\(host)/\(_referenceObject)")
         return url!
     }
 
@@ -48,7 +48,7 @@ open class NSManagedObjectID : NSObject
     //
     
     func setReferenceObject(referenceObject:Any) {
-        _isTemporaryID = false;
+        _isTemporaryID = false
         _referenceObject = referenceObject
     }
     

@@ -12,6 +12,10 @@ open class NSSaveChangesRequest : NSPersistentStoreRequest
     // Default initializer.
     public init(inserted insertedObjects: Set<NSManagedObject>?, updated updatedObjects: Set<NSManagedObject>?, deleted deletedObjects: Set<NSManagedObject>?, locked lockedObjects: Set<NSManagedObject>?){
         
+        _insertedObjects = insertedObjects
+        _updateObjects = updatedObjects
+        _deletedObjects = deletedObjects
+        _lockedObjects = lockedObjects
     }
     
     var _insertedObjects:Set<NSManagedObject>?
