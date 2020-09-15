@@ -384,6 +384,23 @@ open class NSManagedObject : NSObject
         didChangeValue(forKey: "isInserted")
         didChangeValue(forKey: "hasChanges")
     }
+            
+    func _setIsUpdated(_ value:Bool) {
+        willChangeValue(forKey: "hasChanges")
+        willChangeValue(forKey: "isUpdated")
+        _isUpdated = value
+        didChangeValue(forKey: "isUpdated")
+        didChangeValue(forKey: "hasChanges")
+    }
+
+    func _setIsDeleted(_ value:Bool) {
+        willChangeValue(forKey: "hasChanges")
+        willChangeValue(forKey: "isDeleted")
+        _isDeleted = value;
+        //this.deleteFromInverseRelationships();
+        didChangeValue(forKey: "isDeleted")
+        didChangeValue(forKey: "hasChanges")
+    }
 
     
 }
