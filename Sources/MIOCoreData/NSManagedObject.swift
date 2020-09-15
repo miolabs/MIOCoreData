@@ -374,7 +374,7 @@ open class NSManagedObject : NSObject
     func _didCommit() {
         _changedValues = [:]
         _storedValues = nil
-        setIsFault(false)
+        setIsFault(true)
     }
     
     func _setIsInserted(_ value:Bool) {

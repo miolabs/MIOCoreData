@@ -191,9 +191,10 @@ open class NSManagedObjectContext : NSObject
         }
 
         // Inserted objects
+        
         var insertedObjectsByEntityName:[String:[NSManagedObject]] = [:]
         for insObj in insertedObjects {
-            _obtainPermanentIDForObject(insObj)
+            //_obtainPermanentIDForObject(insObj)
 
             // Track object for save notification
             let entityName = insObj.entity.name!
@@ -228,6 +229,8 @@ open class NSManagedObjectContext : NSObject
                 //TODO: Throws error. No Store
                 return
             }
+            
+            try _obtainPermanentID(forObjects: Array(insertedObjects), store: store)
             
             _ = try store.execute(saveRequest, with: self)
 
@@ -264,14 +267,27 @@ open class NSManagedObjectContext : NSObject
         
     }
     
-    func _obtainPermanentIDForObject(_ object: NSManagedObject) {
-//        let store: NSPersistentStore = object.objectID.persistentStore
-//        let objID = store._obtainPermanentIDForObject(object)
-//
+    func _obtainPermanentID(forObjects objects: [NSManagedObject], store:NSIncrementalStore) throws {
+        
+        let temporaryIDs = objects.map { $0.objectID.uriRepresentation().absoluteString }
+        
+        let objIDs = try store.obtainPermanentIDs(for: objects)
+            
+        let permanentIDs = objIDs.map { $0.uriRepresentation().absoluteString }
+        
+        for i in 0..<objects.count {
+            let oldID = temporaryIDs[i]
+            let newID = permanentIDs[i]
+            let obj = objects[i]
+            objectsByID.removeValue(forKey: oldID)
+            objectsByID[newID] = obj
+            obj._objectID = objIDs[i]
+        }
+        
 //        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];
-//
+
 //        object.objectID._setReferenceObject(objID._getReferenceObject());
-//
+
 //        this.objectsByID[object.objectID.URIRepresentation.absoluteString] = object;
     }
 

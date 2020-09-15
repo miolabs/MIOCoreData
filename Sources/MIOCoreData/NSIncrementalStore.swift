@@ -67,7 +67,8 @@ open class NSIncrementalStore : NSPersistentStore
     // Called before executeRequest with a save request, to assign permanent IDs to newly inserted objects;
     // must return the objectIDs in the same order as the objects appear in array.
     open func obtainPermanentIDs(for array: [NSManagedObject]) throws -> [NSManagedObjectID] {
-        return [NSManagedObjectID]()
+        return array.map{ NSManagedObjectID( WithEntity: $0.entity, referenceObject: nil ) }
+        // return [NSManagedObjectID]()
     }
 
     
@@ -90,7 +91,6 @@ open class NSIncrementalStore : NSPersistentStore
         let objID = NSManagedObjectID(WithEntity: entity, referenceObject: data)
         objID._persistentStore = self
         objID._storeIdentifier = identifier
-        
         print("New REFID: \(String(describing: referenceObject))")
 
         return objID
