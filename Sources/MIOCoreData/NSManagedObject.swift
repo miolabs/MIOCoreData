@@ -365,7 +365,6 @@ open class NSManagedObject : NSObject
                 let value = node!.value(for: attr)
                 storedValues[attr.name] = value
             }
-            
         }
         
         return storedValues
@@ -402,51 +401,30 @@ open class NSManagedObject : NSObject
         didChangeValue(forKey: "hasChanges")
     }
 
+    open func _addObject(_ object:NSManagedObject, forKey key:String) {
+        var objIDs:[NSManagedObjectID]? = _changedValues[key] as? [NSManagedObjectID]
+        if objIDs == nil {
+            let values = storedValues[key] as? [NSManagedObjectID]
+            objIDs = values != nil ?  Array(values!) : []
+            _changedValues[key] = objIDs
+        }
+        objIDs!.append(object.objectID)
+        managedObjectContext?.refresh(self, mergeChanges: false)
+    }
+
+    open func _removeObject(_ object:NSManagedObject, forKey key:String) {
+//        let set:MIOManagedObjectSet = this.valueForKey(key);
+//        if (set == null) {
+//            let rel:MIORelationshipDescription = this.entity.relationshipsByName[key];
+//            set = MIOManagedObjectSet._setWithManagedObject(this, rel);
+//        }
+//        else {
+//            set.removeObject(object);
+//        }
+//        this._changedValues[key] = set;
+//        this.managedObjectContext.updateObject(this);
+    }
+
     
 }
 
-/*
- 
- private storeValuesFromIncrementalStore(store:MIOIncrementalStore){
- let storedValues = {};
- let properties = this.entity.properties;
- 
- for(let index = 0; index < properties.length; index++){
- let property = properties[index];
- if (property instanceof MIOAttributeDescription) {
- let attribute = property as MIOAttributeDescription;
- let node = store.newValuesForObjectWithID(this.objectID, this.managedObjectContext);
- if (node == null) continue;
- let value = node.valueForPropertyDescription(attribute);
- storedValues[attribute.name] = value;
- }
- else if (property instanceof MIORelationshipDescription) {
- let relationship = property as MIORelationshipDescription;
- 
- if (relationship.isToMany == false) {
- let objectID = store.newValueForRelationship(relationship, this.objectID, this.managedObjectContext);
- if (objectID != null){
- storedValues[relationship.name] = objectID;
- }
- }
- else {
- // Tick. I store the value in a private property when the object is temporary
- let set:MIOManagedObjectSet = MIOManagedObjectSet._setWithManagedObject(this, relationship);
- //storedValues[relationship.name] = set;
- 
- let objectIDs = store.newValueForRelationship(relationship, this.objectID, this.managedObjectContext);
- if (objectIDs == null) continue;
- 
- for(let count = 0; count < objectIDs.length; count++){
- let objID = objectIDs[count];
- set._addObjectID(objID);
- }
- 
- this["_" + relationship.name] = set;
- }
- }
- }
- 
- return storedValues;
- }
- */
