@@ -406,9 +406,9 @@ open class NSManagedObject : NSObject
         if objIDs == nil {
             let values = storedValues[key] as? [NSManagedObjectID]
             objIDs = values != nil ?  Array(values!) : []
-            _changedValues[key] = objIDs
         }
         objIDs!.append(object.objectID)
+        _changedValues[key] = objIDs
         managedObjectContext?.refresh(self, mergeChanges: false)
     }
 
