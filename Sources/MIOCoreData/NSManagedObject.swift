@@ -430,16 +430,15 @@ open class NSManagedObject : NSObject
     }
 
     open func _removeObject(_ object:NSManagedObject, forKey key:String) {
-//        let set:MIOManagedObjectSet = this.valueForKey(key);
-//        if (set == null) {
-//            let rel:MIORelationshipDescription = this.entity.relationshipsByName[key];
-//            set = MIOManagedObjectSet._setWithManagedObject(this, rel);
-//        }
-//        else {
-//            set.removeObject(object);
-//        }
-//        this._changedValues[key] = set;
-//        this.managedObjectContext.updateObject(this);
+        var objIDs:[NSManagedObjectID]? = _changedValues[key] as? [NSManagedObjectID]
+        if objIDs == nil {
+            let values = storedValues[key] as? [NSManagedObjectID]
+            objIDs = values != nil ?  Array(values!) : []
+        }
+        objIDs!.removeAll { $0 == object.objectID }
+        //objIDs!.remo(object.objectID)
+        _changedValues[key] = objIDs
+        managedObjectContext?.refresh(self, mergeChanges: false)
     }
 
     
