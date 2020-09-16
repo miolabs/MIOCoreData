@@ -156,7 +156,7 @@ open class NSManagedObjectContext : NSObject
 //        objectID._setPersistentStore(store)
 
         insertedObjects.insert(object)
-        //this._registerObject(object);
+        _registerObject(object)
         object._setIsInserted(true)
     }
         
@@ -283,19 +283,21 @@ open class NSManagedObjectContext : NSObject
     
     func _obtainPermanentID(forObjects objects: [NSManagedObject], store:NSIncrementalStore) throws {
         
-        let temporaryIDs = objects.map { $0.objectID.uriRepresentation().absoluteString }
+        let temporaryIDs = objects.map { $0.objectID }
         
         let objIDs = try store.obtainPermanentIDs(for: objects)
-            
-        let permanentIDs = objIDs.map { $0.uriRepresentation().absoluteString }
         
         for i in 0..<objects.count {
             let oldID = temporaryIDs[i]
-            let newID = permanentIDs[i]
+            let newID = objIDs[i]
             let obj = objects[i]
-            objectsByID.removeValue(forKey: oldID)
-            objectsByID[newID] = obj
-            obj._objectID = objIDs[i]
+            
+            objectsByID.removeValue(forKey: oldID.uriRepresentation().absoluteString)
+            objectsByID[newID.uriRepresentation().absoluteString] = obj
+            
+            obj.objectID._referenceObject = newID._referenceObject
+            obj.objectID._storeIdentifier = newID._storeIdentifier
+            obj.objectID._isTemporaryID = newID._isTemporaryID
         }
         
 //        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];
@@ -305,6 +307,47 @@ open class NSManagedObjectContext : NSObject
 //        this.objectsByID[object.objectID.URIRepresentation.absoluteString] = object;
     }
 
-        
+            
+    func _registerObject(_ object: NSManagedObject) {
+
+        if objectsByID[object.objectID.uriRepresentation().absoluteString] != nil  {
+            NSLog("Trying to register a managed object that has already been registered")
+            return
+        }
+
+        //this.registerObjects.addObject(object);
+        objectsByID[object.objectID.uriRepresentation().absoluteString] = object
+
+//        let entityName = object.entity.name;
+//        let array = this.objectsByEntity[entityName];
+//        if (array == null) {
+//            array = [];
+//            this.objectsByEntity[entityName] = array;
+//        }
+//        array.addObject(object);
+
+        if object.objectID.persistentStore is NSIncrementalStore {
+            let store = object.objectID.persistentStore as! NSIncrementalStore
+            store.managedObjectContextDidRegisterObjects(with:[object.objectID])
+        }
+    }
+
+    func _unregisterObject(_ object: NSManagedObject) {
+//        this.registerObjects.removeObject(object);
+//        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];
+//
+//        let entityName = object.entity.name;
+//        let array = this.objectsByEntity[entityName];
+//        if (array != null) {
+//            array.removeObject(object);
+//        }
+//
+//        if (object.objectID.persistentStore instanceof MIOIncrementalStore){
+//            let is = object.objectID.persistentStore as MIOIncrementalStore;
+//            is.managedObjectContextDidUnregisterObjectsWithIDs([object.objectID]);
+//        }
+//
+    }
+    
     
 }
