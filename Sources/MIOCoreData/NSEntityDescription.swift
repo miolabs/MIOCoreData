@@ -19,9 +19,7 @@ open class NSEntityDescription : NSObject
         let model = context.persistentStoreCoordinator!.managedObjectModel
         //FIX: let objectClass = NSClassFromString(entityName) as! NSManagedObject.Type -> Doesn't work on Linux
         let objectClass = _MIOCoreClassFromString(entityName) as! NSManagedObject.Type
-        let object = objectClass.init(entity: model.entitiesByName[entityName]!, insertInto: context)
-        context.insert(object)
-        return object
+        return objectClass.init(entity: model.entitiesByName[entityName]!, insertInto: context)
     }
     
     weak var _model:NSManagedObjectModel!

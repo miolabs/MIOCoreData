@@ -170,12 +170,12 @@ open class NSManagedObjectContext : NSObject
         object._setIsUpdated(true)
     }
     
-    func delete(_ object: NSManagedObject) {
+    open func delete(_ object: NSManagedObject) {
         insertedObjects.remove(object)
         object._setIsInserted(false)
         updatedObjects.remove(object)
         object._setIsUpdated(false)
-        deletedObjects.remove(object)
+        deletedObjects.insert(object)
         object._setIsDeleted(true)
     }
         
