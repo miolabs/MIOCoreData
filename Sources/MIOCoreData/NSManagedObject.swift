@@ -32,7 +32,24 @@ open class NSManagedObject : NSObject
         _managedObjectContext = context
         _objectID = NSManagedObjectID(WithEntity: entity, referenceObject: nil)
         super.init()
+        
         context?.insert(self)
+        _setDefaultValues()
+                
+        awakeFromFetch()
+    }
+    
+    func _setDefaultValues() {
+        //let attributes = this.entity.attributesByName;
+        for prop in entity.properties {
+            if prop is NSRelationshipDescription { continue }
+            
+            let attr = prop as! NSAttributeDescription
+            let value = attr.defaultValue
+
+            if value == nil { continue }
+            setValue(value, forKey: prop.name)
+        }
     }
     
     public required override init() {
