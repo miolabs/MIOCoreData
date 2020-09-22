@@ -211,7 +211,7 @@ open class NSManagedObject : NSObject
                 if _changedValues.keys.contains(key) {
                     let objID = _changedValues[key] as? NSManagedObjectID
                     if objID != nil {
-                        value = managedObjectContext!.objectsByID[objID!.uriRepresentation().absoluteString]
+                        value = try! managedObjectContext!.existingObject(with: objID!)
                     }
                 }
                 else {
@@ -230,8 +230,8 @@ open class NSManagedObject : NSObject
                 var objs: [NSManagedObject] = []
                 if values != nil {
                     for objID in values! {
-                        let obj = managedObjectContext!.objectsByID[objID.uriRepresentation().absoluteString]
-                        objs.append(obj!)
+                        let obj = try! managedObjectContext!.existingObject(with: objID)
+                        objs.append(obj)
                     }
                 }
                 value = objs
@@ -287,13 +287,12 @@ open class NSManagedObject : NSObject
     }
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
-    var _primitiveValues = [String : Any]()
     open func primitiveValue(forKey key: String) -> Any? {
-        return _primitiveValues[key]
+        return storedValues[key]
     }
     
     open func setPrimitiveValue(_ value: Any?, forKey key: String) {
-        _primitiveValues[key] = value
+        _storedValues?[key] = value
     }
     
     // returns a dictionary of the last fetched or saved keys and values of this object.  Pass nil to get all persistent modeled properties.
@@ -381,6 +380,13 @@ open class NSManagedObject : NSObject
                 
                 let value = node!.value(for: attr)
                 storedValues[attr.name] = value
+            }
+            else if property is NSRelationshipDescription {
+                let rel = property as! NSRelationshipDescription
+                let value = try? store!.newValue(forRelationship: rel, forObjectWith: objectID, with: managedObjectContext)
+                if value == nil { continue }
+                
+                storedValues[rel.name] = value!
             }
         }
         
