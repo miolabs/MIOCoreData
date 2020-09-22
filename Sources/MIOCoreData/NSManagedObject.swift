@@ -271,6 +271,18 @@ open class NSManagedObject : NSObject
                 let obj = value as! NSManagedObject
                 _changedValues[key] = obj.objectID
             }
+            else {
+                if let objects = value as? [NSManagedObject] {
+                    var objIDs:[NSManagedObjectID] = []
+                    for obj in objects {
+                        objIDs.append(obj.objectID)
+                    }
+                    _changedValues[key] = objIDs
+                }
+                else {
+                    _changedValues[key] = nil
+                }
+            }
             
             let inverseRelationship = relationship.inverseRelationship
             if inverseRelationship != nil {
