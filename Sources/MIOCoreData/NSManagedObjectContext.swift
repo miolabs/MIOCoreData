@@ -89,7 +89,7 @@ open class NSManagedObjectContext : NSObject
             obj!._storedValues = nil
 
             obj!.awakeFromFetch()
-            //this._registerObject(obj);
+            _registerObject(obj!)
         }
 
         return obj!
@@ -347,6 +347,14 @@ open class NSManagedObjectContext : NSObject
 //            is.managedObjectContextDidUnregisterObjectsWithIDs([object.objectID]);
 //        }
 //
+    }
+    
+    open func reset() {
+        
+    }
+    
+    func rollback() {
+        
     }
     
     

@@ -53,23 +53,13 @@ open class NSIncrementalStoreNode : NSObject
     
     // May return NSNull for to-one relationships.  If a relationship is nil, clients should  invoke -newValueForRelationship:forObjectWithID:withContext:error: on the NSPersistentStore
     open func value(for prop: NSPropertyDescription) -> Any? {
-
-        if prop is NSAttributeDescription {
-            return value(for: prop as! NSAttributeDescription)
-        }
-        
-        return nil
+        return _values[prop.name]
     }
     
-    
-    func value(for attr: NSAttributeDescription) -> Any? {
-                        
-        guard let value = _values[attr.name] else {
-            return nil
-        }
-        
-        return value
+    open func value(for name: String) -> Any? {
+        return _values[name]
     }
+    
 }
 
 /*
