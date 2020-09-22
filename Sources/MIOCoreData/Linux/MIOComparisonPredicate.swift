@@ -11,7 +11,7 @@ import Foundation
 
 open class MIOComparisonPredicate : MIOPredicate
 {
-    public init(leftExpression lhs: NSExpression, rightExpression rhs: NSExpression, modifier: Modifier, type: Operator, options: Options) {
+    public init(leftExpression lhs: MIOExpression, rightExpression rhs: MIOExpression, modifier: Modifier, type: Operator, options: Options) {
         _leftExpression = lhs
         _rightExpression = rhs
         _modifier = modifier
@@ -26,11 +26,11 @@ open class MIOComparisonPredicate : MIOPredicate
     var _modifier:Modifier
     open var comparisonPredicateModifier: Modifier { return _modifier }
     
-    var _leftExpression:NSExpression
-    open var leftExpression: NSExpression {  return _leftExpression }
+    var _leftExpression:MIOExpression
+    open var leftExpression: MIOExpression {  return _leftExpression }
 
-    var _rightExpression:NSExpression
-    open var rightExpression: NSExpression { return _rightExpression }
+    var _rightExpression:MIOExpression
+    open var rightExpression: MIOExpression { return _rightExpression }
     
     var _options:Options
     open var options: Options { return _options }

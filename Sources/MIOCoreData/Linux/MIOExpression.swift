@@ -123,7 +123,7 @@ open class MIOExpression : NSObject
     // accessors for individual parameters - raise if not applicable
     open var expressionType: ExpressionType { return _expressionType }
         
-    open var constantValue: Any { return _constantValue! }
+    open var constantValue: Any? { return _constantValue }
     open var keyPath: String { return _keyPath! }
     
 //    open var function: String { NSUnsupported() }
