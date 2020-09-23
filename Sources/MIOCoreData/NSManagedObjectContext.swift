@@ -209,7 +209,7 @@ open class NSManagedObjectContext : NSObject
         var insertedObjectsByEntityName:[String:[NSManagedObject]] = [:]
         for insObj in insertedObjects {
             //_obtainPermanentIDForObject(insObj)
-
+            
             // Track object for save notification
             let entityName = insObj.entity.name!
             var array = insertedObjectsByEntityName[entityName]
@@ -297,7 +297,8 @@ open class NSManagedObjectContext : NSObject
             
             obj.objectID._referenceObject = newID._referenceObject
             obj.objectID._storeIdentifier = newID._storeIdentifier
-            obj.objectID._isTemporaryID = newID._isTemporaryID
+            obj.objectID._isTemporaryID   = newID._isTemporaryID
+            obj.objectID._persistentStore = newID._persistentStore
         }
         
 //        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];

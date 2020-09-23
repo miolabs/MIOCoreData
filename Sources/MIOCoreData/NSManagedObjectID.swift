@@ -20,7 +20,7 @@ open class NSManagedObjectID : NSObject
     open var isTemporaryID: Bool { get { return _isTemporaryID } }
 
     var _storeIdentifier:String?
-    var _referenceObject:Any
+    open var _referenceObject:Any
     
     // URI which provides an archivable reference to the object which this ID refers
     open func uriRepresentation() -> URL {

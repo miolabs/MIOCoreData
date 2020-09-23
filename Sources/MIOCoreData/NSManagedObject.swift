@@ -215,7 +215,10 @@ open class NSManagedObject : NSObject
                     }
                 }
                 else {
-                    value = primitiveValue(forKey:key)
+                    let objID = primitiveValue(forKey:key) as? NSManagedObjectID
+                    if objID != nil {
+                        value = try! managedObjectContext!.existingObject(with: objID!)
+                    }
                 }
             }
             else {
@@ -251,7 +254,7 @@ open class NSManagedObject : NSObject
     open override func setValue(_ value: Any?, forKey key: String) { _setValue(value, forKey: key) }
     #endif
     
-    open func _setValue(_ value: Any?, forKey key: String) {
+    open func _setValue(_ value: Any?, forKey key: String, ignoreInverses: Bool = false) {
 
         guard let property = entity.propertiesByName[key] else {
             #if os(OSX)
@@ -270,11 +273,14 @@ open class NSManagedObject : NSObject
             if relationship.isToMany == false {
                 let obj = value as! NSManagedObject
                 _changedValues[key] = obj.objectID
+                
+                setInverseRelationship( relationship, obj, ignoreInverses )
             }
             else {
                 if let objects = value as? [NSManagedObject] {
                     var objIDs:[NSManagedObjectID] = []
                     for obj in objects {
+                        setInverseRelationship( relationship, obj, ignoreInverses )
                         objIDs.append(obj.objectID)
                     }
                     _changedValues[key] = objIDs
@@ -282,11 +288,6 @@ open class NSManagedObject : NSObject
                 else {
                     _changedValues[key] = nil
                 }
-            }
-            
-            let inverseRelationship = relationship.inverseRelationship
-            if inverseRelationship != nil {
-                // TODO:
             }
         }
         else {
@@ -436,12 +437,15 @@ open class NSManagedObject : NSObject
         didChangeValue(forKey: "hasChanges")
     }
 
-    open func _addObject(_ object:NSManagedObject, forKey key:String) {
+    open func _addObject(_ object:NSManagedObject, forKey key:String, ignoreInverses: Bool = false ) {
         var objIDs:[NSManagedObjectID]? = _changedValues[key] as? [NSManagedObjectID]
         if objIDs == nil {
             let values = storedValues[key] as? [NSManagedObjectID]
             objIDs = values != nil ?  Array(values!) : []
         }
+        
+        setInverseRelationship( entity.relationshipsByName[ key ]!, object, ignoreInverses )
+        
         objIDs!.append(object.objectID)
         _changedValues[key] = objIDs
         managedObjectContext?.refresh(self, mergeChanges: false)
@@ -460,5 +464,15 @@ open class NSManagedObject : NSObject
     }
 
     
+    func setInverseRelationship ( _ relationship: NSRelationshipDescription, _ obj: NSManagedObject, _ ignoreInverses: Bool ) {
+        if relationship.inverseRelationship == nil || ignoreInverses { return }
+        
+        if relationship.inverseRelationship!.isToMany == false {
+            obj._setValue( self, forKey: relationship.inverseName!, ignoreInverses: true )
+        } else {
+            obj._addObject( self, forKey: relationship.inverseName!, ignoreInverses: true )
+        }
+    }
+
 }
 
