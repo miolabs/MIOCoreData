@@ -324,11 +324,11 @@ open class NSManagedObjectContext : NSObject
         //this.registerObjects.addObject(object);
         objectsByID[object.objectID.uriRepresentation().absoluteString] = object
 
-        let entityName = object.entity.name;
-        if let array = objectsByEntityName[entityName] {
+        let entityName = object.entity.name!;
+        if var array = objectsByEntityName[entityName] {
             array.append( object )
         } else {
-            this.objectsByEntity[entityName] = [ object ]
+            objectsByEntityName[entityName] = [ object ]
         }
 
         if object.objectID.persistentStore is NSIncrementalStore {
