@@ -110,6 +110,11 @@ open class NSManagedObjectContext : NSObject
         }
         
         let objs = try store.execute(request, with: self) as! [T]
+//        let cached_objs = objectsByEntityName[ request.entityName! ]
+//
+//        if request.predicate != nil {
+//            cached_objs?.filter(using: request.predicate!)
+//        }
         
         return objs
     }
@@ -308,7 +313,7 @@ open class NSManagedObjectContext : NSObject
 //        this.objectsByID[object.objectID.URIRepresentation.absoluteString] = object;
     }
 
-            
+    var objectsByEntityName: [ String: [NSManagedObject] ] = [:]
     func _registerObject(_ object: NSManagedObject) {
 
         if objectsByID[object.objectID.uriRepresentation().absoluteString] != nil  {
@@ -319,13 +324,12 @@ open class NSManagedObjectContext : NSObject
         //this.registerObjects.addObject(object);
         objectsByID[object.objectID.uriRepresentation().absoluteString] = object
 
-//        let entityName = object.entity.name;
-//        let array = this.objectsByEntity[entityName];
-//        if (array == null) {
-//            array = [];
-//            this.objectsByEntity[entityName] = array;
-//        }
-//        array.addObject(object);
+        let entityName = object.entity.name;
+        if let array = objectsByEntityName[entityName] {
+            array.append( object )
+        } else {
+            this.objectsByEntity[entityName] = [ object ]
+        }
 
         if object.objectID.persistentStore is NSIncrementalStore {
             let store = object.objectID.persistentStore as! NSIncrementalStore
