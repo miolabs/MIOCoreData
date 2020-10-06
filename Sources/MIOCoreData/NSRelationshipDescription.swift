@@ -27,8 +27,9 @@ public class NSRelationshipDescription : NSPropertyDescription
     open var deleteRule = NSDeleteRule.noActionDeleteRule
     
     open var isToMany: Bool { get { return maxCount == 1 ? false : true} } // convenience method to test whether the relationship is to-one or to-many
-                
-    var destinationEntityName:String!
+    
+    var _destinationEntityName:String?
+    open var destinationEntityName:String { get { return _destinationEntityName! } set { _destinationEntityName = newValue } }
     var inverseName:String?
     var inverseEntityName:String?
     
@@ -38,7 +39,7 @@ public class NSRelationshipDescription : NSPropertyDescription
     
     init(name:String, destinationEntityName:String, toMany:Bool, optional: Bool, inverseName:String?, inverseEntityName:String?){
         self.maxCount = toMany ? 2 : 1
-        self.destinationEntityName = destinationEntityName
+        _destinationEntityName = destinationEntityName
         self.inverseName = inverseName
         self.inverseEntityName = inverseEntityName
         super.init(name: name, optional: optional, transient: false)

@@ -12,7 +12,8 @@ open class NSPropertyDescription : NSObject
     open weak var _entity:NSEntityDescription!
     unowned(unsafe) open var entity: NSEntityDescription { get { return _entity! } }
     
-    open var name: String!
+    var _name:String?
+    open var name: String { get { return _name! } set { _name = newValue } }
     
     // The optional flag specifies whether a property's value can be nil or not (before an object can be persisted).
     open var isOptional: Bool = true
@@ -25,7 +26,7 @@ open class NSPropertyDescription : NSObject
     public override init() {}
     
     init(name:String, optional:Bool, transient:Bool) {
-        self.name = name
+        _name = name
         isOptional = optional
         isTransient = transient
         super.init()
