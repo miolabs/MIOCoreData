@@ -11,6 +11,9 @@ import MIOCore
 
 open class NSEntityDescription : NSObject
 {
+    public override init() {
+    }
+    
     open class func entity(forEntityName entityName: String, in context: NSManagedObjectContext) -> NSEntityDescription? {
         return context.persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName]
     }

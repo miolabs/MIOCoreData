@@ -27,11 +27,14 @@ public class NSRelationshipDescription : NSPropertyDescription
     open var deleteRule = NSDeleteRule.noActionDeleteRule
     
     open var isToMany: Bool { get { return maxCount == 1 ? false : true} } // convenience method to test whether the relationship is to-one or to-many
-            
-    
-    var destinationEntityName:String
+                
+    var destinationEntityName:String!
     var inverseName:String?
     var inverseEntityName:String?
+    
+    public override init() {
+        super.init()
+    }
     
     init(name:String, destinationEntityName:String, toMany:Bool, optional: Bool, inverseName:String?, inverseEntityName:String?){
         self.maxCount = toMany ? 2 : 1

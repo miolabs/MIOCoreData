@@ -29,13 +29,17 @@ public enum NSAttributeType : UInt
 open class NSAttributeDescription: NSPropertyDescription
 {
     // NSUndefinedAttributeType is valid for transient properties - Core Data will still track the property as an id value and register undo/redo actions, etc. NSUndefinedAttributeType is illegal for non-transient properties.
-    open var attributeType: NSAttributeType
+    open var attributeType: NSAttributeType = .undefinedAttributeType
 
     open var attributeValueClassName: String?
     
     open var defaultValue: Any? // value is retained and not copied
+        
+    public override init() {
+        super.init()
+    }
     
-    public init(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, transient:Bool){
+    public init(name:String, type:NSAttributeType, defaultValue:Any?, optional:Bool, transient:Bool){        
         self.attributeType = type
         self.defaultValue = defaultValue
         super.init(name: name, optional: optional, transient: transient)

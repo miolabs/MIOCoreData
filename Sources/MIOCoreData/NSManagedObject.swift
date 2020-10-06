@@ -225,7 +225,7 @@ open class NSManagedObject : NSObject
                 let values:[NSManagedObjectID]?
                 if _changedValues.keys.contains(key) {
                     values = _changedValues[key] as? [NSManagedObjectID]
-                }
+                } 
                 else {
                     values = primitiveValue(forKey:key) as? [NSManagedObjectID]
                 }
