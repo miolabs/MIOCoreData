@@ -51,9 +51,14 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
             let name = attributeDict["name"]
             let parentName = attributeDict["parentEntity"]
+            let sync = attributeDict["syncable"]
             
             currentEntity = NSEntityDescription(entityName: name!, parentEntity: nil, managedObjectModel: model)
             currentEntity!.parentEntityName = parentName
+            
+            if sync != nil && sync!.lowercased() == "no" {
+                currentEntity!.userInfo = ["com.apple.syncservices.Syncable": false]
+            }
         }
         else if elementName == "attribute" {
             

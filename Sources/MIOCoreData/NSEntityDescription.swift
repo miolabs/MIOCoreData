@@ -47,7 +47,20 @@ open class NSEntityDescription : NSObject
 
     open var properties: [NSPropertyDescription] = []
      
-    open var userInfo: [AnyHashable : Any]?
+    var _userInfo: [AnyHashable : Any]?
+    open var userInfo: [AnyHashable : Any]? {
+        get { return _userInfo }
+        set {
+            if _userInfo == nil {
+                _userInfo = newValue
+            }
+            else {
+                for (key, value) in newValue {
+                    _userInfo[key] = value
+                }
+            }
+        }
+    }
 
     // convenience methods to get the most common (and most relevant) types of properties for an entity
     var _attributesByName:[String : NSAttributeDescription] = [:]
