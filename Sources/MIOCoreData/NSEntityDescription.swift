@@ -54,9 +54,9 @@ open class NSEntityDescription : NSObject
             if _userInfo == nil {
                 _userInfo = newValue
             }
-            else {
-                for (key, value) in newValue {
-                    _userInfo[key] = value
+            else if newValue != nil {
+                for (key, value) in newValue! {
+                    _userInfo![key] = value
                 }
             }
         }
