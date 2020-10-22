@@ -83,6 +83,13 @@ open class NSEntityDescription : NSObject
         return relations
     }
     
+    var _toManyRelationshipKeys: [String] = []
+    open override var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
+
+    var _toOneRelationshipKeys: [String] = []
+    open override var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
+
+    
     init(entityName:String, parentEntity:NSEntityDescription?, managedObjectModel model:NSManagedObjectModel) {
         name = entityName
         managedObjectClassName = entityName
@@ -108,6 +115,11 @@ open class NSEntityDescription : NSObject
         properties.append(rel)
         _propertiesByName[name] = rel
         _relationshipsByName[name] = rel
+        if rel.isToMany {
+            _toManyRelationshipKeys.append( name )
+        } else {
+            _toOneRelationshipKeys.append( name )
+        }
         
         return rel
     }

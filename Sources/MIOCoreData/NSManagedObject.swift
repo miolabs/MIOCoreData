@@ -230,14 +230,16 @@ open class NSManagedObject : NSObject
                     values = primitiveValue(forKey:key) as? [NSManagedObjectID]
                 }
                 
-                var objs: [NSManagedObject] = []
-                if values != nil {
-                    for objID in values! {
-                        let obj = try! managedObjectContext!.existingObject(with: objID)
-                        objs.append(obj)
-                    }
-                }
-                value = objs
+                value = Set( (values ?? []).map{ try! managedObjectContext!.existingObject(with: $0 ) } )
+
+//                var objs: Set<NSManagedObject> = Set( )
+//                if values != nil {
+//                    for objID in values! {
+//                        let obj = try! managedObjectContext!.existingObject(with: objID)
+//                        objs.insert(obj)
+//                    }
+//                }
+//                value = objs
             }
         }
         
