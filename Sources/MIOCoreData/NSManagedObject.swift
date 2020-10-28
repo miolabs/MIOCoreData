@@ -222,15 +222,15 @@ open class NSManagedObject : NSObject
                 }
             }
             else {
-                let values:[NSManagedObjectID]?
+                let values:Set<NSManagedObjectID>?
                 if _changedValues.keys.contains(key) {
-                    values = _changedValues[key] as? [NSManagedObjectID]
+                    values = _changedValues[key] as? Set<NSManagedObjectID>
                 } 
                 else {
-                    values = primitiveValue(forKey:key) as? [NSManagedObjectID]
+                    values = primitiveValue(forKey:key) as? Set<NSManagedObjectID>
                 }
                 
-                value = Set( (values ?? []).map{ try! managedObjectContext!.existingObject(with: $0 ) } )
+                value = (values ?? []).map{ try! managedObjectContext!.existingObject(with: $0 ) }
 
 //                var objs: Set<NSManagedObject> = Set( )
 //                if values != nil {
@@ -279,11 +279,11 @@ open class NSManagedObject : NSObject
                 setInverseRelationship( relationship, obj, ignoreInverses )
             }
             else {
-                if let objects = value as? [NSManagedObject] {
-                    var objIDs:[NSManagedObjectID] = []
+                if let objects = value as? Set<NSManagedObject> {
+                    var objIDs:Set<NSManagedObjectID> = Set( )
                     for obj in objects {
                         setInverseRelationship( relationship, obj, ignoreInverses )
-                        objIDs.append(obj.objectID)
+                        objIDs.insert(obj.objectID)
                     }
                     _changedValues[key] = objIDs
                 }
@@ -320,7 +320,17 @@ open class NSManagedObject : NSObject
     // returns a dictionary with the keys and (new) values that have been changed since last fetching or saving the object (this is implemented efficiently without firing relationship faults)
     var _changedValues:[String: Any] = [:]
     open func changedValues() -> [String : Any] {
-        return _changedValues
+        return Dictionary( uniqueKeysWithValues: _changedValues.map{ (k,v) in
+            if let relation = entity.relationshipsByName[ k ] {
+                if relation.isToMany {
+                    return (k, Set( (v as! Set<NSManagedObjectID>).map{ try? managedObjectContext!.existingObject(with: $0 ) } ) )
+                } else {
+                    return (k, try! managedObjectContext!.existingObject(with: v as! NSManagedObjectID) )
+                }
+            } else {
+                return (k,v)
+            }
+        } )
     }
     
     
@@ -440,27 +450,24 @@ open class NSManagedObject : NSObject
     }
 
     open func _addObject(_ object:NSManagedObject, forKey key:String, ignoreInverses: Bool = false ) {
-        var objIDs:[NSManagedObjectID]? = _changedValues[key] as? [NSManagedObjectID]
-        if objIDs == nil {
-            let values = storedValues[key] as? [NSManagedObjectID]
-            objIDs = values != nil ?  Array(values!) : []
-        }
+        var objIDs:Set<NSManagedObjectID> = _changedValues[key] as? Set<NSManagedObjectID> ??
+                                            storedValues[key] as? Set<NSManagedObjectID> ??
+                                            Set( )
         
         setInverseRelationship( entity.relationshipsByName[ key ]!, object, ignoreInverses )
         
-        objIDs!.append(object.objectID)
+        objIDs.insert(object.objectID)
         _changedValues[key] = objIDs
         managedObjectContext?.refresh(self, mergeChanges: false)
     }
 
     open func _removeObject(_ object:NSManagedObject, forKey key:String) {
-        var objIDs:[NSManagedObjectID]? = _changedValues[key] as? [NSManagedObjectID]
-        if objIDs == nil {
-            let values = storedValues[key] as? [NSManagedObjectID]
-            objIDs = values != nil ?  Array(values!) : []
-        }
-        objIDs!.removeAll { $0 == object.objectID }
-        //objIDs!.remo(object.objectID)
+        var objIDs:Set<NSManagedObjectID> = _changedValues[key] as? Set<NSManagedObjectID> ??
+                                            storedValues[key] as? Set<NSManagedObjectID> ??
+                                            Set( )
+
+        objIDs.remove( object.objectID )
+
         _changedValues[key] = objIDs
         managedObjectContext?.refresh(self, mergeChanges: false)
     }

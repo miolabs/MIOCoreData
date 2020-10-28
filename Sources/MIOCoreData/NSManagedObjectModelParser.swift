@@ -41,6 +41,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
     var currentAttribute:NSAttributeDescription?
     var currentRelationship:NSRelationshipDescription?
     var currentUserInfo:[String:Any]?
+    var currentIndex:NSFetchIndexDescription?
     var currentConfigName:String?
         
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
@@ -83,6 +84,13 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         }
         else if elementName == "userInfo" {
             currentUserInfo = [:]
+        }
+        else if elementName == "fetchIndex" {
+            currentIndex = NSFetchIndexDescription(name: attributeDict[ "name" ]!, elements: [] )
+        }
+        else if elementName == "fetchIndexElement" {
+            let property = currentEntity!.propertiesByName[ attributeDict["property"]! ]!
+            currentIndex!.elements.append( NSFetchIndexElementDescription(property: property, collationType: attributeDict[ "type" ]?.lowercased() == "rtree" ? .rTree : .binary ) )
         }
         else if elementName == "entry" {
             if currentUserInfo != nil {
@@ -127,7 +135,12 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             currentRelationship = nil
             currentUserInfo = nil
         }
-        if elementName == "model" {
+        else if elementName == "fetchIndex" {
+            currentEntity!.indexes.append( currentIndex! )
+            
+            currentIndex = nil
+        }
+        else if elementName == "model" {
             //NSLog("ManagedObjectModelParser:didEndElement: End model")
             #if os(Linux)
             buildGraph()
@@ -205,7 +218,7 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             
         case "UUID":
             attrType = NSAttributeType.UUIDAttributeType
-            defaultValue = defaultValueString
+            defaultValue = defaultValueString == nil ? nil : UUID( uuidString: defaultValueString! )
             
         case "Date":
             attrType = NSAttributeType.dateAttributeType;
