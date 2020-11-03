@@ -184,9 +184,9 @@ open class NSManagedObjectContext : NSObject
         object._setIsDeleted(true)
     }
         
-    var insertedObjects: Set<NSManagedObject> = Set()
-    var updatedObjects: Set<NSManagedObject> = Set()
-    var deletedObjects: Set<NSManagedObject> = Set()
+    public var insertedObjects: Set<NSManagedObject> = Set()
+    public var updatedObjects: Set<NSManagedObject> = Set()
+    public var deletedObjects: Set<NSManagedObject> = Set()
     
     open func save() throws {
     
