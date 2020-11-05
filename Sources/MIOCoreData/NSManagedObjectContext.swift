@@ -71,7 +71,7 @@ open class NSManagedObjectContext : NSObject
     open func existingObject(with objectID: NSManagedObjectID) throws -> NSManagedObject {
         
         var obj = objectsByID[objectID.uriRepresentation().absoluteString]
-
+        
         //let store = objectID.persistentStore as! NSIncrementalStore
         //let node = try store.newValuesForObject(with: objectID, with: self)
 
@@ -85,7 +85,7 @@ open class NSManagedObjectContext : NSObject
             obj = objectClass.init()
             obj!._objectID = objectID
             obj!._managedObjectContext = self
-            obj!._isFault = true;
+            obj!._isFault = true
             obj!._storedValues = nil
 
             obj!.awakeFromFetch()
@@ -109,14 +109,18 @@ open class NSManagedObjectContext : NSObject
             throw NSManagedObjectContextError.fetchRequestEntityInvalid
         }
         
-        let objs = try store.execute(request, with: self) as! [T]
+        _ = try store.execute(request, with: self) as! [T]
+        
+        let objs = objectsByEntityName[request.entity!.name!]
+        if objs == nil { return [] }
+        
 //        let cached_objs = objectsByEntityName[ request.entityName! ]
 //
 //        if request.predicate != nil {
 //            cached_objs?.filter(using: request.predicate!)
 //        }
         
-        return objs
+        return objs!.filter(using: request.predicate) as! [T]
     }
     
 //    open func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
@@ -160,6 +164,8 @@ open class NSManagedObjectContext : NSObject
 //        objectID._setStoreIdentifier(store.identifier)
 //        objectID._setPersistentStore(store)
 
+        if updatedObjects.contains(object) { updatedObjects.remove(object) }
+        
         insertedObjects.insert(object)
         _registerObject(object)
         object._setIsInserted(true)
@@ -313,7 +319,7 @@ open class NSManagedObjectContext : NSObject
 //        this.objectsByID[object.objectID.URIRepresentation.absoluteString] = object;
     }
 
-    var objectsByEntityName: [ String: [NSManagedObject] ] = [:]
+    var objectsByEntityName: [ String: Set<NSManagedObject> ] = [:]
     func _registerObject(_ object: NSManagedObject) {
 
         if objectsByID[object.objectID.uriRepresentation().absoluteString] != nil  {
@@ -324,12 +330,10 @@ open class NSManagedObjectContext : NSObject
         //this.registerObjects.addObject(object);
         objectsByID[object.objectID.uriRepresentation().absoluteString] = object
 
-        let entityName = object.entity.name!;
-        if var array = objectsByEntityName[entityName] {
-            array.append( object )
-        } else {
-            objectsByEntityName[entityName] = [ object ]
-        }
+        let entityName = object.entity.name!
+        var set = objectsByEntityName[entityName] ?? Set()
+        set.insert(object)
+        objectsByEntityName[entityName] = set
 
         if object.objectID.persistentStore is NSIncrementalStore {
             let store = object.objectID.persistentStore as! NSIncrementalStore

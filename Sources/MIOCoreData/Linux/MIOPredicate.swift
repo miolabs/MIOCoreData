@@ -406,3 +406,88 @@ func MIOPredicateParseOperator(_ lexer: MIOCoreLexer) -> NSComparisonPredicate.O
     
     return NSComparisonPredicate.Operator.equalTo
 }
+
+func MIOPredicateEvaluateObjects(_ objects: [NSObject], using predicate: MIOPredicate) -> [NSObject]
+{
+    var results:[NSObject] = []
+    for obj in objects {
+        if MIOPredicateEvaluate(object: obj, using: predicate) {
+            results.append(obj)
+        }
+    }
+
+    return results
+}
+
+
+func MIOPredicateEvaluate(object: NSObject, using predicate: MIOPredicate) -> Bool
+{
+    if predicate is NSComparisonPredicate {
+        let cmp = predicate as! NSComparisonPredicate
+        
+        var obj_value:Any?
+        var value:Any?
+        
+        if cmp.leftExpression.expressionType == .keyPath {
+//            obj_value = object.value(forKeyPath: cmp._leftExpression.keyPath)
+            obj_value = object.value(forKey: cmp.leftExpression.keyPath)
+            if obj_value is UUID { obj_value = (obj_value as! UUID).uuidString }
+        }
+        else if cmp.leftExpression.expressionType == .constantValue {
+            value = cmp.leftExpression.constantValue
+        }
+        
+        if cmp.rightExpression.expressionType == .keyPath {
+//            obj_value = object.value(forKeyPath: cmp._leftExpression.keyPath)
+            obj_value = object.value(forKey: cmp.rightExpression.keyPath)
+        }
+        else if cmp.rightExpression.expressionType == .constantValue {
+            value = cmp.rightExpression.constantValue
+        }
+
+        switch cmp.predicateOperatorType {
+        case .equalTo:
+            return MIOPredicateEvaluateEqual(leftValue: obj_value, rightValue: value)
+            
+        default:break
+        }
+
+        return false
+    }
+    
+    return false
+}
+
+func MIOPredicateEvaluateEqual(leftValue: Any?, rightValue:Any?) -> Bool {
+    
+    if leftValue == nil && rightValue == nil { return true }
+    if leftValue == nil && rightValue != nil { return false }
+    if leftValue != nil && rightValue == nil { return false }
+    
+    switch leftValue! {
+    case is String:
+        return (leftValue as! String) == (rightValue as! String)
+
+    case is Int:
+        return (leftValue as! Int) == (rightValue as! Int)
+        
+    case is Int8:
+        return (leftValue as! Int8) == (rightValue as! Int8)
+
+    case is Int16:
+        return (leftValue as! Int16) == (rightValue as! Int16)
+
+    case is Int32:
+        return (leftValue as! Int32) == (rightValue as! Int32)
+
+    case is Int64:
+        return (leftValue as! Int64) == (rightValue as! Int64)
+
+        
+    default: break
+    }
+    
+    return false
+    
+}
+
