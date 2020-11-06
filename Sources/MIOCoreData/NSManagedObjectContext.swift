@@ -15,7 +15,7 @@ enum NSManagedObjectContextError: Error
 }
 
 public enum NSManagedObjectContextConcurrencyType : UInt
-{
+{   
     case confinementConcurrencyType = 0
     case privateQueueConcurrencyType = 1
     case mainQueueConcurrencyType = 2
@@ -86,7 +86,6 @@ open class NSManagedObjectContext : NSObject
             obj!._objectID = objectID
             obj!._managedObjectContext = self
             obj!._isFault = true
-            obj!._storedValues = nil
 
             obj!.awakeFromFetch()
             _registerObject(obj!)

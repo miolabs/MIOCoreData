@@ -96,7 +96,8 @@ open class NSManagedObject : NSObject
     
     
     // returns a Boolean indicating if the relationship for the specified key is a fault.  If a value of NO is returned, the resulting relationship is a realized object;  otherwise the relationship is a fault.  If the specified relationship is a fault, calling this method does not result in the fault firing.
-    //open func hasFault(forRelationshipNamed key: String) -> Bool
+    var relationShipsNamedNotFault:Set<String> = Set()
+    open func hasFault(forRelationshipNamed key: String) -> Bool { return !relationShipsNamedNotFault.contains(key) }
     
     
     /* returns an array of objectIDs for the contents of a relationship.  to-one relationships will return an NSArray with a single NSManagedObjectID.  Optional relationships may return an empty NSArray.  The objectIDs will be returned in an NSArray regardless of the type of the relationship.  */
@@ -231,15 +232,6 @@ open class NSManagedObject : NSObject
                 }
                 
                 value = (values ?? []).map{ try! managedObjectContext!.existingObject(with: $0 ) }
-
-//                var objs: Set<NSManagedObject> = Set( )
-//                if values != nil {
-//                    for objID in values! {
-//                        let obj = try! managedObjectContext!.existingObject(with: objID)
-//                        objs.insert(obj)
-//                    }
-//                }
-//                value = objs
             }
         }
         
@@ -303,11 +295,14 @@ open class NSManagedObject : NSObject
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
     open func primitiveValue(forKey key: String) -> Any? {
+        if hasFault(forRelationshipNamed: key) && objectID.persistentStore != nil {
+            unfaultRelationshipNamed( key, fromStore: objectID.persistentStore! )
+        }
         return storedValues[key]
     }
     
     open func setPrimitiveValue(_ value: Any?, forKey key: String) {
-        _storedValues?[key] = value
+        _storedValues[key] = value
     }
     
     // returns a dictionary of the last fetched or saved keys and values of this object.  Pass nil to get all persistent modeled properties.
@@ -364,63 +359,60 @@ open class NSManagedObject : NSObject
         willChangeValue(forKey: "hasChanges")
         willChangeValue(forKey:"isFault")
         _isFault = value
-        if value == true { _storedValues = nil }
+        if value == true {
+            _storedValues = [:]
+            relationShipsNamedNotFault = Set()
+        }
         didChangeValue(forKey: "isFault")
         didChangeValue(forKey: "hasChanges")
     }
     
-    var _storedValues: [String:Any]?
+    var _storedValues: [String:Any] = [:]
     var storedValues: [String : Any] {
         get {
-            
-            if _storedValues != nil { return _storedValues! }
-            
             if objectID.isTemporaryID == true { return [:] }
+            if objectID.persistentStore == nil { return [:] }
             
-            if objectID.persistentStore is NSIncrementalStore {
-                _storedValues = valueFromIncrementalPersistentStore(objectID.persistentStore as? NSIncrementalStore)
-            }
-            else {
-                print("MIOManagedObject: Only Incremental store is supported.")
-                return [:]
-            }
+            if _isFault == false { return _storedValues }
+            
+            unfaultAttributes(fromStore: objectID.persistentStore!)
             setIsFault(false)
             
-            return _storedValues!
+            return _storedValues
         }
     }
     
-    func valueFromIncrementalPersistentStore(_ store:NSIncrementalStore?) -> [String:Any] {
+    func unfaultAttributes(fromStore store:NSPersistentStore) {
+        guard let incrementalStore = store as? NSIncrementalStore else { return }
         
-        if store == nil { return [:] }
+        _storedValues = [:]
         
-        var storedValues:[String:Any] = [:]
+        let node = try? incrementalStore.newValuesForObject(with: objectID, with: managedObjectContext!)
+        if node == nil { return }
         
-        for property in entity.properties {
-            
-            if property is NSAttributeDescription {
-                let attr = property as! NSAttributeDescription
-                let node = try? store!.newValuesForObject(with: objectID, with: managedObjectContext!)
-                if node == nil { continue }
-                
-                let value = node!.value(for: attr)
-                storedValues[attr.name] = value
-            }
-            else if property is NSRelationshipDescription {
-                let rel = property as! NSRelationshipDescription
-                let value = try? store!.newValue(forRelationship: rel, forObjectWith: objectID, with: managedObjectContext)
-                if value == nil { continue }
-                
-                storedValues[rel.name] = value!
-            }
+        for (key, attr) in entity.attributesByName {
+            let value = node!.value(for: attr)
+            _storedValues[key] = value
         }
         
-        return storedValues
+        // Force to unfault all relationships
+        relationShipsNamedNotFault = Set()
+    }
+    
+    func unfaultRelationshipNamed(_ key:String, fromStore store:NSPersistentStore) {
+        relationShipsNamedNotFault.insert(key)
+        
+        guard let relation = entity.relationshipsByName[key] else { return }
+        guard let incrementalStore = store as? NSIncrementalStore else { return }
+        
+        let value = try? incrementalStore.newValue(forRelationship: relation, forObjectWith: objectID, with: managedObjectContext)
+        if value == nil { return }
+
+        _storedValues[relation.name] = value!
     }
     
     func _didCommit() {
         _changedValues = [:]
-        _storedValues = nil
         setIsFault(true)
     }
     
