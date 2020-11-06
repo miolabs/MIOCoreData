@@ -224,6 +224,9 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             attrType = NSAttributeType.dateAttributeType;
             //if (defaultValueString != null) defaultValue = MIODateFromString(defaultValueString);
             
+        case "Transformable":
+            attrType = NSAttributeType.transformableAttributeType
+            
         default:
             print("MIOManagedObjectModel: Unknown class type: " + type);
         }
