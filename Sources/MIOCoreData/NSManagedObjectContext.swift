@@ -85,7 +85,6 @@ open class NSManagedObjectContext : NSObject
             obj = objectClass.init()
             obj!._objectID = objectID
             obj!._managedObjectContext = self
-            obj!._isFault = true
 
             obj!.awakeFromFetch()
             _registerObject(obj!)
