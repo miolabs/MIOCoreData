@@ -407,7 +407,7 @@ func MIOPredicateParseOperator(_ lexer: MIOCoreLexer) -> NSComparisonPredicate.O
     return NSComparisonPredicate.Operator.equalTo
 }
 
-func MIOPredicateEvaluateObjects(_ objects: [NSObject], using predicate: MIOPredicate) -> [NSObject]
+func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: MIOPredicate) -> [NSManagedObject]
 {
     var results:[NSObject] = []
     for obj in objects {
@@ -420,7 +420,7 @@ func MIOPredicateEvaluateObjects(_ objects: [NSObject], using predicate: MIOPred
 }
 
 
-func MIOPredicateEvaluate(object: NSObject, using predicate: MIOPredicate) -> Bool
+func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate) -> Bool
 {
     if predicate is NSComparisonPredicate {
         let cmp = predicate as! NSComparisonPredicate

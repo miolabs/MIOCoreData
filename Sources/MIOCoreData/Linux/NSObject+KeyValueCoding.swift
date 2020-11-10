@@ -9,11 +9,11 @@ import Foundation
 
 #if os(Linux)
 
-extension NSObject
-{
-    open func value(forKey key: String) -> Any? { return nil }
-    open func setValue(_ value: Any?, forKey key: String) { }
-}
+//extension NSObject
+//{
+//    open func value(forKey key: String) -> Any? { return nil }
+//    open func setValue(_ value: Any?, forKey key: String) { }
+//}
 
 #endif
 
