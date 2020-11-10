@@ -178,7 +178,7 @@ open class NSManagedObject : NSObject
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
     #if os(Linux)
-    open override func value(forKey key: String) -> Any? { return _value(forKey:key)}
+    open func value(forKey key: String) -> Any? { return _value(forKey:key)}
     #else
     open override func value(forKey key: String) -> Any? { return _value(forKey:key) }
     #endif
@@ -243,7 +243,7 @@ open class NSManagedObject : NSObject
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
     #if os(Linux)
-    open override func setValue(_ value: Any?, forKey key: String) { _setValue(value, forKey: key) }
+    open func setValue(_ value: Any?, forKey key: String) { _setValue(value, forKey: key) }
     #else
     open override func setValue(_ value: Any?, forKey key: String) { _setValue(value, forKey: key) }
     #endif
