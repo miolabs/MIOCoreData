@@ -409,7 +409,7 @@ func MIOPredicateParseOperator(_ lexer: MIOCoreLexer) -> NSComparisonPredicate.O
 
 func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: MIOPredicate) -> [NSManagedObject]
 {
-    var results:[NSObject] = []
+    var results:[NSManagedObject] = []
     for obj in objects {
         if MIOPredicateEvaluate(object: obj, using: predicate) {
             results.append(obj)
