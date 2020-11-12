@@ -231,7 +231,7 @@ open class NSManagedObject : NSObject
                     values = primitiveValue(forKey:key) as? Set<NSManagedObjectID>
                 }
                 
-                value = (values ?? []).map{ try! managedObjectContext!.existingObject(with: $0 ) }
+                value = Set( (values ?? Set()).map{ try! managedObjectContext!.existingObject(with: $0 ) } )
             }
         }
         
@@ -395,11 +395,14 @@ open class NSManagedObject : NSObject
             _storedValues[key] = value
         }
         
+        _isFault = false
         // Force to unfault all relationships
-        relationShipsNamedNotFault = Set()
+        // relationShipsNamedNotFault = Set()
     }
     
     func unfaultRelationshipNamed(_ key:String, fromStore store:NSPersistentStore) {
+        if isFault { unfaultAttributes(fromStore: store ) }
+        
         relationShipsNamedNotFault.insert(key)
         
         guard let relation = entity.relationshipsByName[key] else { return }
@@ -408,7 +411,7 @@ open class NSManagedObject : NSObject
         let value = try? incrementalStore.newValue(forRelationship: relation, forObjectWith: objectID, with: managedObjectContext)
         if value == nil { return }
 
-        _storedValues[relation.name] = value!
+        _storedValues[relation.name] = relation.isToMany ? Set( value! as! [NSManagedObjectID] ) : value!
     }
     
     func _didCommit() {

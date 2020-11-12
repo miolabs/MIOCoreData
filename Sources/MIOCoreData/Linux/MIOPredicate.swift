@@ -11,6 +11,7 @@ import MIOCore
 public typealias NSExpression = MIOExpression
 public typealias NSComparisonPredicate = MIOComparisonPredicate
 public typealias NSPredicate = MIOPredicate
+public typealias NSCompoundPredicate = MIOCompoundPredicate
 
 open class MIOPredicate: NSObject, NSCopying
 {
@@ -447,12 +448,21 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
 
         switch cmp.predicateOperatorType {
         case .equalTo:
-            return MIOPredicateEvaluateEqual(leftValue: obj_value, rightValue: value)
-            
+            return  MIOPredicateEvaluateEqual(leftValue: obj_value, rightValue: value)
+        case .notEqualTo:
+            return !MIOPredicateEvaluateEqual(leftValue: obj_value, rightValue: value)
         default:break
         }
 
         return false
+    } else if predicate is NSCompoundPredicate {
+        let compound = predicate as! NSCompoundPredicate
+        
+        switch ( compound.compoundPredicateType ) {
+            case .not: return !MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 0 ] )
+            case .and: return  MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 0 ] ) && MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 1 ] )
+            case .or : return  MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 0 ] ) || MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 1 ] )
+        }
     }
     
     return false
