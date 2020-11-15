@@ -328,15 +328,25 @@ open class NSManagedObjectContext : NSObject
         //this.registerObjects.addObject(object);
         objectsByID[object.objectID.uriRepresentation().absoluteString] = object
 
-        let entityName = object.entity.name!
-        var set = objectsByEntityName[entityName] ?? Set()
-        set.insert(object)
-        objectsByEntityName[entityName] = set
-
+        _registerObjectForEntityName(object, object.entity)
+        
         if object.objectID.persistentStore is NSIncrementalStore {
             let store = object.objectID.persistentStore as! NSIncrementalStore
             store.managedObjectContextDidRegisterObjects(with:[object.objectID])
         }
+    }
+    
+    func _registerObjectForEntityName(_ object: NSManagedObject, _ entity:NSEntityDescription) {
+
+        let entityName = entity.name!
+        var set = objectsByEntityName[entityName] ?? Set()
+        set.insert(object)
+        objectsByEntityName[entityName] = set
+        
+        if entity.superentity != nil {
+            _registerObjectForEntityName(object, entity.superentity!)
+        }
+
     }
 
     func _unregisterObject(_ object: NSManagedObject) {
