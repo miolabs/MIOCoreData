@@ -140,9 +140,9 @@ open class NSEntityDescription : NSObject
             parentEntity!.subentities.append(self)
             parentEntity!.build()
             
-            if userInfo != nil {
-               userInfo!.merge( parentEntity!.userInfo ?? [:] ){ (old,_new) in old }
-            }
+//            if userInfo != nil {
+//               userInfo!.merge( parentEntity!.userInfo ?? [:] ){ (old,_new) in old }
+//            }
             
             for (_, prop) in parentEntity!.propertiesByName {
 
