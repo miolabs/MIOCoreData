@@ -117,8 +117,13 @@ open class NSManagedObjectContext : NSObject
 //        if request.predicate != nil {
 //            cached_objs?.filter(using: request.predicate!)
 //        }
+        let results = objs!.filter(using: request.predicate) as! [T]
+        let offset = request.fetchOffset
+        let limit = min( offset + request.fetchLimit, results.count )
         
-        return objs!.filter(using: request.predicate) as! [T]
+        return  results.count == 0      ? results
+              : request.fetchLimit == 0 ? Array( results[ offset...      ] )
+              :                           Array( results[ offset..<limit ] )
     }
     
 //    open func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
