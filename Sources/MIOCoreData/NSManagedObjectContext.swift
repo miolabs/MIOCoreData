@@ -191,8 +191,9 @@ open class NSManagedObjectContext : NSObject
         object._setIsUpdated(false)
         deletedObjects.insert(object)
         object._setIsDeleted(true)
+                
     }
-        
+            
     public var insertedObjects: Set<NSManagedObject> = Set()
     public var updatedObjects: Set<NSManagedObject> = Set()
     public var deletedObjects: Set<NSManagedObject> = Set()
