@@ -9,13 +9,11 @@ import Foundation
 
 open class NSManagedObjectModel : NSObject
 {
-    var parser: ManagedObjectModelParser?
-    
     public convenience init?(contentsOf url: URL) {
         self.init()
         
-        parser = ManagedObjectModelParser(url: url, model: self)
-        parser?.parse()
+        let parser = ManagedObjectModelParser(url: url, model: self)
+        parser.parse()
     }
         
     var _entitiesByName: [String : NSEntityDescription]?
