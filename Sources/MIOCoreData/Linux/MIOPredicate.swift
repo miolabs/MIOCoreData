@@ -445,7 +445,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
             value = cmp.rightExpression.constantValue
         }
 
-        if obj_value is UUID { obj_value = (obj_value as! UUID).uuidString }
+        if obj_value is UUID { obj_value = (obj_value as! UUID).uuidString.uppercased() }
 
         switch cmp.predicateOperatorType {
             case .equalTo             : return  MIOPredicateEvaluateEqual(     obj_value, value )
