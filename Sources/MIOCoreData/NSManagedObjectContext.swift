@@ -108,7 +108,7 @@ open class NSManagedObjectContext : NSObject
         }
         
         _ = try store.execute(request, with: self) as! [T]
-        
+                
         let objs = objectsByEntityName[request.entity!.name!]
         if objs == nil { return [] }
         

@@ -445,7 +445,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
             value = cmp.rightExpression.constantValue
         }
 
-        if obj_value is UUID { obj_value = (obj_value as! UUID).uuidString.uppercased() }
+        if obj_value is UUID { obj_value = (obj_value as! UUID).uuidString.lowercased() }
 
         switch cmp.predicateOperatorType {
             case .equalTo             : return  MIOPredicateEvaluateEqual(     obj_value, value )
@@ -472,37 +472,6 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
 }
 
 
-// typealias operatorFn<T:Comparable> = (_ lv:T,_ rv:T) -> Bool
-// typealias operatorFn = (_ lv:Comparable,_ rv:Comparable) -> Bool
-
-//func MIOPredicateEvaluate ( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
-//
-//    func evaluate<T> (_ lv:T, _ rv:T) -> Bool {
-//        return (==)( lv, rv )
-//    }
-//
-//    if leftValue == nil && rightValue == nil { return true }
-//    if leftValue == nil && rightValue != nil { return false }
-//    if leftValue != nil && rightValue == nil { return false }
-//
-//    switch leftValue! {
-//        case is String:  return evaluate( leftValue as! String, (==), rightValue as! String )
-//        case is Int:     return ( leftValue as! Int     ) == ( rightValue as! Int     )
-//        case is Int8:    return ( leftValue as! Int8    ) == ( rightValue as! Int8    )
-//        case is Int16:   return ( leftValue as! Int16   ) == ( rightValue as! Int16   )
-//        case is Int32:   return ( leftValue as! Int32   ) == ( rightValue as! Int32   )
-//        case is Int64:   return ( leftValue as! Int64   ) == ( rightValue as! Int64   )
-//        case is Float:   return ( leftValue as! Float   ) == ( rightValue as! Float   )
-//        case is Double:  return ( leftValue as! Double  ) == ( rightValue as! Double  )
-//        case is Decimal: return ( leftValue as! Decimal ) == ( rightValue as! Decimal )
-//        case is Date:    return ( leftValue as! Date    ) == ( rightValue as! Date    )
-//
-//        default: return false
-//    }
-//}
-
-
-
 func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
 
     if leftValue == nil && rightValue == nil { return true }
@@ -519,7 +488,9 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Float:   return ( leftValue as! Float   ) == ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) == ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) == ( rightValue as! Decimal )
-    case is Date:    return ( leftValue as! Date    ) == ( rightValue as! Date    )
+        case is Date:    return rightValue is String ?
+                                ( leftValue as! Date    ) == parse_date( rightValue as! String )!
+                              : ( leftValue as! Date    ) == ( rightValue as! Date    )
 
     default: return false
     }
@@ -542,7 +513,9 @@ func MIOPredicateEvaluateLessEqual( _ leftValue: Any?, _ rightValue:Any?) -> Boo
     case is Float:   return ( leftValue as! Float   ) <= ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) <= ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) <= ( rightValue as! Decimal )
-    case is Date:    return ( leftValue as! Date    ) <= ( rightValue as! Date    )
+    case is Date:    return rightValue is String ?
+                            ( leftValue as! Date    ) <= parse_date( rightValue as! String )!
+                          : ( leftValue as! Date    ) <= ( rightValue as! Date    )
 
     default: return false
     }
@@ -565,7 +538,9 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Float:   return ( leftValue as! Float   ) < ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) < ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) < ( rightValue as! Decimal )
-    case is Date:    return ( leftValue as! Date    ) < ( rightValue as! Date    )
+    case is Date:    return rightValue is String ?
+                            ( leftValue as! Date    ) < parse_date( rightValue as! String )!
+                          : ( leftValue as! Date    ) < ( rightValue as! Date    )
 
     default: return false
     }

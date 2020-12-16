@@ -34,7 +34,7 @@ open class NSManagedObjectID : NSObject
     init(WithEntity entity:NSEntityDescription, referenceObject:Any?){
         _entity = entity
         if referenceObject == nil {
-            _referenceObject = UUID().uuidString.uppercased()
+            _referenceObject = UUID().uuidString.lowercased()
             _isTemporaryID = true
         }
         else {
