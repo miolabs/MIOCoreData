@@ -7,6 +7,8 @@
 
 import Foundation
 
+public typealias NSSortDescriptor = MIOSortDescriptor
+
 open class MIOSortDescriptor : NSObject//, NSSecureCoding, NSCopying
 {
     // keys may be key paths
