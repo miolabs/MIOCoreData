@@ -7,9 +7,8 @@
 
 import Foundation
 
-open class MIOSortDescriptor : NSObject, NSSecureCoding, NSCopying {
-
-    
+open class MIOSortDescriptor : NSObject//, NSSecureCoding, NSCopying
+{
     // keys may be key paths
     public init(key: String?, ascending: Bool){
         _key = key
