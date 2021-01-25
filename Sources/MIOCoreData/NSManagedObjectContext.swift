@@ -18,7 +18,7 @@ extension NSManagedObjectContextError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case let .fetchRequestEntityInvalid(entityName, functionName):
-            return "fetchRequestEntityInvalid:\(entityName) \(functionName)."
+            return "NSManagedObjectContextError.fetchRequestEntityInvalid:\(entityName) \(functionName)."
         }
     }
 }
@@ -112,6 +112,8 @@ open class NSManagedObjectContext : NSObject
             return []
         }
 
+        NSLog("Fetch entity: \(request.entityName!)")
+        
         request.entity = self.persistentStoreCoordinator?.managedObjectModel.entitiesByName[request.entityName!]
         if request.entity == nil {
             throw NSManagedObjectContextError.fetchRequestEntityInvalid(request.entityName!)
