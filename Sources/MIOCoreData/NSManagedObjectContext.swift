@@ -11,8 +11,18 @@ import MIOCore
 
 enum NSManagedObjectContextError: Error
 {
-    case fetchRequestEntityInvalid
+    case fetchRequestEntityInvalid(_ entityName: String, functionName: String = #function)
 }
+
+extension NSManagedObjectContextError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case let .fetchRequestEntityInvalid(entityName, functionName):
+            return "fetchRequestEntityInvalid:\(entityName) \(functionName)."
+        }
+    }
+}
+
 
 public enum NSManagedObjectContextConcurrencyType : UInt
 {   
@@ -104,7 +114,7 @@ open class NSManagedObjectContext : NSObject
 
         request.entity = self.persistentStoreCoordinator?.managedObjectModel.entitiesByName[request.entityName!]
         if request.entity == nil {
-            throw NSManagedObjectContextError.fetchRequestEntityInvalid
+            throw NSManagedObjectContextError.fetchRequestEntityInvalid(request.entityName!)
         }
         
         _ = try store.execute(request, with: self) as! [T]
