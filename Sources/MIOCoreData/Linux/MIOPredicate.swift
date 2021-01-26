@@ -130,6 +130,7 @@ public enum MIOPredicateTokenType: Int
     case multiplyOperation
     case divisionOperation
     
+    case arraySymbol
     case openParenthesisSymbol
     case closeParenthesisSymbol
     case whitespace
@@ -156,6 +157,7 @@ func MIOPredicateTokenize(_ predicateFormat: String) -> MIOCoreLexer
     lexer.addTokenType(MIOPredicateTokenType.nullValue.rawValue, regex: try! NSRegularExpression(pattern:"^(null|nil)", options:.caseInsensitive))
     
     // Symbols
+    lexer.addTokenType(MIOPredicateTokenType.arraySymbol.rawValue, regex: try! NSRegularExpression(pattern: "^\\[([^\\]]*)\\]"))
     lexer.addTokenType(MIOPredicateTokenType.openParenthesisSymbol.rawValue, regex: try! NSRegularExpression(pattern:"^\\("))
     lexer.ignoreTokenType(MIOPredicateTokenType.openParenthesisSymbol.rawValue)
     lexer.addTokenType(MIOPredicateTokenType.closeParenthesisSymbol.rawValue, regex: try! NSRegularExpression(pattern:"^\\)"))
@@ -324,6 +326,9 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer) -> NSExpression
     case MIOPredicateTokenType.booleanValue.rawValue:
         let v = (token!.value == "true" ? 1 : 0)
         return MIOExpression(forConstantValue: v)
+        
+    case MIOPredicateTokenType.arraySymbol.rawValue:
+        return MIOExpression(forConstantValue: token!.value)
      
 /*     case MIOPredicateTokenType.NullValue:
      item.value = this.nullFromString(token.value);
@@ -376,11 +381,10 @@ func MIOPredicateParseOperator(_ lexer: MIOCoreLexer) -> NSComparisonPredicate.O
     case MIOPredicateTokenType.containsComparator.rawValue:
     return NSComparisonPredicate.Operator.contains
     
-        /*
-    case MIOPredicateTokenType.InComparator:
-     item.comparator = MIOPredicateComparatorType.In;
-     break;
-     
+    case MIOPredicateTokenType.inComparator.rawValue:
+    return NSComparisonPredicate.Operator.inOperator
+    
+    /*
      case MIOPredicateTokenType.BitwiseAND:
      item.bitwiseOperation = MIOPredicateBitwiseOperatorType.AND;
      item.bitwiseKey = item.key;
@@ -454,6 +458,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
             case .lessThanOrEqualTo   : return  MIOPredicateEvaluateLessEqual( obj_value, value )
             case .greaterThan         : return !MIOPredicateEvaluateLessEqual( obj_value, value )
             case .greaterThanOrEqualTo: return !MIOPredicateEvaluateLess(      obj_value, value )
+            case .inOperator          : return  MIOPredicateEvaluateIn(        obj_value, value )
             default:break
         }
 
@@ -544,6 +549,15 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
 
     default: return false
     }
+}
+
+func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
+    if leftValue == nil && rightValue == nil { return true }
+    if leftValue == nil && rightValue != nil { return false }
+    if leftValue != nil && rightValue == nil { return false }
+
+    let value = String((rightValue as! String).dropFirst().dropLast()).components(separatedBy: ",").map { String( $0.dropFirst().dropLast() ) }
+    return value.contains(leftValue as! String)
 }
 
 

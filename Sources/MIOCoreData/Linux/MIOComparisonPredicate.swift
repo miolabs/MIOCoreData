@@ -63,7 +63,7 @@ open class MIOComparisonPredicate : MIOPredicate
         case like
         case beginsWith
         case endsWith
-        case `in` // rhs contains lhs returns true
+        case inOperator // rhs contains lhs returns true
         case contains // lhs contains rhs returns true
         case between
     }
