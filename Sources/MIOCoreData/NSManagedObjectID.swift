@@ -27,7 +27,7 @@ open class NSManagedObjectID : NSObject
         
         let host = isTemporaryID ? "": "/\(_storeIdentifier!)"
         
-        let url = URL(string: "x-coredata://\(host)/\(_referenceObject)")
+        let url = URL(string: "x-coredata://\(host)/\(_referenceObject)/\(_entity.name!)")
         return url!
     }
 
