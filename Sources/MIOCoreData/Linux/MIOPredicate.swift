@@ -556,7 +556,7 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     if leftValue == nil && rightValue != nil { return false }
     if leftValue != nil && rightValue == nil { return false }
 
-    let value = String((rightValue as! String).dropFirst().dropLast()).components(separatedBy: ",").map { String( $0.dropFirst().dropLast() ) }
+    let value = String((rightValue as! String).dropFirst().dropLast()).components(separatedBy: ",").map { String( $0.trimmingCharacters(in: .whitespaces).dropFirst().dropLast() ) }
     return value.contains(leftValue as! String)
 }
 

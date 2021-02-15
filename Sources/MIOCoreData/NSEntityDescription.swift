@@ -32,7 +32,8 @@ open class NSEntityDescription : NSObject
     
     open var name: String?
     
-    open var isAbstract: Bool = false
+    var _isAbstract = false
+    open var isAbstract: Bool { get { return _isAbstract } }
     
     var _subentitiesByName:[String : NSEntityDescription] = [:]
     open var subentitiesByName: [String : NSEntityDescription] { get { return _subentitiesByName } }
@@ -94,9 +95,10 @@ open class NSEntityDescription : NSObject
     open override var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
     #endif
         
-    init(entityName:String, parentEntity:NSEntityDescription?, managedObjectModel model:NSManagedObjectModel) {
+    init(entityName:String, parentEntity:NSEntityDescription?, isAbstract:String, managedObjectModel model:NSManagedObjectModel) {
         name = entityName
         managedObjectClassName = entityName
+        _isAbstract = (isAbstract == "yes")
         _model = model
         super.init()
     }

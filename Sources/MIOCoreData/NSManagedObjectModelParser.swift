@@ -53,8 +53,9 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             let name = attributeDict["name"]
             let parentName = attributeDict["parentEntity"]
             let sync = attributeDict["syncable"]
+            let isAbstract = attributeDict["isAbstract"] != nil ? attributeDict["isAbstract"]!.lowercased() : "no"
             
-            currentEntity = NSEntityDescription(entityName: name!, parentEntity: nil, managedObjectModel: model)
+            currentEntity = NSEntityDescription(entityName: name!, parentEntity: nil, isAbstract: isAbstract, managedObjectModel: model)
             currentEntity!.parentEntityName = parentName
             
             if sync != nil && sync!.lowercased() == "no" {
