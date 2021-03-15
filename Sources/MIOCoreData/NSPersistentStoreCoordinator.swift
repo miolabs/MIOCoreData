@@ -82,10 +82,11 @@ open class NSPersistentStoreCoordinator : NSObject
 //
 //    }
     
+    static let _store_queue = DispatchQueue(label: "com.miocoredata.store_queue")
     static var _registeredStoreTypes:[String:Any] = [NSSQLiteStoreType: NSSQLiteStore.self, NSBinaryStoreType: NSBinaryStore.self, NSInMemoryStoreType: NSInMemoryStore.self]
     open class var registeredStoreTypes: [String : Any] { get {
         var types:[String:Any] = [:]
-        DispatchQueue.main.sync {
+        _store_queue.sync {
             for (k, t) in _registeredStoreTypes {
                 types[k] = t
             }
@@ -94,7 +95,7 @@ open class NSPersistentStoreCoordinator : NSObject
     } }
     
     open class func registerStoreClass(_ storeClass: AnyClass?, forStoreType storeType: String) {
-        DispatchQueue.main.sync {
+        _store_queue.sync {
             _registeredStoreTypes[storeType] = storeClass
         }
     }
