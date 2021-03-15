@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  NSManagedObjectModelParser.swift
 //  
 //
 //  Created by Javier Segura Perez on 14/05/2020.

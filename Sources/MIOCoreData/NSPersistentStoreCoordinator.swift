@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  NSPersistentStoreCoordinator.swift
 //  
 //
 //  Created by Javier Segura Perez on 12/05/2020.
@@ -7,6 +7,11 @@
 
 import Foundation
 import MIOCore
+
+// Persistent store types supported by Core Data:
+public let NSSQLiteStoreType = "NSSQLiteStoreType"
+public let NSBinaryStoreType = "NSBinaryStoreType"
+public let NSInMemoryStoreType = "NSInMemoryStoreType"
 
 // Persistent store metadata dictionary keys:
 
@@ -23,6 +28,10 @@ open class NSPersistentStoreCoordinator : NSObject
         
     init(managedObjectModel: NSManagedObjectModel) {
         self.managedObjectModel = managedObjectModel
+        
+        NSPersistentStoreCoordinator._registeredStoreTypes[NSSQLiteStoreType] = NSPersistentStore.self
+        NSPersistentStoreCoordinator._registeredStoreTypes[NSBinaryStoreType] = NSPersistentStore.self
+        NSPersistentStoreCoordinator._registeredStoreTypes[NSInMemoryStoreType] = NSInMemoryStoreType.self
     }
     
     var _persistentStores:[NSPersistentStore] = []
@@ -45,10 +54,7 @@ open class NSPersistentStoreCoordinator : NSObject
     open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
         
         NSLog("NSPersistentStoreCoordinator:addPersistentStore: Loading store type: \(storeType)")
-        
-        //_MIOCoreRegisterClass(type: MIOPersistentStore.self, forKey: MIOPersistentStore.type)
-        //let newClass = _MIOCoreClassFromString(storeType) as! NSPersistentStore.Type
-        
+                
         let storeClass = NSPersistentStoreCoordinator.registeredStoreTypes[storeType] as! NSPersistentStore.Type        
         let store = storeClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
         _persistentStores.append(store)
