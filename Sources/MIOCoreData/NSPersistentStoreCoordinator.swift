@@ -31,7 +31,7 @@ open class NSPersistentStoreCoordinator : NSObject
         
         NSPersistentStoreCoordinator._registeredStoreTypes[NSSQLiteStoreType] = NSPersistentStore.self
         NSPersistentStoreCoordinator._registeredStoreTypes[NSBinaryStoreType] = NSPersistentStore.self
-        NSPersistentStoreCoordinator._registeredStoreTypes[NSInMemoryStoreType] = NSInMemoryStoreType.self
+        NSPersistentStoreCoordinator._registeredStoreTypes[NSInMemoryStoreType] = NSPersistentStore.self
     }
     
     var _persistentStores:[NSPersistentStore] = []
