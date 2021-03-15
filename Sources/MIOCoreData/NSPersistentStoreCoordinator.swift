@@ -20,7 +20,6 @@ public let NSStoreTypeKey = "NSStoreTypeKey"
 
 // key in the metadata dictionary to identify the store UUID - the store UUID is useful to identify stores through URI representations, but it is NOT guaranteed to be unique (while the UUID generated for new stores is unique, users can freely copy files and thus the UUID stored inside, so developers that track/reference stores explicitly do need to be aware of duplicate UUIDs and potentially override the UUID when a new store is added to the list of known stores in their application)
 public let NSStoreUUIDKey = "NSStoreUUIDKey"
-public let NSInMemoryStoreType = "NSInMemoryStoreType"
 
 
 open class NSPersistentStoreCoordinator : NSObject
