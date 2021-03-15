@@ -28,10 +28,6 @@ open class NSPersistentStoreCoordinator : NSObject
         
     init(managedObjectModel: NSManagedObjectModel) {
         self.managedObjectModel = managedObjectModel
-        
-        NSPersistentStoreCoordinator._registeredStoreTypes[NSSQLiteStoreType] = NSSQLiteStore.self
-        NSPersistentStoreCoordinator._registeredStoreTypes[NSBinaryStoreType] = NSBinaryStore.self
-        NSPersistentStoreCoordinator._registeredStoreTypes[NSInMemoryStoreType] = NSInMemoryStore.self
     }
     
     var _persistentStores:[NSPersistentStore] = []
@@ -86,11 +82,19 @@ open class NSPersistentStoreCoordinator : NSObject
 //
 //    }
     
-    static var _registeredStoreTypes:[String:Any] = [:]
-    open class var registeredStoreTypes: [String : Any] { get { return _registeredStoreTypes } }
+    static var _registeredStoreTypes:[String:Any] = [NSSQLiteStoreType: NSSQLiteStore.self, NSBinaryStoreType: NSBinaryStore.self, NSInMemoryStoreType: NSInMemoryStore.self]
+    open class var registeredStoreTypes: [String : Any] { get {
+        var types:[String:Any]
+        DispatchQueue.main.sync {
+            types = _registeredStoreTypes
+        }
+        return types
+    } }
     
     open class func registerStoreClass(_ storeClass: AnyClass?, forStoreType storeType: String) {
-        _registeredStoreTypes[storeType] = storeClass
+        DispatchQueue.main.sync {
+            _registeredStoreTypes[storeType] = storeClass
+        }
     }
     
     open class func metadataForPersistentStore(ofType storeType: String, at url: URL, options: [AnyHashable : Any]? = nil) throws -> [String : Any] {
