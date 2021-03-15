@@ -108,7 +108,7 @@ open class NSManagedObjectContext : NSObject
     //open func fetch(_ request: NSFetchRequest<NSFetchRequestResult>) throws -> [Any]
     open func fetch<T>(_ request: NSFetchRequest<T>) throws -> [T] where T : NSFetchRequestResult {
     
-        if let store = persistentStoreCoordinator!.persistentStores[0] as? NSIncrementalStore else {
+        if let store = persistentStoreCoordinator!.persistentStores[0] as? NSIncrementalStore {
             NSLog("Fetch entity: \(request.entityName!)")
             
             request.entity = self.persistentStoreCoordinator?.managedObjectModel.entitiesByName[request.entityName!]
