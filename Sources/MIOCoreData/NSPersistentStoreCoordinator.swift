@@ -29,9 +29,9 @@ open class NSPersistentStoreCoordinator : NSObject
     init(managedObjectModel: NSManagedObjectModel) {
         self.managedObjectModel = managedObjectModel
         
-        NSPersistentStoreCoordinator._registeredStoreTypes[NSSQLiteStoreType] = NSPersistentStore.self
-        NSPersistentStoreCoordinator._registeredStoreTypes[NSBinaryStoreType] = NSPersistentStore.self
-        NSPersistentStoreCoordinator._registeredStoreTypes[NSInMemoryStoreType] = NSPersistentStore.self
+        NSPersistentStoreCoordinator._registeredStoreTypes[NSSQLiteStoreType] = NSSQLiteStore.self
+        NSPersistentStoreCoordinator._registeredStoreTypes[NSBinaryStoreType] = NSBinaryStore.self
+        NSPersistentStoreCoordinator._registeredStoreTypes[NSInMemoryStoreType] = NSInMemoryStore.self
     }
     
     var _persistentStores:[NSPersistentStore] = []
