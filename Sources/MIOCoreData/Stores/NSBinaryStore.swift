@@ -7,7 +7,7 @@
 
 import Foundation
 
-class NSBinaryStoreType : NSPersistentStore
+class NSBinaryStore : NSPersistentStore
 {
     override func loadMetadata() throws {
         self.metadata = [NSStoreUUIDKey: UUID().uuidString.uppercased(), NSStoreTypeKey: NSBinaryStoreType]        
