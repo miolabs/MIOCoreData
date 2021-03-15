@@ -86,7 +86,7 @@ open class NSPersistentStoreCoordinator : NSObject
     open class var registeredStoreTypes: [String : Any] { get {
         var types:[String:Any] = [:]
         DispatchQueue.main.sync {
-            for k, t in _registeredStoreTypes {
+            for (k, t) in _registeredStoreTypes {
                 types[k] = t
         }
         return types
