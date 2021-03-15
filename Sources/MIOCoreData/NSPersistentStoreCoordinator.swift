@@ -88,6 +88,7 @@ open class NSPersistentStoreCoordinator : NSObject
         DispatchQueue.main.sync {
             for (k, t) in _registeredStoreTypes {
                 types[k] = t
+            }
         }
         return types
     } }
