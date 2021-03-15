@@ -84,9 +84,10 @@ open class NSPersistentStoreCoordinator : NSObject
     
     static var _registeredStoreTypes:[String:Any] = [NSSQLiteStoreType: NSSQLiteStore.self, NSBinaryStoreType: NSBinaryStore.self, NSInMemoryStoreType: NSInMemoryStore.self]
     open class var registeredStoreTypes: [String : Any] { get {
-        var types:[String:Any]
+        var types:[String:Any] = [:]
         DispatchQueue.main.sync {
-            types = _registeredStoreTypes
+            for k, t in _registeredStoreTypes {
+                types[k] = t
         }
         return types
     } }
