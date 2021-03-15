@@ -119,7 +119,7 @@ open class NSManagedObjectContext : NSObject
             _ = try store.execute(request, with: self) as! [T]
         }
                 
-        let objs = objectsByEntityName[request.entity!.name!]
+        let objs = objectsByEntityName[request.entityName!]
         if objs == nil { return [] }
         
 //        let cached_objs = objectsByEntityName[ request.entityName! ]
