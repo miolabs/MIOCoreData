@@ -108,18 +108,16 @@ open class NSManagedObjectContext : NSObject
     //open func fetch(_ request: NSFetchRequest<NSFetchRequestResult>) throws -> [Any]
     open func fetch<T>(_ request: NSFetchRequest<T>) throws -> [T] where T : NSFetchRequestResult {
     
-        guard let store = persistentStoreCoordinator!.persistentStores[0] as? NSIncrementalStore else {
-            return []
+        if let store = persistentStoreCoordinator!.persistentStores[0] as? NSIncrementalStore else {
+            NSLog("Fetch entity: \(request.entityName!)")
+            
+            request.entity = self.persistentStoreCoordinator?.managedObjectModel.entitiesByName[request.entityName!]
+            if request.entity == nil {
+                throw NSManagedObjectContextError.fetchRequestEntityInvalid(request.entityName!)
+            }
+            
+            _ = try store.execute(request, with: self) as! [T]
         }
-
-        NSLog("Fetch entity: \(request.entityName!)")
-        
-        request.entity = self.persistentStoreCoordinator?.managedObjectModel.entitiesByName[request.entityName!]
-        if request.entity == nil {
-            throw NSManagedObjectContextError.fetchRequestEntityInvalid(request.entityName!)
-        }
-        
-        _ = try store.execute(request, with: self) as! [T]
                 
         let objs = objectsByEntityName[request.entity!.name!]
         if objs == nil { return [] }
