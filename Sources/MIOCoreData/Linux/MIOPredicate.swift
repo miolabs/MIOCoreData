@@ -484,6 +484,7 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     if leftValue != nil && rightValue == nil { return false }
 
     switch leftValue! {
+    case is Bool:    return ( leftValue as! Bool    ) == ( rightValue as! Bool    )
     case is String:  return ( leftValue as! String  ) == ( rightValue as! String  )
     case is Int:     return ( leftValue as! Int     ) == ( rightValue as! Int     )
     case is Int8:    return ( leftValue as! Int8    ) == ( rightValue as! Int8    )
