@@ -483,6 +483,10 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     if leftValue == nil && rightValue != nil { return false }
     if leftValue != nil && rightValue == nil { return false }
 
+    // Predicate from coredats issue. Coulbe number 1 or 0
+    if leftValue is Bool && rightValue is Int  { return (   leftValue as! Bool )                      == ( (rightValue as! Int) == 1 ? true : false ) }
+    if leftValue is Int  && rightValue is Bool { return ( ( leftValue as! Int ) == 1 ? true : false ) == ( rightValue as! Bool )                      }
+    
     switch leftValue! {
     case is Bool:    return ( leftValue as! Bool    ) == ( rightValue as! Bool    )
     case is String:  return ( leftValue as! String  ) == ( rightValue as! String  )
