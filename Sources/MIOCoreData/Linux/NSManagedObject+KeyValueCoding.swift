@@ -18,6 +18,8 @@ extension NSManagedObject
         let value = self.value(forKey: key)
         if keys.count == 1 { return value }
         
+        if value == nil { return nil }
+        
         guard let rel = entity.relationshipsByName[key] else { return nil }
         if rel.isToMany { return nil }
         
