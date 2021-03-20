@@ -483,18 +483,20 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     if leftValue == nil && rightValue != nil { return false }
     if leftValue != nil && rightValue == nil { return false }
 
-    // Predicate from coredats issue. Coulbe number 1 or 0
-    if leftValue is Bool            && MIOCoreIsIntValue(rightValue)  { return ( leftValue as! Bool )                              == ( MIOCoreIntValue(rightValue)! == 1 ? true : false ) }
-    if MIOCoreIsIntValue(leftValue) && rightValue is Bool             { return ( MIOCoreIntValue(leftValue)! == 1 ? true : false ) == ( rightValue as! Bool )                              }
+    // Predicate from coredata issue. Coulbe number 1 or 0
+    // Check first for Int & Bool Values
+    if MIOCoreIsIntValue(leftValue) && MIOCoreIsIntValue(rightValue) {
+        return ( MIOCoreIntValue(leftValue) == MIOCoreIntValue(rightValue) )
+    }
     
     switch leftValue! {
-    case is Bool:    return ( leftValue as! Bool    ) == ( rightValue as! Bool    )
     case is String:  return ( leftValue as! String  ) == ( rightValue as! String  )
-    case is Int:     return ( leftValue as! Int     ) == ( rightValue as! Int     )
-    case is Int8:    return ( leftValue as! Int8    ) == ( rightValue as! Int8    )
-    case is Int16:   return ( leftValue as! Int16   ) == ( rightValue as! Int16   )
-    case is Int32:   return ( leftValue as! Int32   ) == ( rightValue as! Int32   )
-    case is Int64:   return ( leftValue as! Int64   ) == ( rightValue as! Int64   )
+//    case is Bool:    return ( leftValue as! Bool    ) == ( rightValue as! Bool    )
+//    case is Int:     return ( leftValue as! Int     ) == ( rightValue as! Int     )
+//    case is Int8:    return ( leftValue as! Int8    ) == ( rightValue as! Int8    )
+//    case is Int16:   return ( leftValue as! Int16   ) == ( rightValue as! Int16   )
+//    case is Int32:   return ( leftValue as! Int32   ) == ( rightValue as! Int32   )
+//    case is Int64:   return ( leftValue as! Int64   ) == ( rightValue as! Int64   )
     case is Float:   return ( leftValue as! Float   ) == ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) == ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) == ( rightValue as! Decimal )
@@ -513,13 +515,17 @@ func MIOPredicateEvaluateLessEqual( _ leftValue: Any?, _ rightValue:Any?) -> Boo
     if leftValue == nil && rightValue != nil { return false }
     if leftValue != nil && rightValue == nil { return false }
 
+    if MIOCoreIsIntValue(leftValue) && MIOCoreIsIntValue(rightValue) {
+        return ( MIOCoreIntValue(leftValue) <= MIOCoreIntValue(rightValue) )
+    }
+
     switch leftValue! {
     case is String:  return ( leftValue as! String  ) <= ( rightValue as! String  )
-    case is Int:     return ( leftValue as! Int     ) <= ( rightValue as! Int     )
-    case is Int8:    return ( leftValue as! Int8    ) <= ( rightValue as! Int8    )
-    case is Int16:   return ( leftValue as! Int16   ) <= ( rightValue as! Int16   )
-    case is Int32:   return ( leftValue as! Int32   ) <= ( rightValue as! Int32   )
-    case is Int64:   return ( leftValue as! Int64   ) <= ( rightValue as! Int64   )
+//    case is Int:     return ( leftValue as! Int     ) <= ( rightValue as! Int     )
+//    case is Int8:    return ( leftValue as! Int8    ) <= ( rightValue as! Int8    )
+//    case is Int16:   return ( leftValue as! Int16   ) <= ( rightValue as! Int16   )
+//    case is Int32:   return ( leftValue as! Int32   ) <= ( rightValue as! Int32   )
+//    case is Int64:   return ( leftValue as! Int64   ) <= ( rightValue as! Int64   )
     case is Float:   return ( leftValue as! Float   ) <= ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) <= ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) <= ( rightValue as! Decimal )
@@ -538,13 +544,17 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     if leftValue == nil && rightValue != nil { return false }
     if leftValue != nil && rightValue == nil { return false }
 
+    if MIOCoreIsIntValue(leftValue) && MIOCoreIsIntValue(rightValue) {
+        return ( MIOCoreIntValue(leftValue) < MIOCoreIntValue(rightValue) )
+    }
+    
     switch leftValue! {
     case is String:  return ( leftValue as! String  ) < ( rightValue as! String  )
-    case is Int:     return ( leftValue as! Int     ) < ( rightValue as! Int     )
-    case is Int8:    return ( leftValue as! Int8    ) < ( rightValue as! Int8    )
-    case is Int16:   return ( leftValue as! Int16   ) < ( rightValue as! Int16   )
-    case is Int32:   return ( leftValue as! Int32   ) < ( rightValue as! Int32   )
-    case is Int64:   return ( leftValue as! Int64   ) < ( rightValue as! Int64   )
+//    case is Int:     return ( leftValue as! Int     ) < ( rightValue as! Int     )
+//    case is Int8:    return ( leftValue as! Int8    ) < ( rightValue as! Int8    )
+//    case is Int16:   return ( leftValue as! Int16   ) < ( rightValue as! Int16   )
+//    case is Int32:   return ( leftValue as! Int32   ) < ( rightValue as! Int32   )
+//    case is Int64:   return ( leftValue as! Int64   ) < ( rightValue as! Int64   )
     case is Float:   return ( leftValue as! Float   ) < ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) < ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) < ( rightValue as! Decimal )
