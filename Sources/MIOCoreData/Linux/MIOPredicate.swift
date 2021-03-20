@@ -486,7 +486,7 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     // Predicate from coredata issue. Coulbe number 1 or 0
     // Check first for Int & Bool Values
     if MIOCoreIsIntValue(leftValue) && MIOCoreIsIntValue(rightValue) {
-        return ( MIOCoreIntValue(leftValue) == MIOCoreIntValue(rightValue) )
+        return ( MIOCoreInt64Value(leftValue) == MIOCoreInt64Value(rightValue) )
     }
     
     switch leftValue! {
@@ -516,7 +516,7 @@ func MIOPredicateEvaluateLessEqual( _ leftValue: Any?, _ rightValue:Any?) -> Boo
     if leftValue != nil && rightValue == nil { return false }
 
     if MIOCoreIsIntValue(leftValue) && MIOCoreIsIntValue(rightValue) {
-        return ( MIOCoreIntValue(leftValue) <= MIOCoreIntValue(rightValue) )
+        return ( MIOCoreInt64Value(leftValue) <= MIOCoreInt64Value(rightValue) )
     }
 
     switch leftValue! {
@@ -545,7 +545,7 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     if leftValue != nil && rightValue == nil { return false }
 
     if MIOCoreIsIntValue(leftValue) && MIOCoreIsIntValue(rightValue) {
-        return ( MIOCoreIntValue(leftValue) < MIOCoreIntValue(rightValue) )
+        return ( MIOCoreInt64Value(leftValue) < MIOCoreInt64Value(rightValue) )
     }
     
     switch leftValue! {
