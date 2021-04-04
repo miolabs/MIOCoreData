@@ -24,7 +24,7 @@ final class MIOPredicateTests: XCTestCase {
         XCTAssertTrue( cmpPredicate.leftExpression.keyPath == "available", "MIOComparisonPredicate left expression keypath value is wrong" )
 
         XCTAssertTrue( cmpPredicate.rightExpression.expressionType == MIOExpression.ExpressionType.constantValue, "MIOComparisonPredicate right expression is not ConstantValue type" )
-        guard let value = cmpPredicate.rightExpression.constantValue as? Int else {
+        guard let value = cmpPredicate.rightExpression.constantValue as? Bool else {
             XCTAssertTrue(false, "MIOComparisonPredicate rigth expression constant value cast type is wrong")
             return
         }
