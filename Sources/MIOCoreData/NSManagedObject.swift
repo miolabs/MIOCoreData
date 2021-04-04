@@ -321,6 +321,7 @@ open class NSManagedObject : NSObject
         return Dictionary( uniqueKeysWithValues: _changedValues.map{ (k,v) in
             if let relation = entity.relationshipsByName[ k ] {
                 if relation.isToMany {
+                    if v is NSNull { return ( k, Set<NSManagedObjectID>() ) }
                     return (k, Set( (v as! Set<NSManagedObjectID>).map{ try? managedObjectContext!.existingObject(with: $0 ) } ) )
                 } else {
                     return (k, try! managedObjectContext!.existingObject(with: v as! NSManagedObjectID) )
