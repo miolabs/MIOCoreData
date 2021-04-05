@@ -204,7 +204,7 @@ func MIOPredicateTokenize(_ predicateFormat: String) -> MIOCoreLexer
 func MIOPredicateParseTokens(lexer: MIOCoreLexer) -> MIOPredicate
 {
     var token = lexer.nextToken()
-    var exit = false
+    let exit = false
     
     var lastPredicate:MIOPredicate?
     var currentPredicate:MIOPredicate?
