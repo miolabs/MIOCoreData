@@ -57,4 +57,12 @@ open class NSManagedObjectModel : NSObject
         }
     }
     
+    /* Returns the collection of developer-defined version identifiers for the model.  For models created in Xcode, this value is set by the developer in the model inspector. Merged models return the combined  collection of identifiers. This value is meant to be used as a debugging hint to help developers determine the models that were combined to create a merged model. The framework does not give models a default identifier, nor does it depend this value at runtime.
+    */
+    var _versionIdentifiers: Set<AnyHashable> = Set()
+    open var versionIdentifiers: Set<AnyHashable> {
+        get { return _versionIdentifiers }
+        set { _versionIdentifiers = newValue }
+    }
+    
 }

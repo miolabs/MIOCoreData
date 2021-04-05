@@ -80,8 +80,9 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
             let optional = attributeDict["optional"] != nil ? attributeDict["optional"]!.lowercased() : "no"
             let inverseName = attributeDict["inverseName"]
             let inverseEntityName = attributeDict["inverseEntity"]
+            let deletionRule = attributeDict["deletionRule"]
             
-            addRelationship(name:name!, destinationEntityName:destinationEntityName!, toMany:toMany, inverseName:inverseName, inverseEntityName:inverseEntityName, optional:optional);
+            addRelationship(name:name!, destinationEntityName:destinationEntityName!, toMany:toMany, inverseName:inverseName, inverseEntityName:inverseEntityName, optional:optional, deleteRuleString: deletionRule)
         }
         else if elementName == "userInfo" {
             currentUserInfo = [:]
@@ -238,13 +239,19 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         currentAttribute = currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: opt, transient: transient)
     }
     
-    func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String){
+    func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String, deleteRuleString:String?){
                         
         let isToMany = (toMany != nil && toMany?.lowercased() == "yes") ? true : false
         let opt = optional.lowercased() == "yes" ? true : false
         
         //NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
+        var deleteRule = NSDeleteRule.noActionDeleteRule
+        switch deleteRuleString {
+        case "Nullify": deleteRule = .nullifyDeleteRule
+        case "Cascade": deleteRule = .cascadeDeleteRule
+        default:break
+        }
                 
-        currentRelationship = currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, optional: opt, inverseName: inverseName, inverseEntityName: inverseEntityName)
+        currentRelationship = currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, optional: opt, inverseName: inverseName, inverseEntityName: inverseEntityName, deleteRule: deleteRule)
     }
 }

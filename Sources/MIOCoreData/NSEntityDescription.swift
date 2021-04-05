@@ -115,7 +115,7 @@ open class NSEntityDescription : NSObject
         return attr
     }
 
-    @discardableResult func addRelationship(name:String, destinationEntityName:String, toMany:Bool, optional:Bool, inverseName:String?, inverseEntityName:String?) -> NSRelationshipDescription {
+    @discardableResult func addRelationship(name:String, destinationEntityName:String, toMany:Bool, optional:Bool, inverseName:String?, inverseEntityName:String?, deleteRule:NSDeleteRule) -> NSRelationshipDescription {
         let rel = NSRelationshipDescription(name: name, destinationEntityName: destinationEntityName, toMany: toMany, optional: optional, inverseName:inverseName, inverseEntityName: inverseEntityName)        
         rel._entity = self
         properties.append(rel)
@@ -126,6 +126,7 @@ open class NSEntityDescription : NSObject
         } else {
             _toOneRelationshipKeys.append( name )
         }
+        rel.deleteRule = deleteRule
         
         return rel
     }
@@ -155,7 +156,7 @@ open class NSEntityDescription : NSObject
                 }
                 else if prop is NSRelationshipDescription {
                     let rel = prop as! NSRelationshipDescription
-                    let new_rel = addRelationship(name: rel.name, destinationEntityName: rel.destinationEntityName, toMany: rel.isToMany, optional: rel.isOptional, inverseName: rel.inverseName, inverseEntityName: rel.inverseEntityName)
+                    let new_rel = addRelationship(name: rel.name, destinationEntityName: rel.destinationEntityName, toMany: rel.isToMany, optional: rel.isOptional, inverseName: rel.inverseName, inverseEntityName: rel.inverseEntityName, deleteRule: rel.deleteRule)
                     new_rel.userInfo = rel.userInfo
                 }
             }

@@ -210,15 +210,13 @@ open class NSManagedObject : NSObject
             let relationship = property as! NSRelationshipDescription
             if relationship.isToMany == false {
                 if _changedValues.keys.contains(key) {
-                    let objID = _changedValues[key] as? NSManagedObjectID
-                    if objID != nil {
-                        value = try! managedObjectContext!.existingObject(with: objID!)
+                    if let objID = _changedValues[key] as? NSManagedObjectID {
+                        value = try! managedObjectContext!.existingObject(with: objID)
                     }
                 }
                 else {
-                    let objID = primitiveValue(forKey:key) as? NSManagedObjectID
-                    if objID != nil {
-                        value = try! managedObjectContext!.existingObject(with: objID!)
+                    if let objID = primitiveValue(forKey:key) as? NSManagedObjectID {
+                        value = try! managedObjectContext!.existingObject(with: objID)
                     }
                 }
             }
@@ -237,7 +235,7 @@ open class NSManagedObject : NSObject
         
         didAccessValue(forKey:key)
         
-        return value
+        return value is NSNull ? nil : value
     }
     
     
@@ -260,7 +258,7 @@ open class NSManagedObject : NSObject
         willChangeValue(forKey: key)
 
         if (value == nil) {
-            _changedValues[key] = nil
+            _changedValues[key] = NSNull()
         }
         else if property is NSRelationshipDescription {
             let relationship = property as! NSRelationshipDescription
@@ -280,7 +278,7 @@ open class NSManagedObject : NSObject
                     _changedValues[key] = objIDs
                 }
                 else {
-                    _changedValues[key] = nil
+                    _changedValues[key] = NSNull()
                 }
             }
         }
@@ -323,6 +321,7 @@ open class NSManagedObject : NSObject
         return Dictionary( uniqueKeysWithValues: _changedValues.map{ (k,v) in
             if let relation = entity.relationshipsByName[ k ] {
                 if relation.isToMany {
+                    if v is NSNull { return ( k, Set<NSManagedObjectID>() ) }
                     return (k, Set( (v as! Set<NSManagedObjectID>).map{ try? managedObjectContext!.existingObject(with: $0 ) } ) )
                 } else {
                     return (k, try! managedObjectContext!.existingObject(with: v as! NSManagedObjectID) )
