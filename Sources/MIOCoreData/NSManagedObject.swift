@@ -324,6 +324,7 @@ open class NSManagedObject : NSObject
                     if v is NSNull { return ( k, Set<NSManagedObjectID>() ) }
                     return (k, Set( (v as! Set<NSManagedObjectID>).map{ try? managedObjectContext!.existingObject(with: $0 ) } ) )
                 } else {
+                    if v is NSNull { return ( k, v ) }
                     return (k, try! managedObjectContext!.existingObject(with: v as! NSManagedObjectID) )
                 }
             } else {
