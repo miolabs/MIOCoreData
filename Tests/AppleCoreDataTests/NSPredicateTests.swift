@@ -385,4 +385,119 @@ final class NSPredicateTests: XCTestCase
         XCTAssertTrue(dv != nil && dv == 10.5)
 
     }
+    
+    func testSimpleGroupPredicate() {
+        let predicate = NSPredicate(format: "(available = 1)")
+        XCTAssertTrue( predicate is NSComparisonPredicate, "Predicate is not NSComparisionPredicate type")
+        
+        let cmpPredicate = predicate as! NSComparisonPredicate
+        XCTAssertTrue( cmpPredicate.predicateOperatorType == NSComparisonPredicate.Operator.equalTo, "NSComparisionPredicate operator type is not EqualThan" )
+
+        XCTAssertTrue( cmpPredicate.leftExpression.expressionType == NSExpression.ExpressionType.keyPath, "NSComparisionPredicate right expression is not KeyPath type" )
+        XCTAssertTrue( cmpPredicate.leftExpression.keyPath == "available", "NSComparisionPredicate left expression keypath value is wrong" )
+        
+        XCTAssertTrue( cmpPredicate.rightExpression.expressionType == NSExpression.ExpressionType.constantValue, "NSComparisionPredicate right expression is not ConstantValue type" )
+        guard let value = cmpPredicate.rightExpression.constantValue as? Int else {
+            XCTAssertTrue(false, "NSComparisionPredicate rigth expression constant value cast type is wrong")
+            return
+        }
+        
+        XCTAssertTrue( value == 1, "NSComparisionPredicate rigth expression constant value is wrong" )
+    }
+    
+    func testBitwiseAndFunctionPredicate() {
+        let predicate = NSPredicate(format: "(key & 1) > 0")
+        XCTAssertTrue( predicate is NSComparisonPredicate, "Predicate is not NSComparisionPredicate type")
+        
+        let cmpPredicate = predicate as! NSComparisonPredicate
+        XCTAssertTrue( cmpPredicate.predicateOperatorType == NSComparisonPredicate.Operator.greaterThan, "NSComparisionPredicate operator type is not GreaterThan" )
+        
+        XCTAssertTrue( cmpPredicate.leftExpression.expressionType == NSExpression.ExpressionType.function, "NSComparisionPredicate left expression is not Function type" )
+        XCTAssertTrue( cmpPredicate.leftExpression.function == "bitwiseAnd:with:", "NSComparisionPredicate left expression function is not 'bitwiseAnd:with:'" )
+        guard let arguments = cmpPredicate.leftExpression.arguments else {
+            XCTAssertTrue( false, "NSComparisionPredicate left expression arguments are null")
+            return
+        }
+        
+        if arguments.count != 2 {
+            XCTAssertTrue( false, "NSComparisionPredicate left expression arguments are wrong" )
+            return
+        }
+        
+        XCTAssertTrue( arguments[0].keyPath == "key", "NSComparisionPredicate left expression arguments[0] has not the right value: 'key'" )
+        XCTAssertTrue( (arguments[1].constantValue as! Int) == 1, "NSComparisionPredicate left expression arguments[1] has not the right value: '1'" )
+
+        XCTAssertTrue( cmpPredicate.rightExpression.expressionType == NSExpression.ExpressionType.constantValue, "NSComparisionPredicate right expression is not ConstantValue type" )
+        guard let value = cmpPredicate.rightExpression.constantValue as? Int else {
+            XCTAssertTrue(false, "NSComparisionPredicate rigth expression constant value cast type is wrong")
+            return
+        }
+        
+        XCTAssertTrue( value == 0, "NSComparisionPredicate rigth expression constant value is wrong" )        
+        
+    }
+    
+    func testBitwiseOrFunctionPredicate() {
+        let predicate = NSPredicate(format: "(key | 1) > 0")
+        XCTAssertTrue( predicate is NSComparisonPredicate, "Predicate is not NSComparisionPredicate type")
+        
+        let cmpPredicate = predicate as! NSComparisonPredicate
+        XCTAssertTrue( cmpPredicate.predicateOperatorType == NSComparisonPredicate.Operator.greaterThan, "NSComparisionPredicate operator type is not GreaterThan" )
+        
+        XCTAssertTrue( cmpPredicate.leftExpression.expressionType == NSExpression.ExpressionType.function, "NSComparisionPredicate left expression is not Function type" )
+        XCTAssertTrue( cmpPredicate.leftExpression.function == "bitwiseOr:with:", "NSComparisionPredicate left expression function is not 'bitwiseOr:with:'" )
+        guard let arguments = cmpPredicate.leftExpression.arguments else {
+            XCTAssertTrue( false, "NSComparisionPredicate left expression arguments are null")
+            return
+        }
+        
+        if arguments.count != 2 {
+            XCTAssertTrue( false, "NSComparisionPredicate left expression arguments are wrong" )
+            return
+        }
+        
+        XCTAssertTrue( arguments[0].keyPath == "key", "NSComparisionPredicate left expression arguments[0] has not the right value: 'key'" )
+        XCTAssertTrue( (arguments[1].constantValue as! Int) == 1, "NSComparisionPredicate left expression arguments[1] has not the right value: '1'" )
+
+        XCTAssertTrue( cmpPredicate.rightExpression.expressionType == NSExpression.ExpressionType.constantValue, "NSComparisionPredicate right expression is not ConstantValue type" )
+        guard let value = cmpPredicate.rightExpression.constantValue as? Int else {
+            XCTAssertTrue(false, "NSComparisionPredicate rigth expression constant value cast type is wrong")
+            return
+        }
+        
+        XCTAssertTrue( value == 0, "NSComparisionPredicate rigth expression constant value is wrong" )
+        
+    }
+    
+    func testBitwiseXORFunctionPredicate() {
+        let predicate = NSPredicate(format: "(key ^ 1) > 0")
+        XCTAssertTrue( predicate is NSComparisonPredicate, "Predicate is not NSComparisionPredicate type")
+        
+        let cmpPredicate = predicate as! NSComparisonPredicate
+        XCTAssertTrue( cmpPredicate.predicateOperatorType == NSComparisonPredicate.Operator.greaterThan, "NSComparisionPredicate operator type is not GreaterThan" )
+        
+        XCTAssertTrue( cmpPredicate.leftExpression.expressionType == NSExpression.ExpressionType.function, "NSComparisionPredicate left expression is not Function type" )
+        XCTAssertTrue( cmpPredicate.leftExpression.function == "bitwiseXor:with:", "NSComparisionPredicate left expression function is not 'bitwiseXor:with:'" )
+        guard let arguments = cmpPredicate.leftExpression.arguments else {
+            XCTAssertTrue( false, "NSComparisionPredicate left expression arguments are null")
+            return
+        }
+        
+        if arguments.count != 2 {
+            XCTAssertTrue( false, "NSComparisionPredicate left expression arguments are wrong" )
+            return
+        }
+        
+        XCTAssertTrue( arguments[0].keyPath == "key", "NSComparisionPredicate left expression arguments[0] has not the right value: 'key'" )
+        XCTAssertTrue( (arguments[1].constantValue as! Int) == 1, "NSComparisionPredicate left expression arguments[1] has not the right value: '1'" )
+
+        XCTAssertTrue( cmpPredicate.rightExpression.expressionType == NSExpression.ExpressionType.constantValue, "NSComparisionPredicate right expression is not ConstantValue type" )
+        guard let value = cmpPredicate.rightExpression.constantValue as? Int else {
+            XCTAssertTrue(false, "NSComparisionPredicate rigth expression constant value cast type is wrong")
+            return
+        }
+        
+        XCTAssertTrue( value == 0, "NSComparisionPredicate rigth expression constant value is wrong" )
+        
+    }
 }
