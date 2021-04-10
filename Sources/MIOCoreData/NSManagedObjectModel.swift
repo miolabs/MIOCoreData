@@ -11,9 +11,13 @@ open class NSManagedObjectModel : NSObject
 {
     public convenience init?(contentsOf url: URL) {
         self.init()
-        
-        let parser = ManagedObjectModelParser(url: url, model: self)
-        parser.parse()
+                        
+        let parser = MIOManagedObjectModelParser(url: url, model: self)
+
+        // Make the xml deserialization synchronous
+        let semaphore = DispatchSemaphore(value: 0)
+        parser.parse { error in semaphore.signal() }
+        _ = semaphore.wait(timeout: .distantFuture)
     }
         
     var _entitiesByName: [String : NSEntityDescription]?
@@ -64,5 +68,8 @@ open class NSManagedObjectModel : NSObject
         get { return _versionIdentifiers }
         set { _versionIdentifiers = newValue }
     }
+    
+    // To internal function to override
+    open func registerDataModelRuntimeObjects() {}
     
 }
