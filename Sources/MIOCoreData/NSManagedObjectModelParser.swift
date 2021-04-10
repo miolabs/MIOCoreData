@@ -6,12 +6,20 @@
 //
 
 import Foundation
+import MIOCore
 
 #if canImport(FoundationXML)
 import FoundationXML
 #endif
 
-class ManagedObjectModelParser : NSObject, XMLParserDelegate
+public enum MIOManagedObjectModelParserError : Error
+{
+    case invalidURL
+}
+
+typealias MIOManagedObjectModelParserCompletion = (Error?) -> Void
+
+class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
 {
     let url:URL!
     let model:NSManagedObjectModel
@@ -23,16 +31,24 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         super.init()        
     }
     
-    public func parse(){
-        print("ManagedObjectModelParser:parse: Parsing contents of \(url.absoluteString)")
+    var completion:MIOManagedObjectModelParserCompletion? = nil
+    public func parse(completion:@escaping MIOManagedObjectModelParserCompletion) {
         
-        guard let parser = XMLParser(contentsOf: url) else {
-            print("ManagedObjectModelParser:parse: XMLParser is nil. file couldn't be read")
+        print("MIOManagedObjectModelParser:parse: Parsing contents of \(url.standardizedFileURL)")
+                
+        guard let parser = XMLParser(contentsOf: url.standardizedFileURL) else {
+            print("MIOManagedObjectModelParser:parse: XMLParser is nil. file couldn't be read")
+            completion( MIOManagedObjectModelParserError.invalidURL )
             return
         }
         
+        self.completion = completion
         parser.delegate = self
-        _ = parser.parse()
+        let result = parser.parse()
+        
+        if result == false {
+            completion( MIOManagedObjectModelParserError.invalidURL )
+        }
     }
     
     // #region XML Parser delegate
@@ -168,15 +184,19 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
         // Check every relation ship and assign the right destination entity
         for (_, entity) in entitiesByName {
             entity.build()
-        }        
+        }
+        
+        model.registerDataModelRuntimeObjects()
+        
+        if completion != nil { completion!( nil ) }
     }
-    
+        
     func addAttribute(name:String, type:String, optional:String, syncable:String?, defaultValueString:String?){
         
         //NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type)")
         
         var attrType = NSAttributeType.undefinedAttributeType
-        var defaultValue:Any?
+        var defaultValue:Any? = nil
         
         switch(type){
         case "Boolean":
@@ -186,25 +206,17 @@ class ManagedObjectModelParser : NSObject, XMLParserDelegate
                 defaultValue = def == "true" || def == "yes"
             }
             
-        case "Integer":
-            attrType = NSAttributeType.integer32AttributeType
-            defaultValue = defaultValueString != nil ? Int(defaultValueString!) : nil
-            
-        case "Integer 8":
-            attrType = NSAttributeType.integer16AttributeType
-            defaultValue = defaultValueString != nil ? Int8(defaultValueString!) : nil
-            
         case "Integer 16":
             attrType = NSAttributeType.integer16AttributeType
-            defaultValue = defaultValueString != nil ? Int16(defaultValueString!) : nil
+            defaultValue = MIOCoreInt16Value(defaultValueString, nil)
             
         case "Integer 32":
             attrType = NSAttributeType.integer32AttributeType
-            defaultValue = defaultValueString != nil ? Int32(defaultValueString!) : nil
+            defaultValue = MIOCoreInt32Value(defaultValueString, nil)
             
         case "Integer 64":
             attrType = NSAttributeType.integer64AttributeType
-            defaultValue = defaultValueString != nil ? Int64(defaultValueString!) : nil
+            defaultValue = MIOCoreInt64Value(defaultValueString, nil)
             
         case "Float":
             attrType = NSAttributeType.floatAttributeType
