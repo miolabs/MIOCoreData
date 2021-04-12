@@ -512,7 +512,7 @@ open class NSManagedObject : NSObject
         else {
             let objects = value(forKey: relationship.name) as! Set<NSManagedObject>
             for obj in objects {
-                obj._removeObject(self, forKey: relationship.name)
+                obj._removeObject(self, forKey: relationship.inverseName!)
             }
         }
         
