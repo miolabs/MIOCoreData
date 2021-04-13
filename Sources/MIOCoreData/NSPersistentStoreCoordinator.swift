@@ -52,7 +52,7 @@ open class NSPersistentStoreCoordinator : NSObject
         NSLog("NSPersistentStoreCoordinator:addPersistentStore: Loading store type: \(storeType)")
                 
         let storeClass = NSPersistentStoreCoordinator.registeredStoreTypes[storeType] as! NSPersistentStore.Type        
-        let store = storeClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL!, options: nil)
+        let store = storeClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL ?? URL(string: "localhost")! , options: nil)
         _persistentStores.append(store)
         
         return store

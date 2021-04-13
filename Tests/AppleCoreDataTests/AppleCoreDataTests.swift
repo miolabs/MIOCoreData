@@ -1,8 +1,15 @@
-//
-//  File.swift
-//  
-//
-//  Created by Javier Segura Perez on 5/4/21.
-//
+import XCTest
 
-import Foundation
+final class AppleCoreDataTests: XCTestCase {
+    
+    func testExample() {
+        // This is an example of a functional test case.
+        // Use XCTAssert and related functions to verify your tests produce the correct
+        // results.
+        //XCTAssertEqual(MIOCoreData().text, "Hello, World!")
+    }
+
+    static var allTests = [
+        ("testExample", testExample),             
+    ]
+}

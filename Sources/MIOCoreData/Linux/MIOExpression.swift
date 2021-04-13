@@ -9,9 +9,10 @@ import Foundation
 
 
 // Expressions are the core of the predicate implementation. When expressionValueWithObject: is called, the expression is evaluated, and a value returned which can then be handled by an operator. Expressions can be anything from constants to method invocations. Scalars should be wrapped in appropriate NSValue classes.
-extension MIOExpression {
-    public enum ExpressionType : UInt {
-        
+extension MIOExpression
+{
+    public enum ExpressionType : UInt
+    {
         case constantValue // Expression that always returns the same value
         case evaluatedObject // Expression that always returns the parameter object itself
         case variable // Expression that always returns whatever is stored at 'variable' in the bindings dictionary
@@ -30,7 +31,7 @@ extension MIOExpression {
 
 open class MIOExpression : NSObject
 {
-
+    
     
 //    public convenience init(format expressionFormat: String, argumentArray arguments: [Any]) { NSUnsupported() }
 //
@@ -53,8 +54,33 @@ open class MIOExpression : NSObject
         self.init(expressionType: MIOExpression.ExpressionType.keyPath)
         _keyPath = keyPath
     }
-
-//    public convenience init(forFunction name: String, arguments parameters: [Any]) { NSUnsupported() } // Expression that invokes one of the predefined functions. Will throw immediately if the selector is bad; will throw at runtime if the parameters are incorrect.
+    
+    var _functionName:String?
+    var _arguments:[NSExpression]?
+    
+    // Expression that invokes one of the predefined functions. Will throw immediately if the selector is bad; will throw at runtime if the parameters are incorrect.
+    public convenience init(forFunction name: String, arguments parameters: [Any]) {
+        self.init(expressionType: MIOExpression.ExpressionType.function)
+        _functionName = name
+        _arguments = parameters as? [MIOExpression]
+        
+        if !MIOExpression.isFunctionNameSupported(name) {
+            NSLog("MIOExpression: Function \(name) is not supported")
+        }
+    }
+    
+    class func isFunctionNameSupported( _ name:String ) -> Bool {
+        let functions = ["count:", "bitwiseAnd:with:", "bitwiseOr:with:", "bitwiseXor:with:"]
+        return functions.contains(name)
+    }
+    
+    enum FunctionType:String {
+        case count      = "count:"
+        case bitwiseAnd = "bitwiseAnd:with:"
+        case bitwiseOr  = "bitwiseOr:with:"
+        case bitwiseXor = "bitwiseXor:with:"
+    }
+    
     // Predefined functions are:
     // name              parameter array contents                returns
     //-------------------------------------------------------------------------------------------------------------------------------------
@@ -125,11 +151,10 @@ open class MIOExpression : NSObject
         
     open var constantValue: Any? { return _constantValue }
     open var keyPath: String { return _keyPath! }
-    
-//    open var function: String { NSUnsupported() }
+    open var function: String { return _functionName! }
 //    open var variable: String { NSUnsupported() }
 //    /*@NSCopying*/ open var operand: NSExpression { NSUnsupported() } // the object on which the selector will be invoked (the result of evaluating a key path or one of the defined functions)
-//    open var arguments: [NSExpression]? { NSUnsupported() } // array of expressions which will be passed as parameters during invocation of the selector on the operand of a function expression
+    open var arguments: [NSExpression]? { return _arguments! } // array of expressions which will be passed as parameters during invocation of the selector on the operand of a function expression
     
 //    open var collection: Any { NSUnsupported() }
 //    /*@NSCopying*/ open var predicate: NSPredicate { NSUnsupported() }

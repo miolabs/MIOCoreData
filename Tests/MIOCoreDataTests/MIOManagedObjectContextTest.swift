@@ -1,16 +1,16 @@
 //
-//  NSManagedObjectContextTest.swift
-//  
+//  MIOManagedObjectContextTest.swift
+//
 //
 //  Created by Javier Segura Perez on 5/4/21.
 //
 
 import Foundation
-import CoreData
+import MIOCoreData
 
 fileprivate var _persistentContainer: NSPersistentContainer? = nil
 
-func NSManagedObjectContextTest () -> NSManagedObjectContext
+func MIOManagedObjectContextTest () -> NSManagedObjectContext
 {
     if _persistentContainer != nil { return _persistentContainer!.viewContext }
     
@@ -23,14 +23,10 @@ func NSManagedObjectContextTest () -> NSManagedObjectContext
     
     let documentPath = CommandLine.arguments.count < 2 ? "\(FileManager().currentDirectoryPath)" : CommandLine.arguments[1]
     
-    let modelPath = documentPath.appending("/TestModel/TestModel.momd")
+    let modelPath = documentPath.appending("/TestModel/TestModel.xcdatamodeld/TestModel.xcdatamodel/contents")
+
+    let mom = NSManagedObjectModel(contentsOf: URL(string: modelPath)! )!
     
-    guard let modelURL = URL(string: modelPath ) else {
-        fatalError("Error loading model from bundle")
-    }
-    
-    let mom = NSManagedObjectModel(contentsOf: modelURL )!
-        
     let container = NSPersistentContainer(name: "TestModel", managedObjectModel: mom)
     let description = NSPersistentStoreDescription()
     description.type = NSInMemoryStoreType
@@ -54,6 +50,7 @@ func NSManagedObjectContextTest () -> NSManagedObjectContext
     })
 
     _persistentContainer = container
+    mom.registerDataModelRuntimeObjects()
     
     return _persistentContainer!.viewContext
 }

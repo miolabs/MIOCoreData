@@ -74,4 +74,21 @@ open class NSPersistentStore : NSObject
     // Gives the store a chance to do any non-dealloc teardown (for example, closing a network connection)
     // before removal.
     open func willRemove(from coordinator: NSPersistentStoreCoordinator?) {}
+    
+    // Private methods
+
+    var objectsByEntityName:[ Int: [ Int: [ String:Any ] ] ] = [:]
+    
+    func save (insertedObjects: Set<NSManagedObject>, updatedObjects: Set<NSManagedObject>, deletedObjects: Set <NSManagedObject>, context:NSManagedObjectContext) throws {}
+
+}
+
+struct ObjectsSet
+{
+    var objectsByID:[Int:ObjectValues]
+}
+
+struct ObjectValues
+{
+    var values: [String: Any]
 }

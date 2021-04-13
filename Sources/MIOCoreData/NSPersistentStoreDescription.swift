@@ -47,6 +47,10 @@ open class NSPersistentStoreDescription : NSObject
 //    open var shouldInferMappingModelAutomatically: Bool
 
     
+    public override init() {
+        self.type = "None"
+    }
+    
     // Returns a store description instance with default values for the store located at `URL` that can be used immediately with `addPersistentStoreWithDescription:completionHandler:`.
     public init(url: URL){
         self.url = url

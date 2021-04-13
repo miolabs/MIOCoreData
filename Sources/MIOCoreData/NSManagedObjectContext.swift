@@ -195,13 +195,19 @@ open class NSManagedObjectContext : NSObject
     }
     
     open func delete(_ object: NSManagedObject) {
+        var visited: Set<NSManagedObjectID> = Set()
+        _delete(object, visited: &visited)
+    }
+    
+    func _delete(_ object: NSManagedObject, visited: inout Set<NSManagedObjectID>) {
         insertedObjects.remove(object)
         object._setIsInserted(false)
         updatedObjects.remove(object)
         object._setIsUpdated(false)
         deletedObjects.insert(object)
-        object._setIsDeleted(true)
-                
+        
+        visited.insert(object.objectID)
+        object._setIsDeleted(true, visited: &visited)
     }
             
     public var insertedObjects: Set<NSManagedObject> = Set()
@@ -212,7 +218,7 @@ open class NSManagedObjectContext : NSObject
     
         // Check if nothing changed... to avoid unnecessay methods calls
         if insertedObjects.count == 0 && updatedObjects.count == 0 && deletedObjects.count == 0 { return }
-
+        
         // There's changes, so keep going...
         //MIONotificationCenter.defaultCenter().postNotification(MIOManagedObjectContextWillSaveNotification, this);
 
@@ -260,18 +266,10 @@ open class NSManagedObjectContext : NSObject
         }
 
         if parent == nil {
+                        
             // Save to persistent store
-            let saveRequest = NSSaveChangesRequest(inserted: insertedObjects, updated: updatedObjects, deleted: deletedObjects, locked: nil)
-            
-            //TODO: Execute save per store configuration
-            guard let store = persistentStoreCoordinator?.persistentStores[0] as? NSIncrementalStore else {
-                //TODO: Throws error. No Store
-                return
-            }
-            
-            try _obtainPermanentID(forObjects: Array(insertedObjects), store: store)
-            
-            _ = try store.execute(saveRequest, with: self)
+            let store = persistentStoreCoordinator!.persistentStores[0]
+            try store.save(insertedObjects: insertedObjects, updatedObjects: updatedObjects, deletedObjects: deletedObjects, context: self)
 
             //Clear values
             for obj in insertedObjects {
@@ -306,33 +304,6 @@ open class NSManagedObjectContext : NSObject
         
     }
     
-    func _obtainPermanentID(forObjects objects: [NSManagedObject], store:NSIncrementalStore) throws {
-        
-        let temporaryIDs = objects.map { $0.objectID }
-        
-        let objIDs = try store.obtainPermanentIDs(for: objects)
-        
-        for i in 0..<objects.count {
-            let oldID = temporaryIDs[i]
-            let newID = objIDs[i]
-            let obj = objects[i]
-            
-            objectsByID.removeValue(forKey: oldID.uriRepresentation().absoluteString)
-            objectsByID[newID.uriRepresentation().absoluteString] = obj
-            
-            obj.objectID._referenceObject = newID._referenceObject
-            obj.objectID._storeIdentifier = newID._storeIdentifier
-            obj.objectID._isTemporaryID   = newID._isTemporaryID
-            obj.objectID._persistentStore = newID._persistentStore
-        }
-        
-//        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];
-
-//        object.objectID._setReferenceObject(objID._getReferenceObject());
-
-//        this.objectsByID[object.objectID.URIRepresentation.absoluteString] = object;
-    }
-
     var objectsByEntityName: [ String: Set<NSManagedObject> ] = [:]
     func _registerObject(_ object: NSManagedObject) {
 
