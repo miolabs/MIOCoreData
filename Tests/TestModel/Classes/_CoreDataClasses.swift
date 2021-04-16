@@ -1,13 +1,12 @@
-
+#if !APPLE_CORE_DATA
 import Foundation
 import MIOCore
-import MIOCoreData
 
-extension NSManagedObjectModel
+extension DLDB
 {
-	func registerDataModelRuntimeObjects(){
+	func registerRuntimeObjects(){
 
 		_MIOCoreRegisterClass(type: SimpleEntity.self, forKey: "SimpleEntity")
 	}
 }
-
+#endif

@@ -387,7 +387,7 @@ open class NSManagedObject : NSObject
         }
     }
     
-    func unfaultAttributes(fromStore store:NSPersistentStore) {
+    func unfaultAttributes(fromStore store:NSPersistentStore?) {
         guard let incrementalStore = store as? NSIncrementalStore else { return }
         
         _storedValues = [:]
@@ -405,8 +405,9 @@ open class NSManagedObject : NSObject
         // relationShipsNamedNotFault = Set()
     }
     
-    func unfaultRelationshipNamed(_ key:String, fromStore store:NSPersistentStore) {
-        if isFault { unfaultAttributes(fromStore: store ) }
+    func unfaultRelationshipNamed(_ key:String, fromStore store:NSPersistentStore?) {
+        if store == nil { return }
+        if isFault { unfaultAttributes(fromStore: store! ) }
         
         relationShipsNamedNotFault.insert(key)
         

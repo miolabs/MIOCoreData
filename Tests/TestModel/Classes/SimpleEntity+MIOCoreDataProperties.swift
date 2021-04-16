@@ -1,4 +1,4 @@
-
+#if !APPLE_CORE_DATA
 // Generated class SimpleEntity by MIOTool
 import Foundation
 import MIOCoreData
@@ -18,4 +18,4 @@ extension SimpleEntity
     public var primitiveName:String { get { primitiveValue(forKey: "primitiveName") as! String } set { setPrimitiveValue(newValue, forKey: "primitiveName") } }
     public var primitiveType:Int16 { get { primitiveValue(forKey: "primitiveType") as! Int16 } set { setPrimitiveValue(newValue, forKey: "primitiveType") } }
 }
-
+#endif
