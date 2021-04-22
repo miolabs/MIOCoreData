@@ -465,7 +465,7 @@ open class NSManagedObject : NSObject
     }
 
     open func _removeObject(_ object:NSManagedObject, forKey key:String, ignoreInverses: Bool = false) {
-        if hasFault(forRelationshipNamed: key) == true { unfaultRelationshipNamed(key, fromStore: objectID.persistentStore!) }
+        if hasFault(forRelationshipNamed: key) == true { unfaultRelationshipNamed(key, fromStore: objectID.persistentStore) }
         
         var objIDs:Set<NSManagedObjectID> = _changedValues[key] as? Set<NSManagedObjectID> ??
                                             storedValues[key] as? Set<NSManagedObjectID> ??
