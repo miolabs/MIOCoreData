@@ -517,11 +517,13 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Float:   return ( leftValue as! Float   ) == ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) == ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) == ( rightValue as! Decimal )
-        case is Date:    return rightValue is String ?
+    case is Date:    return rightValue is String ?
                                 ( leftValue as! Date    ) == parse_date( rightValue as! String )!
                               : ( leftValue as! Date    ) == ( rightValue as! Date    )
 
-    default: return false
+    default:
+        print( "[FATAL]: MIOPredicateEvaluate equal cannot compare \(leftValue) with \(rightValue)" )
+        return false
     }
 }
 
@@ -588,8 +590,23 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     if leftValue == nil && rightValue != nil { return false }
     if leftValue != nil && rightValue == nil { return false }
 
-    let value = String((rightValue as! String).dropFirst().dropLast()).components(separatedBy: ",").map { String( $0.trimmingCharacters(in: .whitespaces).dropFirst().dropLast() ) }
-    return value.contains(leftValue as! String)
+    let value = String((rightValue as! String).dropFirst().dropLast())
+                    .components(separatedBy: ",")
+                    .map { inferType( String( $0.trimmingCharacters(in: .whitespaces) ) ) }
+    
+    if let str = leftValue as? String {
+        return (value as! [String]).contains( str )
+    }
+
+    return (value as! [Int]).contains( leftValue! as! Int )
 }
 
+
+func inferType ( _ value: String ) -> Any {
+    if value.starts(with: "\"" ) {
+        return value.replacingOccurrences(of: "\"", with: "")
+    }
+    
+    return MIOCoreIntValue( value )!
+}
 
