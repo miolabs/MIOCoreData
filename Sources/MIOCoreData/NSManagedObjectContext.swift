@@ -127,7 +127,8 @@ open class NSManagedObjectContext : NSObject
 //        if request.predicate != nil {
 //            cached_objs?.filter(using: request.predicate!)
 //        }
-        let results = objs!.filter(using: request.predicate) as! [T]
+        var results = objs!.filter(using: request.predicate) as! [T]
+        if request.sortDescriptors != nil { results = results.sortedArray(using: request.sortDescriptors!) }
         let offset = request.fetchOffset
         let limit = min( offset + request.fetchLimit, results.count )
         

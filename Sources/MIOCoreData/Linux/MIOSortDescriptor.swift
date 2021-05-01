@@ -64,11 +64,38 @@ extension NSSet {
     open func sortedArray(using sortDescriptors: [NSSortDescriptor]) -> [Any] // returns a new array by sorting the objects of the receiver
 }
 
-extension NSArray {
+ */
 
-    
-    open func sortedArray(using sortDescriptors: [NSSortDescriptor]) -> [Any] // returns a new array by sorting the objects of the receiver
+extension Array
+{
+    public func sortedArray(using sortDescriptors: [NSSortDescriptor]) -> [Element] {
+        let results = sorted { a, b in
+            
+            for sd in sortDescriptors {
+                let key = sd.key!
+                
+                let lv = a is NSManagedObject ? (a as! NSManagedObject).value(forKeyPath: key) : a
+                let rv = b is NSManagedObject ? (b as! NSManagedObject).value(forKeyPath: key) : b
+
+                if MIOPredicateEvaluateLess(lv, rv) { return sd.ascending ? false : true }
+                else if !MIOPredicateEvaluateLessEqual(lv, rv) { return sd.ascending ? true : false }
+            }
+                       
+            return false
+        }
+     
+        return results
+    }
+   
 }
+
+
+/*
+extension NSArray {
+    
+    // returns a new array by sorting the objects of the receiver
+    open func sortedArray(using sortDescriptors: [NSSortDescriptor]) -> [Any] { }
+
 
 extension NSMutableArray {
 
