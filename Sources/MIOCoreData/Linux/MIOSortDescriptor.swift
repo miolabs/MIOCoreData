@@ -77,8 +77,8 @@ extension Array
                 let lv = a is NSManagedObject ? (a as! NSManagedObject).value(forKeyPath: key) : a
                 let rv = b is NSManagedObject ? (b as! NSManagedObject).value(forKeyPath: key) : b
 
-                if MIOPredicateEvaluateLess(lv, rv) { return sd.ascending ? false : true }
-                else if !MIOPredicateEvaluateLessEqual(lv, rv) { return sd.ascending ? true : false }
+                if MIOPredicateEvaluateLess(lv, rv) { return sd.ascending }
+                else if !MIOPredicateEvaluateLessEqual(lv, rv) { return !sd.ascending }
             }
                        
             return false
