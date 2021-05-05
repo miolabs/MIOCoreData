@@ -75,12 +75,12 @@ open class NSManagedObjectContext : NSObject
     open var concurrencyType: NSManagedObjectContextConcurrencyType { get { return _concurrencyType } }
     
     
-    var objectsByID:[String:NSManagedObject] = [:]
+    var objectsByID:[Int:NSManagedObject] = [:]
     
     /* returns the object for the specified ID if it is already registered in the context, or faults the object into the context.  It might perform I/O if the data is uncached.  If the object cannot be fetched, or does not exist, or cannot be faulted, it returns nil.  Unlike -objectWithID: it never returns a fault.  */
     open func existingObject(with objectID: NSManagedObjectID) throws -> NSManagedObject {
         
-        var obj = objectsByID[objectID.uriRepresentation().absoluteString]
+        var obj = objectsByID[objectID.uriRepresentation().absoluteString.hashValue]
         
         //let store = objectID.persistentStore as! NSIncrementalStore
         //let node = try store.newValuesForObject(with: objectID, with: self)
@@ -283,6 +283,7 @@ open class NSManagedObjectContext : NSObject
 
             for obj in deletedObjects {
                 obj._didCommit()
+                _unregisterObject(obj)
             }
 
             // Clear
@@ -306,17 +307,19 @@ open class NSManagedObjectContext : NSObject
     }
     
     var objectsByEntityName: [ String: Set<NSManagedObject> ] = [:]
-    func _registerObject(_ object: NSManagedObject) {
+    func _registerObject(_ object: NSManagedObject, notifyStore:Bool = true) {
 
-        if objectsByID[object.objectID.uriRepresentation().absoluteString] != nil  {
+        if objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
             NSLog("Trying to register a managed object that has already been registered")
             return
         }
 
         //this.registerObjects.addObject(object);
-        objectsByID[object.objectID.uriRepresentation().absoluteString] = object
+        objectsByID[object.objectID.uriRepresentation().absoluteString.hashValue] = object
 
         _registerObjectForEntityName(object, object.entity)
+        
+        if notifyStore == false { return }
         
         if object.objectID.persistentStore is NSIncrementalStore {
             let store = object.objectID.persistentStore as! NSIncrementalStore
@@ -337,21 +340,36 @@ open class NSManagedObjectContext : NSObject
 
     }
 
-    func _unregisterObject(_ object: NSManagedObject) {
-//        this.registerObjects.removeObject(object);
-//        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];
-//
-//        let entityName = object.entity.name;
-//        let array = this.objectsByEntity[entityName];
-//        if (array != null) {
-//            array.removeObject(object);
-//        }
-//
-//        if (object.objectID.persistentStore instanceof MIOIncrementalStore){
-//            let is = object.objectID.persistentStore as MIOIncrementalStore;
-//            is.managedObjectContextDidUnregisterObjectsWithIDs([object.objectID]);
-//        }
-//
+    func _unregisterObject(_ object: NSManagedObject, notifyStore:Bool = true) {
+        
+        if objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
+            NSLog("Trying to unregister a managed object that has not been registered")
+            return
+        }
+
+        // this.registerObjects.removeObject(object);
+        objectsByID.removeValue(forKey: object.objectID.uriRepresentation().absoluteString.hashValue)
+        
+        _unregisterObjectForEntityName(object, object.entity)
+        
+        if notifyStore == false { return }
+        
+        if object.objectID.persistentStore is NSIncrementalStore {
+            let store = object.objectID.persistentStore as! NSIncrementalStore
+            store.managedObjectContextDidUnregisterObjects(with:[object.objectID])
+        }        
+    }
+    
+    func _unregisterObjectForEntityName(_ object: NSManagedObject, _ entity:NSEntityDescription) {
+        let entityName = entity.name!
+        if var set = objectsByEntityName[entityName] {
+            set.remove(object)
+            objectsByEntityName[entityName] = set
+        }
+        
+        if entity.superentity != nil {
+            _unregisterObjectForEntityName(object, entity.superentity!)
+        }
     }
     
     open func reset() {

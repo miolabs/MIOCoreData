@@ -107,20 +107,22 @@ open class NSIncrementalStore : NSPersistentStore
         
         let saveRequest = NSSaveChangesRequest(inserted: insertedObjects, updated: updatedObjects, deleted: deletedObjects, locked: nil)
                                 
-        try _obtainPermanentIDs(for: Array(insertedObjects))
+        try _obtainPermanentIDs(for: Array(insertedObjects), context: context)
         _ = try execute(saveRequest, with: context)
     }
     
-    func _obtainPermanentIDs(for objects: [NSManagedObject]) throws {
+    func _obtainPermanentIDs(for objects: [NSManagedObject], context:NSManagedObjectContext) throws {
         
-        let temporaryIDs = objects.map { $0.objectID }
-        
+//        let temporaryIDs = objects.map { $0.objectID }
+                
         let objIDs = try obtainPermanentIDs(for: objects)
         
         for i in 0..<objects.count {
-            let oldID = temporaryIDs[i]
+//            let oldID = temporaryIDs[i]
             let newID = objIDs[i]
             let obj = objects[i]
+            
+            context._unregisterObject(obj, notifyStore: false)
             
 //            objectsByID.removeValue(forKey: oldID.uriRepresentation().absoluteString)
 //            objectsByID[newID.uriRepresentation().absoluteString] = obj
@@ -129,6 +131,8 @@ open class NSIncrementalStore : NSPersistentStore
             obj.objectID._storeIdentifier = newID._storeIdentifier
             obj.objectID._isTemporaryID   = newID._isTemporaryID
             obj.objectID._persistentStore = newID._persistentStore
+            
+            context._registerObject(obj, notifyStore: false)
         }
         
 //        delete this.objectsByID[object.objectID.URIRepresentation.absoluteString];
