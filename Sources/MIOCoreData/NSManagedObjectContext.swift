@@ -342,7 +342,7 @@ open class NSManagedObjectContext : NSObject
 
     func _unregisterObject(_ object: NSManagedObject, notifyStore:Bool = true) {
         
-        if objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
+        if !objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
             NSLog("Trying to unregister a managed object that has not been registered")
             return
         }
