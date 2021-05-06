@@ -559,6 +559,18 @@ open class NSManagedObject : NSObject
             }
         }
     }
+    
+    open override var debugDescription: String {
+        get {
+            var str = ""
+            str += "<\(entity.name!): \(Unmanaged.passUnretained(self).toOpaque())>\n"
+            for (key, value) in entity.attributesByName {
+                str += "  \(key): \(value)"
+            }
+            
+            return str
+        }
+    }
 
 }
 
