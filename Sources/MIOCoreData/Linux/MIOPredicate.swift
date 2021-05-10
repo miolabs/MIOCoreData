@@ -518,11 +518,11 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Double:  return ( leftValue as! Double  ) == ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) == ( rightValue as! Decimal )
     case is Date:    return rightValue is String ?
-                                ( leftValue as! Date    ) == parse_date( rightValue as! String )!
+                                ( leftValue as! Date    ) == parse_date( (rightValue as! String) )!
                               : ( leftValue as! Date    ) == ( rightValue as! Date    )
 
     default:
-        print( "[FATAL]: MIOPredicateEvaluate equal cannot compare \(leftValue) with \(rightValue)" )
+        print( "[FATAL]: MIOPredicateEvaluate equal cannot compare \(leftValue ?? "nil") with \(rightValue ?? "nil")" )
         return false
     }
 }
