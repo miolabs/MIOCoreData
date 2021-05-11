@@ -598,7 +598,7 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
         return (value as! [String]).contains( str )
     }
 
-    return (value as! [Int]).contains( leftValue! as! Int )
+    return (value as! [Int]).contains( MIOCoreIntValue( leftValue!)! )
 }
 
 
