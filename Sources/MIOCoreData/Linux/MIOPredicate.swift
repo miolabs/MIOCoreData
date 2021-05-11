@@ -8,6 +8,11 @@
 import Foundation
 import MIOCore
 
+#if canImport(CoreFoundation)
+import CoreFoundation
+#endif
+
+
 public typealias NSExpression = MIOExpression
 public typealias NSComparisonPredicate = MIOComparisonPredicate
 public typealias NSPredicate = MIOPredicate
