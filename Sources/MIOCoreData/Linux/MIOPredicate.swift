@@ -356,7 +356,7 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer) -> NSExpression
         }
      
     case MIOPredicateTokenType.booleanValue.rawValue:
-        let v = (token!.value == "true" ? 1 : 0) as CFBoolean
+        let v = (token!.value == "true" ? true : false) as CFBoolean
         return MIOExpression(forConstantValue: v)
         
     case MIOPredicateTokenType.arraySymbol.rawValue:
