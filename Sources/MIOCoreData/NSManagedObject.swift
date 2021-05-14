@@ -564,8 +564,13 @@ open class NSManagedObject : NSObject
         get {
             var str = ""
             str += "<\(entity.name!): \(Unmanaged.passUnretained(self).toOpaque())>\n"
-            for (key, value) in entity.attributesByName {
-                str += "  \(key): \(value)"
+            let keys = entity.attributesByName.keys.sorted()
+            for k in keys {
+                let value = value(forKey: k)
+                if value == nil { str += "  \(k): <null>\n" }
+                else if value is NSNull { str += "  \(k): <null>\n" }
+                else if value is String { str += "  \(k): '\(value!)'\n" }
+                else { str += "  \(k): \(value!)\n" }
             }
             
             return str

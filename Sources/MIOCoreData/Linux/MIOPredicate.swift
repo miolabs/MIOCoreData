@@ -612,6 +612,6 @@ func inferType ( _ value: String ) -> Any {
         return value.replacingOccurrences(of: "\"", with: "")
     }
     
-    return MIOCoreIntValue( value )!
+    return MIOCoreInt32Value( value )!
 }
 
