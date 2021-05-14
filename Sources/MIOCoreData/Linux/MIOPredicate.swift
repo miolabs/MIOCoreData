@@ -352,7 +352,7 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer) -> NSExpression
             return MIOExpression(forConstantValue: Double(token!.value))
         }
         else {
-            return MIOExpression(forConstantValue: Int(token!.value))
+            return MIOExpression(forConstantValue: Int32(token!.value))
         }
 
     case MIOPredicateTokenType.booleanValue.rawValue:
@@ -583,7 +583,7 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Double:  return ( leftValue as! Double  ) < ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) < ( rightValue as! Decimal )
     case is Date:    return rightValue is String ?
-                            ( leftValue as! Date    ) < parse_date( rightValue as! String )!
+                            ( leftValue as! Date    ) < parse_date( (rightValue as! String) )!
                           : ( leftValue as! Date    ) < ( rightValue as! Date    )
 
     default: return false
@@ -603,7 +603,7 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
         return (value as! [String]).contains( str )
     }
 
-    return (value as! [Int]).contains( MIOCoreIntValue( leftValue!)! )
+    return (value as! [Int32]).contains( MIOCoreInt32Value( leftValue!)! )
 }
 
 
