@@ -388,6 +388,8 @@ open class NSManagedObject : NSObject
     }
     
     func unfaultAttributes(fromStore store:NSPersistentStore?) {
+        //if _isDeleted == true { return }
+        
         guard let incrementalStore = store as? NSIncrementalStore else { return }
         
         _storedValues = [:]
@@ -406,6 +408,8 @@ open class NSManagedObject : NSObject
     }
     
     func unfaultRelationshipNamed(_ key:String, fromStore store:NSPersistentStore?) {
+        //if _isDeleted == true { return }
+        
         if store == nil { return }
         if isFault { unfaultAttributes(fromStore: store! ) }
         
@@ -566,11 +570,11 @@ open class NSManagedObject : NSObject
             str += "<\(entity.name!): \(Unmanaged.passUnretained(self).toOpaque())>\n"
             let keys = entity.attributesByName.keys.sorted()
             for k in keys {
-                let value = value(forKey: k)
-                if value == nil { str += "  \(k): <null>\n" }
-                else if value is NSNull { str += "  \(k): <null>\n" }
-                else if value is String { str += "  \(k): '\(value!)'\n" }
-                else { str += "  \(k): \(value!)\n" }
+                let v = value(forKey: k)
+                if v == nil { str += "  \(k): <null>\n" }
+                else if v is NSNull { str += "  \(k): <null>\n" }
+                else if v is String { str += "  \(k): '\(v!)'\n" }
+                else { str += "  \(k): \(v!)\n" }
             }
             
             return str
