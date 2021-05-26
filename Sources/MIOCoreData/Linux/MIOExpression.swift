@@ -172,4 +172,17 @@ open class MIOExpression : NSObject
 //    open func allowEvaluation() { NSUnsupported() } // Force an expression which was securely decoded to allow evaluation
 //
 //    public convenience init(format expressionFormat: String, _ args: CVarArg...) { NSUnsupported() }*/
+    
+    open override var debugDescription: String {
+        get {
+            var str = ""
+            switch expressionType {
+            case .keyPath: str += keyPath
+            case .constantValue: str += constantValue != nil ? "\(constantValue!)" : "nil"
+            default: str += "No debug description"
+            }
+            
+            return str
+        }
+    }
 }

@@ -71,8 +71,7 @@ open class MIOComparisonPredicate : MIOPredicate
     open override var debugDescription: String {
         get {
             var str = ""
-            str += "<MIOComparisonPredicate: \(Unmanaged.passUnretained(self).toOpaque())>\n"
-            str += "  operator type: "
+            str += rightExpression.debugDescription + " "
             switch _operator {
             case .lessThan: str += "lessThan"
             case .lessThanOrEqualTo:  str += "lessThanOrEqualTo"
@@ -87,9 +86,8 @@ open class MIOComparisonPredicate : MIOPredicate
             case .inOperator: str += "inOperator"
             case .contains: str += "contains"
             case .between: str += "between"
-                
             }
-            str += "\n"
+            str += " " + leftExpression.debugDescription
             return str
         }
     }

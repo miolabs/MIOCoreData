@@ -541,13 +541,19 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
         }
 
         return false
-    } else if predicate is NSCompoundPredicate {
+    }
+    else if predicate is NSCompoundPredicate {
         let compound = predicate as! NSCompoundPredicate
         
         switch ( compound.compoundPredicateType ) {
-            case .not: return !MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 0 ] )
-            case .and: return  MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 0 ] ) && MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 1 ] )
-            case .or : return  MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 0 ] ) || MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 1 ] )
+        // TODO: Thow something when not has more than 1 predicate
+        case .not: return !MIOPredicateEvaluate( object: object, using: compound.subpredicates[ 0 ] )
+        case .and: return compound.subpredicates.reduce(true) { result, predicate in
+                result && MIOPredicateEvaluate(object: object, using: predicate)
+            }
+        case .or : return compound.subpredicates.reduce(true) { result, predicate in
+                result || MIOPredicateEvaluate(object: object, using: predicate)
+            }
         }
     }
     

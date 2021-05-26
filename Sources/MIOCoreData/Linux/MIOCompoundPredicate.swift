@@ -60,19 +60,15 @@ open class MIOCompoundPredicate : MIOPredicate
     
     open override var debugDescription: String {
         get {
-            var str = ""
-            str += "<MIOCompoundPredicate: \(Unmanaged.passUnretained(self).toOpaque())>\n"
-            str += "  compound type: "
+
+            var type = ""
             switch compoundPredicateType {
-            case .and: str += "and"
-            case .or:  str += "or"
-            case .not: str += "not"
+            case .and: type = "and"
+            case .or:  type = "or"
+            case .not: type = "not"
             }
-            str += "\n"
-            for p in subpredicates {
-                str += p.debugDescription
-            }
-            return str
+            
+            return subpredicates.map { $0.debugDescription }.joined(separator: type)
         }
     }
 
