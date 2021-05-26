@@ -500,4 +500,103 @@ final class NSPredicateTests: XCTestCase
         XCTAssertTrue( value == 0, "NSComparisionPredicate rigth expression constant value is wrong" )
         
     }
+    
+    func testComplexWithKeyPathPredicate() {
+        let predicate = NSPredicate(format: "cashDesk.identifier = \'3CEF7AEA-11C2-48AB-B289-C3C02E6A38A6\' and isOpen = true and deletedAt = null and beginDate <= \'2021-05-25 23:11:32.050000\' and (endDate = null or endDate >= \'2021-05-25 23:11:32.050000\')")
+        
+        guard let cp = predicate as? NSCompoundPredicate else {
+            XCTAssertTrue( false, "NSPredicate is not NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue( cp.compoundPredicateType == .and, "Expected NSCompoundPredicate type: AND")
+        XCTAssertTrue( cp.subpredicates.count == 5, "Number of subpredcated must be equal to 5")
+        
+        // First predicate
+        guard let sp1 = cp.subpredicates[0] as? NSComparisonPredicate else {
+            XCTAssertTrue( false, "Subpredicate 0 is not NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue(sp1.leftExpression.expressionType == .keyPath, "Expected left expression of keyPath type")
+        XCTAssertTrue(sp1.leftExpression.keyPath == "cashDesk.identifier", "Expected left expression keyPath value: cashDesk.identifier")
+        XCTAssertTrue(sp1.predicateOperatorType == .equalTo, "Expected left expression operator: equalTo")
+        XCTAssertTrue(sp1.rightExpression.expressionType == .constantValue, "Expected right expression of constantValue type")
+        XCTAssertTrue((sp1.rightExpression.constantValue as? String) == "3CEF7AEA-11C2-48AB-B289-C3C02E6A38A6", "Expected right expression value: 3CEF7AEA-11C2-48AB-B289-C3C02E6A38A6")
+
+        
+        // Second predicate
+        guard let sp2 = cp.subpredicates[1] as? NSComparisonPredicate else {
+            XCTAssertTrue( false, "Subpredicate 1 is not NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue(sp2.leftExpression.expressionType == .keyPath, "Expected left expression of keyPath type")
+        XCTAssertTrue(sp2.leftExpression.keyPath == "isOpen", "Expected left expression keyPath value: isOpen")
+        XCTAssertTrue(sp2.predicateOperatorType == .equalTo, "Expected left expression operator: equalTo")
+        XCTAssertTrue(sp2.rightExpression.expressionType == .constantValue, "Expected right expression of constantValue type")
+        XCTAssertTrue((sp2.rightExpression.constantValue as? Int) == 1, "Expected right expression value: 1")
+
+        
+        // Third predicate
+        guard let sp3 = cp.subpredicates[2] as? NSComparisonPredicate else {
+            XCTAssertTrue( false, "Subpredicate 2 is not NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue(sp3.leftExpression.expressionType == .keyPath, "Expected left expression of keyPath type")
+        XCTAssertTrue(sp3.leftExpression.keyPath == "deletedAt", "Expected left expression keyPath value: deletedAt")
+        XCTAssertTrue(sp3.predicateOperatorType == .equalTo, "Expected left expression operator: equalTo")
+        XCTAssertTrue(sp3.rightExpression.expressionType == .constantValue, "Expected right expression of constantValue type")
+        XCTAssertTrue(sp3.rightExpression.constantValue == nil, "Expected right expression value: nil")
+
+        
+        // Forth predicate
+        guard let sp4 = cp.subpredicates[3] as? NSComparisonPredicate else {
+            XCTAssertTrue( false, "Subpredicate 3 is not NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue(sp4.leftExpression.expressionType == .keyPath, "Expected left expression of keyPath type")
+        XCTAssertTrue(sp4.leftExpression.keyPath == "beginDate", "Expected left expression keyPath value: beginDate")
+        XCTAssertTrue(sp4.predicateOperatorType == .lessThanOrEqualTo, "Expected left expression operator: lessThanOrEqualTo")
+        XCTAssertTrue(sp4.rightExpression.expressionType == .constantValue, "Expected right expression of constantValue type")
+        XCTAssertTrue((sp4.rightExpression.constantValue as? String) == "2021-05-25 23:11:32.050000", "Expected right expression value: 2021-05-25 23:11:32.050000")
+
+
+        // Fith predicate
+        guard let sp5 = cp.subpredicates[4] as? NSCompoundPredicate else {
+            XCTAssertTrue( false, "Subpredicate 4 is NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue( sp5.compoundPredicateType == .or, "Expected NSCompoundPredicate type: OR")
+        XCTAssertTrue( sp5.subpredicates.count == 2, "Number of subpredcated must be equal to 2")
+        
+        guard let sp5_sp1 = sp5.subpredicates[0] as? NSComparisonPredicate else {
+            XCTAssertTrue( false, "Subpredicate 0 is not NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue(sp5_sp1.leftExpression.expressionType == .keyPath, "Expected left expression of keyPath type")
+        XCTAssertTrue(sp5_sp1.leftExpression.keyPath == "endDate", "Expected left expression keyPath value: endDate")
+        XCTAssertTrue(sp5_sp1.predicateOperatorType == .equalTo, "Expected left expression operator: equalTo")
+        XCTAssertTrue(sp5_sp1.rightExpression.expressionType == .constantValue, "Expected right expression of constantValue type")
+        XCTAssertTrue(sp5_sp1.rightExpression.constantValue == nil, "Expected right expression value: nil")
+
+        
+        guard let sp5_sp2 = sp5.subpredicates[1] as? NSComparisonPredicate else {
+            XCTAssertTrue( false, "Subpredicate 1 is not NSCompoundPredicate subtype" )
+            return
+        }
+        
+        XCTAssertTrue(sp5_sp2.leftExpression.expressionType == .keyPath, "Expected left expression of keyPath type")
+        XCTAssertTrue(sp5_sp2.leftExpression.keyPath == "endDate", "Expected left expression keyPath value: endDate")
+        XCTAssertTrue(sp5_sp2.predicateOperatorType == .greaterThanOrEqualTo, "Expected left expression operator: greaterThanOrEqualTo")
+        XCTAssertTrue(sp5_sp2.rightExpression.expressionType == .constantValue, "Expected right expression of constantValue type")
+        XCTAssertTrue((sp5_sp2.rightExpression.constantValue as? String) == "2021-05-25 23:11:32.050000", "Expected right expression value: 2021-05-25 23:11:32.050000")
+
+    }
 }
+
+

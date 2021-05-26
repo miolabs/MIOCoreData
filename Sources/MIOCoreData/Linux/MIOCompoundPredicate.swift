@@ -57,4 +57,24 @@ open class MIOCompoundPredicate : MIOPredicate
         _compoundPredicateType = .not
         _subpredicates = [predicate]
     }
+    
+    open override var debugDescription: String {
+        get {
+            var str = ""
+            str += "<MIOCompoundPredicate: \(Unmanaged.passUnretained(self).toOpaque())>\n"
+            str += "  compound type: "
+            switch compoundPredicateType {
+            case .and: str += "and"
+            case .or:  str += "or"
+            case .not: str += "not"
+            }
+            str += "\n"
+            for p in subpredicates {
+                str += p.debugDescription
+            }
+            return str
+        }
+    }
+
 }
+

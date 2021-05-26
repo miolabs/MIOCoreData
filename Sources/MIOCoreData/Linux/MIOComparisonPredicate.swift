@@ -67,4 +67,31 @@ open class MIOComparisonPredicate : MIOPredicate
         case contains // lhs contains rhs returns true
         case between
     }
+    
+    open override var debugDescription: String {
+        get {
+            var str = ""
+            str += "<MIOComparisonPredicate: \(Unmanaged.passUnretained(self).toOpaque())>\n"
+            str += "  operator type: "
+            switch _operator {
+            case .lessThan: str += "lessThan"
+            case .lessThanOrEqualTo:  str += "lessThanOrEqualTo"
+            case .greaterThan: str += "greaterThan"
+            case .greaterThanOrEqualTo: str += "greaterThanOrEqualTo"
+            case .equalTo: str += "equalTo"
+            case .notEqualTo: str += "notEqualTo"
+            case .matches: str += "matches"
+            case .like: str += "like"
+            case .beginsWith: str += "beginsWith"
+            case .endsWith: str += "endsWith"
+            case .inOperator: str += "inOperator"
+            case .contains: str += "contains"
+            case .between: str += "between"
+                
+            }
+            str += "\n"
+            return str
+        }
+    }
+
 }

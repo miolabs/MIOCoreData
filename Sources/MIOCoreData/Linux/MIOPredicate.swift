@@ -170,9 +170,7 @@ func MIOPredicateTokenize(_ predicateFormat: String) -> MIOCoreLexer
     // Symbols
     lexer.addTokenType(MIOPredicateTokenType.arraySymbol.rawValue, regex: try! NSRegularExpression(pattern: "^\\[([^\\]]*)\\]"))
     lexer.addTokenType(MIOPredicateTokenType.openParenthesisSymbol.rawValue, regex: try! NSRegularExpression(pattern:"^\\("))
-    lexer.ignoreTokenType(MIOPredicateTokenType.openParenthesisSymbol.rawValue)
     lexer.addTokenType(MIOPredicateTokenType.closeParenthesisSymbol.rawValue, regex: try! NSRegularExpression(pattern:"^\\)"))
-    lexer.ignoreTokenType(MIOPredicateTokenType.closeParenthesisSymbol.rawValue)
     
     // Comparators
     lexer.addTokenType(MIOPredicateTokenType.minorOrEqualComparator.rawValue, regex: try! NSRegularExpression(pattern:"^<="))
@@ -219,8 +217,9 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
     let exit = false
     
     var lastPredicate:MIOPredicate?
-    var currentPredicate:MIOPredicate?
+    var lastCompoundPredicate:MIOCompoundPredicate?
     var rootPredicate:MIOPredicate?
+    var compoundPredicateStack:[MIOCompoundPredicate] = []
     
     while (token != nil && exit == false) {
         
@@ -252,8 +251,9 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
             let rightExpression = MIOPredicateParseExpresion(lexer)
             let predicate = MIOComparisonPredicate(leftExpression: leftExpression, rightExpression: rightExpression, modifier: .direct, type: op!, options: [])
             
-            if lastPredicate != nil {
-                (lastPredicate as! MIOCompoundPredicate).append(predicate: predicate)
+            if lastCompoundPredicate?.compoundPredicateType == .not {
+                lastCompoundPredicate!.append(predicate: predicate)
+                lastPredicate = nil
             }
             else {
                 lastPredicate = predicate
@@ -262,27 +262,73 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
             //predicates.append(predicate)
                     
         case MIOPredicateTokenType.and.rawValue:
+                                                   
+            if lastCompoundPredicate?._compoundPredicateType == .and && lastPredicate != nil {
+                lastCompoundPredicate!.append(predicate: lastPredicate!)
+                lastPredicate = nil
+                break
+            }
+
             let predicate = MIOCompoundPredicate(type: .and)
-            predicate.append(predicate: lastPredicate!)
-                                    
-            if currentPredicate != nil {
-                (currentPredicate as! MIOCompoundPredicate).append(predicate: predicate)
-                if rootPredicate == nil { rootPredicate = currentPredicate }
+            
+            if lastPredicate != nil {
+                predicate.append(predicate: lastPredicate!)
+                lastPredicate = nil
             }
             
-            lastPredicate = nil
-            currentPredicate = predicate
+            if lastCompoundPredicate != nil && lastCompoundPredicate!.compoundPredicateType == .not {
+                predicate.append(predicate: lastCompoundPredicate!)
+            }
+            else if lastCompoundPredicate != nil {
+                lastCompoundPredicate!.append(predicate: predicate)
+            }
             
+            lastCompoundPredicate = predicate
+            if rootPredicate == nil { rootPredicate = predicate }
             
         case MIOPredicateTokenType.or.rawValue:
-            currentPredicate = MIOCompoundPredicate(type: .or)
-            (currentPredicate as! MIOCompoundPredicate).append(predicate: lastPredicate!)
-            lastPredicate = nil
+            if lastCompoundPredicate?._compoundPredicateType == .or && lastPredicate != nil {
+                lastCompoundPredicate!.append(predicate: lastPredicate!)
+                lastPredicate = nil
+                break
+            }
+                        
+            let predicate = MIOCompoundPredicate(type: .or)
+            
+            if lastPredicate != nil {
+                predicate.append(predicate: lastPredicate!)
+                lastPredicate = nil
+            }
+            
+            if lastCompoundPredicate != nil && lastCompoundPredicate!.compoundPredicateType == .not {
+                predicate.append(predicate: lastCompoundPredicate!)
+            }
+            else if lastCompoundPredicate != nil {
+                lastCompoundPredicate!.append(predicate: predicate)
+            }
+            
+            lastCompoundPredicate = predicate
+            if rootPredicate == nil { rootPredicate = predicate }
 
         case MIOPredicateTokenType.not.rawValue:
-            lastPredicate = MIOCompoundPredicate(type: .not)
+            lastCompoundPredicate = MIOCompoundPredicate(type: .not)
                     
 
+        case MIOPredicateTokenType.openParenthesisSymbol.rawValue:
+            if lastCompoundPredicate != nil { compoundPredicateStack.append(lastCompoundPredicate!) }
+            lastCompoundPredicate = nil
+            
+        case MIOPredicateTokenType.closeParenthesisSymbol.rawValue:
+            if lastCompoundPredicate != nil && lastPredicate != nil {
+                lastCompoundPredicate!.append(predicate: lastPredicate!)
+                lastPredicate = nil
+            }
+            
+            let predicate = compoundPredicateStack.last
+            if predicate != nil && lastCompoundPredicate != nil { predicate!.append(predicate: lastCompoundPredicate!) }
+            else if predicate != nil && lastPredicate != nil { predicate!.append(predicate: lastPredicate!) }
+            lastCompoundPredicate = predicate
+            
         /*
          case MIOPredicateTokenType.ANY:
          this.lexer.nextToken();
@@ -318,16 +364,20 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
         }
     }
     
-    if currentPredicate == nil {
+    if compoundPredicateStack.count == 0 && lastCompoundPredicate == nil && lastPredicate != nil {
         return lastPredicate!
     }
     
-    if lastPredicate != nil {
-        (currentPredicate as! MIOCompoundPredicate).append(predicate: lastPredicate!)
+    if lastCompoundPredicate != nil && lastPredicate != nil {
+        lastCompoundPredicate!.append(predicate: lastPredicate!)
     }
-     
-    if rootPredicate == nil {
-        return currentPredicate!
+             
+    if rootPredicate == nil && lastCompoundPredicate != nil {
+        return lastCompoundPredicate!
+    }
+    
+    if rootPredicate == nil && compoundPredicateStack.count > 0 {
+        return compoundPredicateStack.first!
     }
     
     return rootPredicate!
@@ -352,7 +402,7 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer) -> NSExpression
             return MIOExpression(forConstantValue: Double(token!.value))
         }
         else {
-            return MIOExpression(forConstantValue: Int32(token!.value))
+            return MIOExpression(forConstantValue: Int(token!.value))
         }
 
     case MIOPredicateTokenType.booleanValue.rawValue:
@@ -361,6 +411,9 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer) -> NSExpression
         
     case MIOPredicateTokenType.arraySymbol.rawValue:
         return MIOExpression(forConstantValue: token!.value)
+        
+    case MIOPredicateTokenType.nullValue.rawValue:
+        return MIOExpression(forConstantValue: nil)
      
 /*     case MIOPredicateTokenType.NullValue:
      item.value = this.nullFromString(token.value);
@@ -428,6 +481,9 @@ func MIOPredicateParseOperatorOrFunction(_ lexer: MIOCoreLexer, op: inout NSComp
     case MIOPredicateTokenType.bitwiseXOR.rawValue:
     functionType = .bitwiseXor
 
+    case MIOPredicateTokenType.closeParenthesisSymbol.rawValue:
+        MIOPredicateParseOperatorOrFunction(lexer, op: &op, functionType: &functionType)
+        
     default: break
         //throw new Error(`MIOPredicate: Error. Unexpected comparator. (${token.value})`);
     }

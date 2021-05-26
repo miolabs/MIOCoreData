@@ -2,11 +2,11 @@
 import Foundation
 import MIOCore
 
-extension DLDB
-{
-	func registerRuntimeObjects(){
-
-		_MIOCoreRegisterClass(type: SimpleEntity.self, forKey: "SimpleEntity")
-	}
-}
+//extension DLDB
+//{
+//	func registerRuntimeObjects(){
+//
+//		_MIOCoreRegisterClass(type: SimpleEntity.self, forKey: "SimpleEntity")
+//	}
+//}
 #endif
