@@ -68,7 +68,7 @@ open class MIOComparisonPredicate : MIOPredicate
         case between
     }
     
-    open override var debugDescription: String {
+    open override var description: String {
         get {
             var str = ""
             str += rightExpression.debugDescription + " "

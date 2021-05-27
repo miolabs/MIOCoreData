@@ -58,7 +58,7 @@ open class MIOCompoundPredicate : MIOPredicate
         _subpredicates = [predicate]
     }
     
-    open override var debugDescription: String {
+    open override var description: String {
         get {
 
             var type = ""
@@ -68,7 +68,7 @@ open class MIOCompoundPredicate : MIOPredicate
             case .not: type = "not"
             }
             
-            return subpredicates.map { $0.debugDescription }.joined(separator: type)
+            return subpredicates.map { $0.description }.joined(separator: type)
         }
     }
 

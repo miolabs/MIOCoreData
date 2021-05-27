@@ -173,7 +173,7 @@ open class MIOExpression : NSObject
 //
 //    public convenience init(format expressionFormat: String, _ args: CVarArg...) { NSUnsupported() }*/
     
-    open override var debugDescription: String {
+    open override var description: String {
         get {
             var str = ""
             switch expressionType {
