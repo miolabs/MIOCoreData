@@ -505,7 +505,7 @@ func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: 
 
 func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate) -> Bool
 {
-    print("PPredicate: \(predicate)")
+    print("Predicate: \(predicate)")
     if predicate is NSComparisonPredicate {
         let cmp = predicate as! NSComparisonPredicate
         
@@ -617,9 +617,7 @@ func MIOPredicateEvaluateLessEqual( _ leftValue: Any?, _ rightValue:Any?) -> Boo
     case is Float:   return ( leftValue as! Float   ) <= ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) <= ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) <= ( rightValue as! Decimal )
-    case is Date:
-        print("MIOPredicateEvaluateLessEqual:\(leftValue):\(rightValue)")
-        return rightValue is String ?
+    case is Date:    return   rightValue is String ?
                             ( leftValue as! Date    ) <= parse_date( rightValue as! String )!
                           : ( leftValue as! Date    ) <= ( rightValue as! Date    )
 

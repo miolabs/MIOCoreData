@@ -13,9 +13,11 @@ extension NSManagedObject
 {
     open func value(forKeyPath keyPath: String) -> Any? {
         
+        print("value:forKeyPath: \(keyPath)")
         let keys = keyPath.split(separator: ".")
         let key = String(keys[0])
         let value = self.value(forKey: key)
+        print("value:forKey: \(key), value: \(value)")
         if keys.count == 1 { return value }
         
         if value == nil { return nil }
