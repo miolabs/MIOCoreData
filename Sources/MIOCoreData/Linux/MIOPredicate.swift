@@ -505,6 +505,7 @@ func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: 
 
 func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate) -> Bool
 {
+    print("PPredicate: \(predicate)")
     if predicate is NSComparisonPredicate {
         let cmp = predicate as! NSComparisonPredicate
         
