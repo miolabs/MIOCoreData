@@ -128,6 +128,7 @@ open class NSManagedObjectContext : NSObject
 //            cached_objs?.filter(using: request.predicate!)
 //        }
         var results = objs!.filter(using: request.predicate) as! [T]
+        print("======= Eval predicate end")
         if request.sortDescriptors != nil { results = results.sortedArray(using: request.sortDescriptors!) }
         let offset = request.fetchOffset
         let limit = min( offset + request.fetchLimit, results.count )
