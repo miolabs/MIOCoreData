@@ -63,9 +63,9 @@ open class MIOCompoundPredicate : MIOPredicate
 
             var type = ""
             switch compoundPredicateType {
-            case .and: type = "and"
-            case .or:  type = "or"
-            case .not: type = "not"
+            case .and: type = " and "
+            case .or:  type = " or "
+            case .not: type = " not "
             }
             
             return subpredicates.map { $0.description }.joined(separator: type)

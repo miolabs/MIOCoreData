@@ -177,8 +177,8 @@ open class MIOExpression : NSObject
         get {
             var str = ""
             switch expressionType {
-            case .keyPath: str += keyPath
-            case .constantValue: str += constantValue != nil ? "\(constantValue!)" : "nil"
+            case .keyPath: str += " \(keyPath) "
+            case .constantValue: str += constantValue != nil ? " \(constantValue!) " : " nil "
             default: str += "No debug description"
             }
             
