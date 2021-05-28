@@ -173,12 +173,12 @@ open class MIOExpression : NSObject
 //
 //    public convenience init(format expressionFormat: String, _ args: CVarArg...) { NSUnsupported() }*/
     
-    open override var debugDescription: String {
+    open override var description: String {
         get {
             var str = ""
             switch expressionType {
-            case .keyPath: str += keyPath
-            case .constantValue: str += constantValue != nil ? "\(constantValue!)" : "nil"
+            case .keyPath: str += " \(keyPath) "
+            case .constantValue: str += constantValue != nil ? " \(constantValue!) " : " nil "
             default: str += "No debug description"
             }
             

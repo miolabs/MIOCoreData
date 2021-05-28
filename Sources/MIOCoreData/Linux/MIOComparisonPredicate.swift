@@ -68,10 +68,10 @@ open class MIOComparisonPredicate : MIOPredicate
         case between
     }
     
-    open override var debugDescription: String {
+    open override var description: String {
         get {
             var str = ""
-            str += rightExpression.debugDescription + " "
+            str += leftExpression.description + " "
             switch _operator {
             case .lessThan: str += "lessThan"
             case .lessThanOrEqualTo:  str += "lessThanOrEqualTo"
@@ -87,7 +87,7 @@ open class MIOComparisonPredicate : MIOPredicate
             case .contains: str += "contains"
             case .between: str += "between"
             }
-            str += " " + leftExpression.debugDescription
+            str += " " + rightExpression.description
             return str
         }
     }

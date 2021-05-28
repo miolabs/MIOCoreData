@@ -564,7 +564,7 @@ open class NSManagedObject : NSObject
         }
     }
     
-    open override var debugDescription: String {
+    open override var description: String {
         get {
             var str = ""
             str += "<\(entity.name!): \(Unmanaged.passUnretained(self).toOpaque())>\n"
