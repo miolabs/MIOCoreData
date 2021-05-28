@@ -505,7 +505,6 @@ func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: 
 
 func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate) -> Bool
 {
-    print("Predicate: \(predicate)")
     if predicate is NSComparisonPredicate {
         let cmp = predicate as! NSComparisonPredicate
         
@@ -529,8 +528,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
         }
 
         if obj_value is UUID { obj_value = (obj_value as! UUID).uuidString.uppercased() }
-
-        print("value1: \(obj_value) - value2: \(value)")
+        
         switch cmp.predicateOperatorType {
             case .equalTo             : return  MIOPredicateEvaluateEqual(     obj_value, value )
             case .notEqualTo          : return !MIOPredicateEvaluateEqual(     obj_value, value )
