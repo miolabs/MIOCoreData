@@ -595,4 +595,5 @@ final class MIOPredicateTests: XCTestCase {
         XCTAssertTrue((sp5_sp2.rightExpression.constantValue as? String) == "2021-05-25 23:11:32.050000", "Expected right expression value: 2021-05-25 23:11:32.050000")
 
     }
+
 }

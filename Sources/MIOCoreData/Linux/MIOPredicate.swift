@@ -584,9 +584,16 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Float:   return ( leftValue as! Float   ) == ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) == ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) == ( rightValue as! Decimal )
-    case is Date:    return rightValue is String ?
-                                ( leftValue as! Date    ) == parse_date( (rightValue as! String) )!
-                              : ( leftValue as! Date    ) == ( rightValue as! Date    )
+    case is Date:
+        if rightValue is String {
+            let rightDate = parse_date_or_nil( (rightValue as! String) )
+            
+            return rightDate == nil ?
+                     false
+                   : ( leftValue as! Date    ) ==  rightDate!
+        }
+        
+        return (leftValue as! Date) == (rightValue as! Date)
 
     default:
         print( "[FATAL]: MIOPredicateEvaluate equal cannot compare \(leftValue ?? "nil") with \(rightValue ?? "nil")" )
@@ -615,9 +622,16 @@ func MIOPredicateEvaluateLessEqual( _ leftValue: Any?, _ rightValue:Any?) -> Boo
     case is Float:   return ( leftValue as! Float   ) <= ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) <= ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) <= ( rightValue as! Decimal )
-    case is Date:    return rightValue is String ?
-                            ( leftValue as! Date    ) <= parse_date( rightValue as! String )!
-                          : ( leftValue as! Date    ) <= ( rightValue as! Date    )
+    case is Date:
+        if rightValue is String {
+            let rightDate = parse_date_or_nil( (rightValue as! String) )
+            
+            return rightDate == nil ?
+                     false
+                   : (leftValue as! Date) <=  rightDate!
+        }
+        
+        return (leftValue as! Date) <= (rightValue as! Date)
 
     default: return false
     }
@@ -644,9 +658,16 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Float:   return ( leftValue as! Float   ) < ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) < ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) < ( rightValue as! Decimal )
-    case is Date:    return rightValue is String ?
-                            ( leftValue as! Date    ) < parse_date( (rightValue as! String) )!
-                          : ( leftValue as! Date    ) < ( rightValue as! Date    )
+    case is Date:
+        if rightValue is String {
+            let rightDate = parse_date_or_nil( (rightValue as! String) )
+            
+            return rightDate == nil ?
+                     false
+                   : (leftValue as! Date) <  rightDate!
+        }
+        
+        return (leftValue as! Date) < (rightValue as! Date)
 
     default: return false
     }
