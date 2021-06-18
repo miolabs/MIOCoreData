@@ -309,7 +309,26 @@ open class NSManagedObject : NSObject
             
         var values:[String: Any] = [:]
         for key in keys! {
-            values[key] = storedValues[key]
+            if entity.propertiesByName[key] is NSRelationshipDescription {
+                if hasFault(forRelationshipNamed: key) && objectID.persistentStore != nil {
+                    unfaultRelationshipNamed(key, fromStore: objectID.persistentStore!)
+                }
+            }
+            if let v = storedValues[key] as? [NSManagedObjectID] {
+                values[key] = Set(v.map{ try? managedObjectContext!.existingObject(with: $0 ) } )
+            }
+            else if let v = storedValues[key] as? [NSManagedObject] {
+                values[key] = Set(v)
+            }
+            else if let v = storedValues[key] as? Set<NSManagedObjectID> {
+                values[key] = Set(v.map{ try? managedObjectContext!.existingObject(with: $0 ) } )
+            }
+            else if let v = storedValues[key] as? Set<NSManagedObject> {
+                values[key] = v
+            }
+            else {
+                values[key] = Set<NSManagedObject>()
+            }
         }
         return values
     }
