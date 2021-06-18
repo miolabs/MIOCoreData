@@ -195,20 +195,23 @@ open class NSManagedObjectContext : NSObject
         object._setIsUpdated(true)
     }
     
-    open func delete(_ object: NSManagedObject) {
-        var visited: Set<NSManagedObjectID> = Set()
-        _delete(object, visited: &visited)
-    }
+//    open func delete(_ object: NSManagedObject) {
+//        var visited: Set<NSManagedObjectID> = Set()
+//        _delete(object, visited: &visited)
+//    }
     
-    func _delete(_ object: NSManagedObject, visited: inout Set<NSManagedObjectID>) {
+//    func _delete(_ object: NSManagedObject, visited: inout Set<NSManagedObjectID>) {
+    
+    open func delete(_ object: NSManagedObject) {
+        if deletedObjects.contains(object) { return }
+        
         insertedObjects.remove(object)
         object._setIsInserted(false)
         updatedObjects.remove(object)
         object._setIsUpdated(false)
         deletedObjects.insert(object)
         
-        visited.insert(object.objectID)
-        object._setIsDeleted(true, visited: &visited)
+        object._setIsDeleted(true)
     }
             
     public var insertedObjects: Set<NSManagedObject> = Set()
