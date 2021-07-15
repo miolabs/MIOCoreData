@@ -91,7 +91,7 @@ open class NSIncrementalStore : NSPersistentStore
         let objID = NSManagedObjectID(WithEntity: entity, referenceObject: data)
         objID._persistentStore = self
         objID._storeIdentifier = identifier
-        print("New REFID: \(entity.name!)://\(String(describing: data))")
+        // --- print("New REFID: \(entity.name!)://\(String(describing: data))")
 
         return objID
     }
