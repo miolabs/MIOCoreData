@@ -231,12 +231,10 @@ open class NSManagedObjectContext : NSObject
         for delObj in deletedObjects {
             // Track object for save notification
             let entityName = delObj.entity.name!
-            var array = deletedObjectsByEntityName[entityName]
-            if array == nil {
-                array = []
-                deletedObjectsByEntityName[entityName] = array
+            if deletedObjectsByEntityName[entityName] == nil {
+                deletedObjectsByEntityName[entityName] = []
             }
-            array!.append(delObj)
+            deletedObjectsByEntityName[entityName]!.append(delObj)
         }
 
         // Inserted objects
@@ -247,12 +245,11 @@ open class NSManagedObjectContext : NSObject
             
             // Track object for save notification
             let entityName = insObj.entity.name!
-            var array = insertedObjectsByEntityName[entityName]
-            if array == nil {
-                array = []
-                insertedObjectsByEntityName[entityName] = array
+            if insertedObjectsByEntityName[entityName] == nil {
+                insertedObjectsByEntityName[entityName] = []
             }
-            array!.append(insObj)
+            
+            insertedObjectsByEntityName[entityName]!.append(insObj)
         }
 
         // Updated objects
@@ -261,12 +258,10 @@ open class NSManagedObjectContext : NSObject
 
             // Track object for save notification
             let entityName = updObj.entity.name!
-            var array = updatedObjectsByEntityName[entityName]
-            if array == nil {
-                array = []
-                updatedObjectsByEntityName[entityName] = array
+            if updatedObjectsByEntityName[entityName] == nil {
+                updatedObjectsByEntityName[entityName] = []
             }
-            array!.append(updObj)
+            updatedObjectsByEntityName[entityName]!.append(updObj)
         }
 
         if parent == nil {
