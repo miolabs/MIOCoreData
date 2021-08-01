@@ -584,6 +584,7 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Float:   return ( leftValue as! Float   ) == ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) == ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) == ( rightValue as! Decimal )
+    case is UUID: return ( (leftValue as! UUID).uuidString ) == ( (rightValue as! UUID).uuidString )
     case is Date:
         if rightValue is String {
             let rightDate = parse_date_or_nil( (rightValue as! String) )
@@ -622,6 +623,7 @@ func MIOPredicateEvaluateLessEqual( _ leftValue: Any?, _ rightValue:Any?) -> Boo
     case is Float:   return ( leftValue as! Float   ) <= ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) <= ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) <= ( rightValue as! Decimal )
+    case is UUID: return ( (leftValue as! UUID).uuidString ) <= ( (rightValue as! UUID).uuidString )
     case is Date:
         if rightValue is String {
             let rightDate = parse_date_or_nil( (rightValue as! String) )
@@ -658,6 +660,7 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is Float:   return ( leftValue as! Float   ) < ( rightValue as! Float   )
     case is Double:  return ( leftValue as! Double  ) < ( rightValue as! Double  )
     case is Decimal: return ( leftValue as! Decimal ) < ( rightValue as! Decimal )
+    case is UUID: return ( (leftValue as! UUID).uuidString ) < ( (rightValue as! UUID).uuidString )
     case is Date:
         if rightValue is String {
             let rightDate = parse_date_or_nil( (rightValue as! String) )
