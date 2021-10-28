@@ -62,7 +62,7 @@ open class NSManagedObject : NSObject
     //
     //    }
     
-    var _managedObjectContext:NSManagedObjectContext?
+    weak var _managedObjectContext:NSManagedObjectContext?
     // identity
     unowned(unsafe) open var managedObjectContext: NSManagedObjectContext? { get { return _managedObjectContext } }
     

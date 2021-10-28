@@ -147,6 +147,9 @@ open class NSEntityDescription : NSObject
             parentEntity!.subentities.append(self)
             parentEntity!.build()
             
+            // NOTE: We don't want to progate the user info configuration to it's own children.
+            // For example if the base class has the property TableHasiTownTable... we dont want every children
+            // has teh same property.
 //            if userInfo != nil {
 //               userInfo!.merge( parentEntity!.userInfo ?? [:] ){ (old,_new) in old }
 //            }

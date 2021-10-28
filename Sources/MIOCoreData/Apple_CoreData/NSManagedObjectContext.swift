@@ -58,7 +58,7 @@ open class NSManagedObjectContext : NSObject
     /* coordinator which provides model and handles persistency (multiple contexts can share a coordinator) */
     open var persistentStoreCoordinator: NSPersistentStoreCoordinator?
     
-    open var parent: NSManagedObjectContext?
+    open weak var parent: NSManagedObjectContext?
     
     /* custom label for a context.  NSPrivateQueueConcurrencyType contexts will set the label on their queue */
     open var name: String?
