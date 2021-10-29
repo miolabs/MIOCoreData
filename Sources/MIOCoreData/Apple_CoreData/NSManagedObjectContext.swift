@@ -372,10 +372,30 @@ open class NSManagedObjectContext : NSObject
     
     open func reset() {
         
+        var idsByStore:[String:Set<NSManagedObjectID>] = [:]
+        for ps in persistentStoreCoordinator!.persistentStores {
+            idsByStore[ps.identifier] = Set<NSManagedObjectID>()
+        }
+        
+        for entityName in objectsByEntityName.keys {
+            if let set = objectsByEntityName[entityName] {
+                for o in set {
+                    idsByStore[o.objectID.persistentStore!.identifier]!.insert(o.objectID)
+                    _unregisterObject(o, notifyStore: false)
+                }
+            }
+        }
+        
+        for ps in persistentStoreCoordinator!.persistentStores {
+            if ps is NSIncrementalStore {
+                let obj_ids = idsByStore[ps.identifier]!
+                (ps as! NSIncrementalStore).managedObjectContextDidUnregisterObjects(with:Array(obj_ids))
+            }
+        }
     }
     
     func rollback() {
-        
+        //TODO
     }
     
     
