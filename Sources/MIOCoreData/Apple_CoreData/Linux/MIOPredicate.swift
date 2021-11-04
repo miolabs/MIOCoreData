@@ -732,6 +732,9 @@ func inferType ( _ value: String ) -> Any {
     if value.starts(with: "\"" ) {
         return value.replacingOccurrences(of: "\"", with: "")
     }
+    else if value.starts(with: "'" ) {
+        return value.replacingOccurrences(of: "'", with: "")
+    }
     
     return MIOCoreInt32Value( value )!
 }
