@@ -467,8 +467,9 @@ open class NSManagedObject : NSObject
     func _setIsDeleted(_ value:Bool) {
         willChangeValue(forKey: "hasChanges")
         willChangeValue(forKey: "isDeleted")
-        _isDeleted = value;
+        _isDeleted = value
         deleteInverseRelationships()
+        _isDeleted = value
         didChangeValue(forKey: "isDeleted")
         didChangeValue(forKey: "hasChanges")
     }
@@ -487,7 +488,7 @@ open class NSManagedObject : NSObject
         managedObjectContext?.refresh(self, mergeChanges: false)
     }
 
-    open func _removeObject(_ object:NSManagedObject, forKey key:String, ignoreInverses: Bool = false) {
+    open func _removeObject(_ object:NSManagedObject, forKey key:String, ignoreInverses: Bool = false, refresh: Bool = true) {
         if hasFault(forRelationshipNamed: key) == true { unfaultRelationshipNamed(key, fromStore: objectID.persistentStore) }
         
         var objIDs:Set<NSManagedObjectID> = _changedValues[key] as? Set<NSManagedObjectID> ??
@@ -499,7 +500,7 @@ open class NSManagedObject : NSObject
         objIDs.remove( object.objectID )
 
         _changedValues[key] = objIDs
-        managedObjectContext?.refresh(self, mergeChanges: false)
+        if refresh { managedObjectContext?.refresh(self, mergeChanges: false) }
     }
 
     
@@ -527,7 +528,7 @@ open class NSManagedObject : NSObject
         
         for (_, rel) in entity.relationshipsByName {
             
-            if rel.inverseName == nil { continue }            
+//            if rel.inverseName == nil { continue }
             
             switch rel.deleteRule {
             case .cascadeDeleteRule: deleteByCascade(fromRelationship: rel)
@@ -541,22 +542,24 @@ open class NSManagedObject : NSObject
         
         if relationship.isToMany == false {
             guard let obj = value(forKey: relationship.name) as? NSManagedObject else { return }
-            obj._nullify_inverse_relation( relationship.inverseRelationship!, self)
+            if obj.isDeleted == false { obj._nullify_inverse_relation( relationship.inverseRelationship, self ) }
         }
         else {
             let objects = value(forKey: relationship.name) as! Set<NSManagedObject>
             for obj in objects {
-                obj._nullify_inverse_relation( relationship.inverseRelationship!, self )
+                if obj.isDeleted == false { obj._nullify_inverse_relation( relationship.inverseRelationship, self ) }
             }
         }
     }
     
-    func _nullify_inverse_relation (_ relationship: NSRelationshipDescription, _ obj: NSManagedObject) {
+    func _nullify_inverse_relation (_ relationship: NSRelationshipDescription?, _ obj: NSManagedObject) {
+        guard let relationship = relationship else { return }
+        
         if relationship.isToMany == false {
             _setValue(nil, forKey:relationship.name, ignoreInverses: true)
         }
         else {
-            _removeObject(obj, forKey: relationship.name, ignoreInverses: true)
+            _removeObject(obj, forKey: relationship.name, ignoreInverses: true, refresh: false)
         }
     }
 
@@ -565,14 +568,15 @@ open class NSManagedObject : NSObject
 
         if relationship.isToMany == false {
             guard let obj = value(forKey: relationship.name) as? NSManagedObject else { return }
-            managedObjectContext?.delete(obj)
+            if obj.isDeleted == false { managedObjectContext?.delete(obj) }
         }
         else {
             let objects = value(forKey: relationship.name) as! Set<NSManagedObject>
             for obj in objects {
-                managedObjectContext?.delete(obj)
-                _removeObject(obj, forKey: relationship.name)
+                if obj.isDeleted == false { managedObjectContext?.delete(obj) }
+                _removeObject(obj, forKey: relationship.name, refresh: false)
             }
+//            managedObjectContext?.refresh(self, mergeChanges: false)
         }
     }
     

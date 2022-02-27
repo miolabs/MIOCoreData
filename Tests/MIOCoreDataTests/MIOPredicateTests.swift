@@ -35,28 +35,32 @@ final class MIOPredicateTests: XCTestCase {
     func testComparisionPredicateOperators() {
         
         var predicate = MIOPredicateWithFormat(format: "value == 0") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.equalTo, "MIOComparisonPredicate operator type is not equalTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.equalTo, "MIOComparisonPredicate operator type is not 'equalTo'" )
         
         predicate = MIOPredicateWithFormat(format: "value = 0") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.equalTo, "MIOComparisonPredicate operator type is not equalTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.equalTo, "MIOComparisonPredicate operator type is not 'equalTo'" )
         
         predicate = MIOPredicateWithFormat(format: "value > 1") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.greaterThan, "MIOComparisonPredicate operator type is not greaterThan" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.greaterThan, "MIOComparisonPredicate operator type is not 'greaterThan'" )
         
         predicate = MIOPredicateWithFormat(format: "value < 1") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.lessThan, "MIOComparisonPredicate operator type is not lessThan" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.lessThan, "MIOComparisonPredicate operator type is not 'lessThan'" )
 
         predicate = MIOPredicateWithFormat(format: "value >= 1") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.greaterThanOrEqualTo, "MIOComparisonPredicate operator type is not greaterThanOrEqualTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.greaterThanOrEqualTo, "MIOComparisonPredicate operator type is not 'greaterThanOrEqualTo'" )
 
         predicate = MIOPredicateWithFormat(format: "value <= 1") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.lessThanOrEqualTo, "MIOComparisonPredicate operator type is not lessThanOrEqualTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.lessThanOrEqualTo, "MIOComparisonPredicate operator type is not 'lessThanOrEqualTo'" )
         
         predicate = MIOPredicateWithFormat(format: "value != 1") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.notEqualTo, "MIOComparisonPredicate operator type is not notEqualTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.notEqualTo, "MIOComparisonPredicate operator type is not 'notEqualTo'" )
 
         predicate = MIOPredicateWithFormat(format: "value contains 'v'") as! MIOComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.contains, "MIOComparisonPredicate operator type is not contains" )
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.contains, "MIOComparisonPredicate operator type is not 'contains'" )
+        
+        let array = ["1", "2"]
+        predicate = MIOPredicateWithFormat(format: "value in %@", array) as! MIOComparisonPredicate
+        XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.in, "NSComparisionPredicate operator type is not 'in'" )
     }
     
     func testComparisionPredicateValueTypes() {
@@ -105,6 +109,15 @@ final class MIOPredicateTests: XCTestCase {
 
         predicate = MIOPredicateWithFormat(format: "value = null") as! MIOComparisonPredicate
         XCTAssertTrue( predicate.rightExpression.constantValue == nil, "Null value conversion fails. Value is wrong: \(String(describing: predicate.rightExpression.constantValue))")
+        
+        let array = ["1", "2"]
+        predicate = MIOPredicateWithFormat(format: "value in %@", array) as! MIOComparisonPredicate
+        if let v = predicate.rightExpression.constantValue as? [String] {
+            XCTAssertTrue( true, "String value conversion fails. Value is wrong: \(v)")
+        }
+        else {
+            XCTAssertTrue(false, "String value conversion fails. Value is null")
+        }
 
     }
     

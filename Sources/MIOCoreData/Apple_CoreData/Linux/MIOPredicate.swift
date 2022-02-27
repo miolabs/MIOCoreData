@@ -29,65 +29,6 @@ open class MIOPredicate: NSObject, NSCopying
         let obj = MIOPredicate()
         return obj
     }
-    
-    //override init() {}
-    
-    //    public init(format predicateFormat: String, argumentArray arguments: [Any]?) {
-    //        super.init()
-    //        parse(predicateFormat, arguments: arguments)
-    //    }
-    //
-    //    public init(format predicateFormat: String, arguments argList: CVaListPointer) {
-    //        super.init()
-    //        parse(predicateFormat, arguments: nil)
-    //    }
-    
-        
-    /*
-     private booleanFromString(value:string){
-     
-     let v = value.toLocaleLowerCase();
-     let bv = false;
-     
-     switch (v) {
-     
-     case "yes":
-     case "true":
-     bv = true;
-     break;
-     
-     case "no":
-     case "false":
-     bv = false;
-     break;
-     
-     default:
-     throw new Error(`MIOPredicate: Error. Can't convert '${value}' to boolean`);
-     }
-     
-     return bv;
-     }
-     
-     private nullFromString(value:string){
-     
-     let v = value.toLocaleLowerCase();
-     let nv = null;
-     
-     switch (v) {
-     
-     case "nil":
-     case "null":
-     nv = null;
-     break;
-     
-     default:
-     throw new Error(`MIOPredicate: Error. Can't convert '${value}' to null`);
-     }
-     
-     return nv;
-     }*/
-    
-    
 }
 
 /*
@@ -106,7 +47,7 @@ open class MIOPredicate: NSObject, NSCopying
 public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPredicate
 {
     let lexer = MIOPredicateTokenize(format)
-    let predicate = try! MIOPredicateParseTokens(lexer: lexer)
+    let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
     
     return predicate
 }
@@ -246,7 +187,7 @@ func MIOPredicateTokenize(_ predicateFormat: String) -> MIOCoreLexer
     return lexer
 }
 
-func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
+func MIOPredicateParseTokens(lexer: MIOCoreLexer, _ args: [Any]...) throws -> MIOPredicate
 {
     var token = lexer.nextToken()
     let exit = false
@@ -274,7 +215,7 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
                 switch functionType {
                 case .bitwiseAnd, .bitwiseOr, .bitwiseXor:
                     let arg1 = MIOExpression(forKeyPath: token!.value)
-                    let arg2 = MIOPredicateParseExpresion(lexer)
+                    let arg2 = MIOPredicateParseExpresion(lexer, args)
                     leftExpression = MIOExpression(forFunction: functionType!.rawValue, arguments: [arg1, arg2])
                     MIOPredicateParseOperatorOrFunction(lexer, op: &op, functionType: &functionType)
                     
@@ -283,7 +224,7 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
                 }
             }
             
-            let rightExpression = MIOPredicateParseExpresion(lexer)
+            let rightExpression = MIOPredicateParseExpresion(lexer, args)
             let predicate = MIOComparisonPredicate(leftExpression: leftExpression, rightExpression: rightExpression, modifier: .direct, type: op!, options: [])
             
             if lastCompoundPredicate?.compoundPredicateType == .not {
@@ -419,8 +360,16 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer) throws -> MIOPredicate
     
 }
 
-func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer) -> NSExpression
+func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer, _ args: [[Any]]) -> NSExpression
 {
+    var next_arg_index = 0
+    func next_argument() -> Any {
+        let v = args[0][next_arg_index]
+        next_arg_index += 1
+        return v
+    }
+
+    
     let token = lexer.nextToken()
     
     switch token!.type {
@@ -449,21 +398,17 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer) -> NSExpression
         
     case MIOPredicateTokenType.nullValue.rawValue:
         return MIOExpression(forConstantValue: nil)
-     
-/*     case MIOPredicateTokenType.NullValue:
-     item.value = this.nullFromString(token.value);
-     item.valueType = MIOPredicateItemValueType.Null;
-     break;
-     
+
+    case MIOPredicateTokenType.classValue.rawValue:
+        let v = next_argument()
+        return MIOExpression(forConstantValue: v)
+        
+/*
      case MIOPredicateTokenType.Identifier:
      item.value = token.value;
      item.valueType = MIOPredicateItemValueType.Property;
      break;
      
-     case MIOPredicateTokenType.Class:
-     item.value = this.nextPlaceHolderArgument();
-     item.valueType = MIOPredicateItemValueType.Class;
-     break;
      */
     default:
         //throw new Error(`MIOPredicate: Error. Unexpected comparator. (${token.value})`);
@@ -502,10 +447,7 @@ func MIOPredicateParseOperatorOrFunction(_ lexer: MIOCoreLexer, op: inout NSComp
     op = NSComparisonPredicate.Operator.contains
     
     case MIOPredicateTokenType.inComparator.rawValue:
-    op = NSComparisonPredicate.Operator.inOperator
-
-    case MIOPredicateTokenType.inComparator.rawValue:
-    op = NSComparisonPredicate.Operator.inOperator
+    op = NSComparisonPredicate.Operator.in
       
     case MIOPredicateTokenType.bitwiseAND.rawValue:
     functionType = .bitwiseAnd
@@ -571,7 +513,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
             case .lessThanOrEqualTo   : return  MIOPredicateEvaluateLessEqual( obj_value, value )
             case .greaterThan         : return !MIOPredicateEvaluateLessEqual( obj_value, value )
             case .greaterThanOrEqualTo: return !MIOPredicateEvaluateLess(      obj_value, value )
-            case .inOperator          : return  MIOPredicateEvaluateIn(        obj_value, value )
+            case .in                  : return  MIOPredicateEvaluateIn(        obj_value, value )
             default:break
         }
 

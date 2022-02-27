@@ -35,28 +35,32 @@ final class NSPredicateTests: XCTestCase
     func testComparisionPredicateOperators() {
         
         var predicate = NSPredicate(format: "value == 0") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.equalTo, "NSComparisionPredicate operator type is not equalTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.equalTo, "NSComparisionPredicate operator type is not 'equalTo'" )
         
         predicate = NSPredicate(format: "value = 0") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.equalTo, "NSComparisionPredicate operator type is not equalTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.equalTo, "NSComparisionPredicate operator type is not 'equalTo'" )
         
         predicate = NSPredicate(format: "value > 1") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.greaterThan, "NSComparisionPredicate operator type is not greaterThan" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.greaterThan, "NSComparisionPredicate operator type is not 'greaterThan'" )
         
         predicate = NSPredicate(format: "value < 1") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.lessThan, "NSComparisionPredicate operator type is not lessThan" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.lessThan, "NSComparisionPredicate operator type is not 'lessThan'" )
 
         predicate = NSPredicate(format: "value >= 1") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.greaterThanOrEqualTo, "NSComparisionPredicate operator type is not greaterThanOrEqualTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.greaterThanOrEqualTo, "NSComparisionPredicate operator type is not 'greaterThanOrEqualTo'" )
 
         predicate = NSPredicate(format: "value <= 1") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.lessThanOrEqualTo, "NSComparisionPredicate operator type is not lessThanOrEqualTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.lessThanOrEqualTo, "NSComparisionPredicate operator type is not 'lessThanOrEqualTo'" )
         
         predicate = NSPredicate(format: "value != 1") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.notEqualTo, "NSComparisionPredicate operator type is not notEqualTo" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.notEqualTo, "NSComparisionPredicate operator type is not 'notEqualTo'" )
 
         predicate = NSPredicate(format: "value contains 'v'") as! NSComparisonPredicate
-        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.contains, "NSComparisionPredicate operator type is not contains" )
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.contains, "NSComparisionPredicate operator type is not 'contains'" )
+        
+        let array = ["1", "2"]
+        predicate = NSPredicate(format: "value in %@", array) as! NSComparisonPredicate
+        XCTAssertTrue( predicate.predicateOperatorType == NSComparisonPredicate.Operator.in, "NSComparisionPredicate operator type is not 'in'" )
     }
     
     func testComparisionPredicateValueTypes() {
@@ -105,6 +109,16 @@ final class NSPredicateTests: XCTestCase
 
         predicate = NSPredicate(format: "value = null") as! NSComparisonPredicate
         XCTAssertTrue( predicate.rightExpression.constantValue == nil, "Null value conversion fails. Value is wrong: \(String(describing: predicate.rightExpression.constantValue))")
+        
+        let array = ["1", "2"]
+        predicate = NSPredicate(format: "value in %@", array) as! NSComparisonPredicate
+        if let v = predicate.rightExpression.constantValue as? [String] {
+            XCTAssertTrue( true, "String value conversion fails. Value is wrong: \(v)")
+        }
+        else {
+            XCTAssertTrue(false, "String value conversion fails. Value is null")
+        }
+        
         
     }
     
