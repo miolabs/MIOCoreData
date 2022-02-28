@@ -187,7 +187,7 @@ func MIOPredicateTokenize(_ predicateFormat: String) -> MIOCoreLexer
     return lexer
 }
 
-func MIOPredicateParseTokens(lexer: MIOCoreLexer, _ args: [Any]...) throws -> MIOPredicate
+func MIOPredicateParseTokens(lexer: MIOCoreLexer, _ args: [Any]) throws -> MIOPredicate
 {
     var token = lexer.nextToken()
     let exit = false
@@ -360,11 +360,11 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer, _ args: [Any]...) throws -> MI
     
 }
 
-func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer, _ args: [[Any]]) -> NSExpression
+func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer, _ args: [Any]) -> NSExpression
 {
     var next_arg_index = 0
     func next_argument() -> Any {
-        let v = args[0][next_arg_index]
+        let v = args[next_arg_index]
         next_arg_index += 1
         return v
     }
