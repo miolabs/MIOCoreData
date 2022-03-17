@@ -456,7 +456,7 @@ open class NSManagedObject : NSObject
         didChangeValue(forKey: "hasChanges")
     }
             
-    func _setIsUpdated(_ value:Bool) {
+    func _setIsUpdated(_ value:Bool) {        
         willChangeValue(forKey: "hasChanges")
         willChangeValue(forKey: "isUpdated")
         _isUpdated = value

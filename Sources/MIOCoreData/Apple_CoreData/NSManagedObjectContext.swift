@@ -190,6 +190,7 @@ open class NSManagedObjectContext : NSObject
         object.setIsFault(true)
         
         if insertedObjects.contains(object) { return }
+        if deletedObjects.contains(object) { return }
         
         updatedObjects.insert(object)
         object._setIsUpdated(true)

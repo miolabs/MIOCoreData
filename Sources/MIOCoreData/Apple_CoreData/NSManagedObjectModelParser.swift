@@ -84,7 +84,7 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
             let type = attributeDict["attributeType"]
             let optional = attributeDict["optional"] != nil ? attributeDict["optional"]!.lowercased() : "no"
             let syncable = attributeDict["syncable"]
-            let defaultValueString = attributeDict["defaultValueString"]
+            let defaultValueString = attributeDict["defaultValueString"] ?? attributeDict["defaultDateTimeInterval"]
             
             addAttribute(name: name!, type: type!, optional: optional, syncable: syncable, defaultValueString: defaultValueString)
         }
@@ -236,7 +236,10 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
             
         case "Date":
             attrType = NSAttributeType.dateAttributeType;
-            //if (defaultValueString != null) defaultValue = MIODateFromString(defaultValueString);
+            if defaultValueString != nil {
+                let ti = TimeInterval( integerLiteral: Int64( defaultValueString! )! )
+                defaultValue = Date( timeIntervalSinceReferenceDate: ti )
+            }
             
         case "Transformable":
             attrType = NSAttributeType.transformableAttributeType
