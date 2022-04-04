@@ -661,11 +661,26 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     let value = String((rightValue as! String).dropFirst().dropLast())
                     .components(separatedBy: ",")
                     .map { inferType( String( $0.trimmingCharacters(in: .whitespaces) ) ) }
+
     
-    if let str = leftValue as? String {
-        return (value as! [String]).contains( str )
+    if let str_list = value as? [String] {
+        if let lv = leftValue as? UUID {
+            return (str_list).contains( lv.uuidString )
+        }
+        else {
+            return (str_list).contains( leftValue as! String )
+        }
+    }
+    else if let uuid_list = value as? [UUID] {
+        if let lv = leftValue as? UUID {
+            return (uuid_list).contains( lv )
+        }
+        else {
+            return (uuid_list).contains( UUID(uuidString: leftValue as! String )! )
+        }
     }
 
+    
     return (value as! [Int32]).contains( MIOCoreInt32Value( leftValue!)! )
 }
 
@@ -676,6 +691,9 @@ func inferType ( _ value: String ) -> Any {
     }
     else if value.starts(with: "'" ) {
         return value.replacingOccurrences(of: "'", with: "")
+    }
+    else if let uuid = UUID(uuidString: value) {
+        return uuid
     }
     
     return MIOCoreInt32Value( value )!
