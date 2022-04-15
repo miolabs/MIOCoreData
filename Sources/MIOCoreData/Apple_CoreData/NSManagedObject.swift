@@ -547,9 +547,17 @@ open class NSManagedObject : NSObject
         if relationship.inverseRelationship == nil || cache.contains( obj ) { return }
         
         if relationship.inverseRelationship!.isToMany == false {
-            obj._setValue( nil, forKey: relationship.inverseName!, cache: &cache )
+            if let v = obj.value(forKey: relationship.inverseName!) as? NSManagedObject {
+                if v.objectID == self.objectID {
+                    obj._setValue( nil, forKey: relationship.inverseName!, cache: &cache )
+                }
+            }
         } else {
-            obj._removeObject( self, forKey: relationship.inverseName!, cache: &cache )
+            if let v = obj.value(forKey: relationship.inverseName!) as? Set<NSManagedObject> {
+                if v.contains( self) {
+                    obj._removeObject( self, forKey: relationship.inverseName!, cache: &cache )
+                }
+            }
         }
     }
     
