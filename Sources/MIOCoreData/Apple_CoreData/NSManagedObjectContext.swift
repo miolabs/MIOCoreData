@@ -204,6 +204,12 @@ open class NSManagedObjectContext : NSObject
 //    func _delete(_ object: NSManagedObject, visited: inout Set<NSManagedObjectID>) {
     
     open func delete(_ object: NSManagedObject) {
+        var cache:Set<NSManagedObject> = Set()
+        cache.insert( object )
+        _delete(object, cache: &cache)
+    }
+    
+    func _delete(_ object: NSManagedObject, cache: inout Set<NSManagedObject>) {
         if deletedObjects.contains(object) { return }
         
         insertedObjects.remove(object)
@@ -212,8 +218,9 @@ open class NSManagedObjectContext : NSObject
         object._setIsUpdated(false)
         deletedObjects.insert(object)
         
-        object._setIsDeleted(true)
+        object._setIsDeleted(true, cache: &cache)
     }
+
             
     public var insertedObjects: Set<NSManagedObject> = Set()
     public var updatedObjects: Set<NSManagedObject> = Set()
