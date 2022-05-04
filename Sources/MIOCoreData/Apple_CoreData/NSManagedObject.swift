@@ -627,7 +627,7 @@ open class NSManagedObject : NSObject
             _setValue(nil, forKey:relationship.name, cache: &cache)
         }
         else {
-            _removeObject(obj, forKey: relationship.name, cache: &cache, refresh: false)
+            _removeObject(obj, forKey: relationship.name, cache: &cache)
         }
     }
 
@@ -644,7 +644,7 @@ open class NSManagedObject : NSObject
                 if obj.isDeleted == false { managedObjectContext?._delete(obj, cache: &cache) }
                 _removeObject(obj, forKey: relationship.name, cache: &cache, refresh: false)
             }
-//            managedObjectContext?.refresh(self, mergeChanges: false)
+            managedObjectContext?.refresh(self, mergeChanges: true)
         }
     }
     
