@@ -528,7 +528,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
         case .and: return compound.subpredicates.reduce(true) { result, predicate in
                 result && MIOPredicateEvaluate(object: object, using: predicate)
             }
-        case .or : return compound.subpredicates.reduce(true) { result, predicate in
+        case .or : return compound.subpredicates.reduce(false) { result, predicate in
                 result || MIOPredicateEvaluate(object: object, using: predicate)
             }
         }
