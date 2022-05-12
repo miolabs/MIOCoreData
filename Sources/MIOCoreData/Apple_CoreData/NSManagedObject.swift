@@ -11,7 +11,7 @@ open class NSManagedObject : NSObject
 {
 #if os(Linux)
     open var className: String {
-        return entity.name
+        return entity.name ?? "NSManagedObject"
     }
 #endif
     
