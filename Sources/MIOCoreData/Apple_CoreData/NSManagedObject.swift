@@ -9,6 +9,12 @@ import Foundation
 
 open class NSManagedObject : NSObject
 {
+#if os(Linux)
+    open var className: String {
+        return entity.name
+    }
+#endif
+    
     /*  Distinguish between changes that should and should not dirty the object for any key unknown to Core Data.  10.5 & earlier default to NO.  10.6 and later default to YES. */
     /*    Similarly, transient attributes may be individually flagged as not dirtying the object by adding +(BOOL)contextShouldIgnoreChangesFor<key> where <key> is the property name. */
     //open class var contextShouldIgnoreUnmodeledPropertyChanges: Bool { get }
