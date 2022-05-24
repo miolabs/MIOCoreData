@@ -84,9 +84,10 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
             let type = attributeDict["attributeType"]
             let optional = attributeDict["optional"] != nil ? attributeDict["optional"]!.lowercased() : "no"
             let syncable = attributeDict["syncable"]
+            let use_scalar = attributeDict[ "usesScalarValueType" ] != nil ? attributeDict[ "usesScalarValueType" ]!.lowercased() == "yes" : false
             let defaultValueString = attributeDict["defaultValueString"] ?? attributeDict["defaultDateTimeInterval"]
             
-            addAttribute(name: name!, type: type!, optional: optional, syncable: syncable, defaultValueString: defaultValueString)
+            addAttribute(name: name!, type: type!, optional: optional, syncable: syncable, defaultValueString: defaultValueString, useScalar: use_scalar )
         }
         else if elementName == "relationship" {
             
@@ -191,7 +192,7 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         if completion != nil { completion!( nil ) }
     }
         
-    func addAttribute(name:String, type:String, optional:String, syncable:String?, defaultValueString:String?){
+    func addAttribute(name:String, type:String, optional:String, syncable:String?, defaultValueString:String?, useScalar: Bool ){
         
         //NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type)")
         
@@ -252,6 +253,8 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         let transient = (syncable != nil && syncable!.lowercased() == "no") ? false : true
         
         currentAttribute = currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: opt, transient: transient)
+        
+        currentAttribute?.useScalar = useScalar
     }
     
     func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String, deleteRuleString:String?){

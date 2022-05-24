@@ -34,6 +34,8 @@ open class NSAttributeDescription: NSPropertyDescription
     open var attributeValueClassName: String?
     
     open var defaultValue: Any? // value is retained and not copied
+    
+    open var useScalar: Bool = false
         
     public override init() {
         super.init()
