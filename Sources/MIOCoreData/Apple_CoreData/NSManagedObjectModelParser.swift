@@ -85,9 +85,10 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
             let optional = attributeDict["optional"] != nil ? attributeDict["optional"]!.lowercased() : "no"
             let syncable = attributeDict["syncable"]
             let use_scalar = attributeDict[ "usesScalarValueType" ] != nil ? attributeDict[ "usesScalarValueType" ]!.lowercased() == "yes" : false
+            let is_transient = attributeDict[ "transient" ] != nil ? attributeDict[ "transient" ]!.lowercased() == "yes" : false
             let defaultValueString = attributeDict["defaultValueString"] ?? attributeDict["defaultDateTimeInterval"]
             
-            addAttribute(name: name!, type: type!, optional: optional, syncable: syncable, defaultValueString: defaultValueString, useScalar: use_scalar )
+            addAttribute(name: name!, type: type!, optional: optional, syncable: syncable, defaultValueString: defaultValueString, useScalar: use_scalar, isTransient: is_transient )
         }
         else if elementName == "relationship" {
             
@@ -192,7 +193,7 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         if completion != nil { completion!( nil ) }
     }
         
-    func addAttribute(name:String, type:String, optional:String, syncable:String?, defaultValueString:String?, useScalar: Bool ){
+    func addAttribute(name:String, type:String, optional:String, syncable:String?, defaultValueString:String?, useScalar: Bool, isTransient:Bool ){
         
         //NSLog("ManagedObjectModelParser:addAttribute: \(name) \(type)")
         
@@ -250,9 +251,8 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         }
         
         let opt = optional.lowercased() == "yes" ? true : false
-        let transient = (syncable != nil && syncable!.lowercased() == "no") ? false : true
         
-        currentAttribute = currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: opt, transient: transient)
+        currentAttribute = currentEntity!.addAttribute(name: name, type: attrType, defaultValue: defaultValue, optional: opt, transient: isTransient)
         
         currentAttribute?.useScalar = useScalar
     }
