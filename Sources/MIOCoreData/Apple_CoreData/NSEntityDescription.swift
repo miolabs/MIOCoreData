@@ -180,6 +180,10 @@ open class NSEntityDescription : NSObject
                 rel.inverseRelationship = inverseRelation
             }
         }
+        
+        for idx in indexes {
+            idx.buildGraph(entity:  self )
+        }
     }
     
     //

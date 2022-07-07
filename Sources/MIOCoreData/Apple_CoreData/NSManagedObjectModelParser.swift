@@ -109,8 +109,9 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
             currentIndex = NSFetchIndexDescription(name: attributeDict[ "name" ]!, elements: [] )
         }
         else if elementName == "fetchIndexElement" {
-            let property = currentEntity!.propertiesByName[ attributeDict["property"]! ]!
-            currentIndex!.elements.append( NSFetchIndexElementDescription(property: property, collationType: attributeDict[ "type" ]?.lowercased() == "rtree" ? .rTree : .binary ) )
+//            let property = currentEntity!.propertiesByName[ attributeDict["property"]! ]!
+//            currentIndex!.elements.append( NSFetchIndexElementDescription(property: property, collationType: attributeDict[ "type" ]?.lowercased() == "rtree" ? .rTree : .binary ) )
+            currentIndex!.addIndexElement( propertyName: attributeDict["property"]!, collationType: attributeDict[ "type" ]?.lowercased() == "rtree" ? .rTree : .binary )
         }
         else if elementName == "entry" {
             if currentUserInfo != nil {
