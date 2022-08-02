@@ -38,6 +38,9 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
         return []
     }
     
+    // TODO:
+    open var version: Int64?
+    
     open var entity: NSEntityDescription?
     
     var _entityName:String?
