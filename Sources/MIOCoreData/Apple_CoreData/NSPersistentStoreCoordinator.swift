@@ -7,7 +7,7 @@
 
 import Foundation
 import MIOCore
-import LoggerAPI
+//import LoggerAPI
 
 // Persistent store types supported by Core Data:
 public let NSSQLiteStoreType = "NSSQLiteStoreType"
@@ -50,7 +50,7 @@ open class NSPersistentStoreCoordinator : NSObject
 
     open func addPersistentStore(ofType storeType: String, configurationName configuration: String?, at storeURL: URL?, options: [AnyHashable : Any]? = nil) throws -> NSPersistentStore {
         
-        Log.verbose( "NSPersistentStoreCoordinator:addPersistentStore: Loading store type: \(storeType)" )
+        //Log.verbose( "NSPersistentStoreCoordinator:addPersistentStore: Loading store type: \(storeType)" )
                 
         let storeClass = NSPersistentStoreCoordinator.registeredStoreTypes[storeType] as! NSPersistentStore.Type        
         let store = storeClass.init(persistentStoreCoordinator: self, configurationName: configuration, at: storeURL ?? URL(string: "localhost")! , options: nil)
