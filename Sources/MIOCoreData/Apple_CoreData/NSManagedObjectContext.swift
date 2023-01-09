@@ -107,7 +107,8 @@ open class NSManagedObjectContext : NSObject
     // method to fetch objects from the persistent stores into the context (fetch request defines the entity and predicate as well as a sort order for the objects); context will match the results from persistent stores with current changes in the context (so inserted objects are returned even if they are not persisted yet); to fetch a single object with an ID if it is not guaranteed to exist and thus -objectWithObjectID: cannot be used, one would create a predicate like [NSComparisonPredicate predicateWithLeftExpression:[NSExpression expressionForKeyPath:@"objectID"] rightExpression:[NSExpression expressionForConstantValue:<object id>] modifier:NSPredicateModifierDirect type:NSEqualToPredicateOperatorType options:0]
     //open func fetch(_ request: NSFetchRequest<NSFetchRequestResult>) throws -> [Any]
     open func fetch<T>(_ request: NSFetchRequest<T>) throws -> [T] where T : NSFetchRequestResult {
-    
+        let offset = request.fetchOffset
+
         if let store = persistentStoreCoordinator!.persistentStores[0] as? NSIncrementalStore {
             // --- NSLog("Fetch entity: \(request.entityName!)")
             
@@ -116,7 +117,16 @@ open class NSManagedObjectContext : NSObject
                 throw NSManagedObjectContextError.fetchRequestEntityInvalid(request.entityName!)
             }
             
-            _ = try store.execute(request, with: self) as! [T]
+            let original_objs = try store.execute(request, with: self) as! [T]
+            
+            // TODO: IF there is an offset, we do not support filter by dynamics properties.
+            // For this reason, we return now.
+            // CASE:
+            // moc.reset deletes all the items in memory
+            // do a fetch with an offset (ex: offset = 2500, limit = 500)
+            if offset > 0 {
+                return original_objs
+            }
         }
                 
         let objs = objectsByEntityName[request.entityName!]
@@ -129,7 +139,6 @@ open class NSManagedObjectContext : NSObject
 //        }
         var results = objs!.filter(using: request.predicate) as! [T]        
         if request.sortDescriptors != nil { results = results.sortedArray(using: request.sortDescriptors!) }
-        let offset = request.fetchOffset
         let limit = min( offset + request.fetchLimit, results.count )
         
         return  results.count == 0      ? results
