@@ -111,8 +111,9 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         else if elementName == "fetchIndexElement" {
 //            let property = currentEntity!.propertiesByName[ attributeDict["property"]! ]!
 //            currentIndex!.elements.append( NSFetchIndexElementDescription(property: property, collationType: attributeDict[ "type" ]?.lowercased() == "rtree" ? .rTree : .binary ) )
-            if ( attributeDict["property"] != nil ) {
-                currentIndex!.addIndexElement( propertyName: attributeDict["property"]!, collationType: attributeDict[ "type" ]?.lowercased() == "rtree" ? .rTree : .binary )
+            let prop = attributeDict["property"]
+            if prop != nil {
+                currentIndex!.addIndexElement( propertyName: prop!, collationType: attributeDict[ "type" ]?.lowercased() == "rtree" ? .rTree : .binary )
             }
             // TODO: expresionType == "String" ... (para el prduct cost index)
         }
