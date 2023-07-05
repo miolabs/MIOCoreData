@@ -670,6 +670,10 @@ open class NSManagedObject : NSObject
             return str
         }
     }
-
+    
+    public func printAsJSON() throws -> String? {
+        let data = try JSONSerialization.data(withJSONObject: self)
+        return String(data: data, encoding: .utf8)
+    }
 }
 
