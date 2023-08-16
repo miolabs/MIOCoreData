@@ -91,13 +91,8 @@ open class NSEntityDescription : NSObject
     var _toManyRelationshipKeys: [String] = []
     var _toOneRelationshipKeys: [String] = []
     
-    #if os(Linux)
     open var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
     open var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
-    #else
-    open override var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
-    open override var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
-    #endif
         
     init(entityName:String, parentEntity:NSEntityDescription?, isAbstract:String, managedObjectModel model:NSManagedObjectModel) {
         _name = entityName
