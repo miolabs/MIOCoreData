@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 15/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 
@@ -143,3 +145,5 @@ open class NSIncrementalStore : NSPersistentStore
     }
 
 }
+
+#endif

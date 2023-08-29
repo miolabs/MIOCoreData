@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 21/05/2019.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 public enum NSDeleteRule : UInt
@@ -46,3 +48,6 @@ public class NSRelationshipDescription : NSPropertyDescription
     }
         
 }
+
+
+#endif

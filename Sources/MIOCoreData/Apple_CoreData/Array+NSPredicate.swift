@@ -5,6 +5,8 @@
 //  Created by David Trallero on 05/10/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 extension Array
@@ -26,3 +28,6 @@ extension Set
     }
     
 }
+
+
+#endif

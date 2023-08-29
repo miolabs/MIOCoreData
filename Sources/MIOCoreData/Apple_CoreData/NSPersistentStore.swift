@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 12/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 open class NSPersistentStore : NSObject
@@ -92,3 +94,5 @@ struct ObjectValues
 {
     var values: [String: Any]
 }
+
+#endif

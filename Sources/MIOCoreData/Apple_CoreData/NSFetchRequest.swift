@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 22/05/2019.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 public struct NSFetchRequestResultType : OptionSet
@@ -120,3 +122,6 @@ open class NSFetchRequest<ResultType> : NSPersistentStoreRequest where ResultTyp
     
     open var havingPredicate: NSPredicate?
 }
+
+
+#endif

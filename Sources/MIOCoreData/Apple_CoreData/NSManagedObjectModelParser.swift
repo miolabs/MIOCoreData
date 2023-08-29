@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 14/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 import MIOCore
 
@@ -278,3 +280,5 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         currentRelationship = currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, optional: opt, inverseName: inverseName, inverseEntityName: inverseEntityName, deleteRule: deleteRule)
     }
 }
+
+#endif

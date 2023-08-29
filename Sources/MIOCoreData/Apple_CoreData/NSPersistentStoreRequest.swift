@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 12/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 public enum NSPersistentStoreRequestType : UInt
@@ -25,3 +27,5 @@ open class NSPersistentStoreRequest : NSObject
     // The type of the request.
     open var requestType: NSPersistentStoreRequestType { get { return .none } }
 }
+
+#endif

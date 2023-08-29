@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 12/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 import MIOCore
 //import LoggerAPI
@@ -110,3 +112,5 @@ open class NSPersistentStoreCoordinator : NSObject
     }
 
 }
+
+#endif

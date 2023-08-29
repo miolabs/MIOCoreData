@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 18/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 open class NSSaveChangesRequest : NSPersistentStoreRequest
@@ -34,3 +36,5 @@ open class NSSaveChangesRequest : NSPersistentStoreRequest
     // Objects that were flagged for optimistic locking on the calling context via detectConflictsForObject:.
     open var lockedObjects: Set<NSManagedObject>? { get { return _lockedObjects } }
 }
+
+#endif

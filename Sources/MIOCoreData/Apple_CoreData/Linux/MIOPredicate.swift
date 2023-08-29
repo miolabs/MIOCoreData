@@ -8,6 +8,17 @@
 import Foundation
 import MIOCore
 
+
+#if APPLE_CORE_DATA
+
+public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> NSPredicate
+{
+    return NSPredicate(format: format, args )
+}
+
+#else
+
+
 #if canImport(CoreFoundation)
 import CoreFoundation
 #endif
@@ -31,6 +42,15 @@ open class MIOPredicate: NSObject, NSCopying
     }
 }
 
+public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPredicate
+{
+    let lexer = MIOPredicateTokenize(format)
+    let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
+    
+    return predicate
+}
+
+
 /*
  extension NSPredicate {
  
@@ -43,14 +63,6 @@ open class MIOPredicate: NSObject, NSCopying
  
  }
  */
-
-public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPredicate
-{
-    let lexer = MIOPredicateTokenize(format)
-    let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
-    
-    return predicate
-}
 
 public enum MIOPredicateTokenType: Int
 {
@@ -699,3 +711,5 @@ func inferType ( _ value: String ) -> Any {
     return MIOCoreInt32Value( value )!
 }
 
+
+#endif

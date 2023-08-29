@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 02/09/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 open class NSFetchIndexDescription : NSObject, NSCopying
@@ -43,3 +45,5 @@ open class NSFetchIndexDescription : NSObject, NSCopying
         }
     }
 }
+
+#endif

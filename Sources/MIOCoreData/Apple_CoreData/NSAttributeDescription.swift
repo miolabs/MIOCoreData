@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 21/05/2019.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 public enum NSAttributeType : UInt
@@ -47,3 +49,5 @@ open class NSAttributeDescription: NSPropertyDescription
         super.init(name: name, optional: optional, transient: transient)
     }
 }
+
+#endif

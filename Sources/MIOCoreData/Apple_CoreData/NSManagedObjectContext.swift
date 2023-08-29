@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 12/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 import MIOCore
@@ -388,12 +390,12 @@ open class NSManagedObjectContext : NSObject
     }
     
     open func reset() {
-        
+                        
         var idsByStore:[String:Set<NSManagedObjectID>] = [:]
         for ps in persistentStoreCoordinator!.persistentStores {
             idsByStore[ps.identifier] = Set<NSManagedObjectID>()
         }
-        
+
         for entityName in objectsByEntityName.keys {
             if let set = objectsByEntityName[entityName] {
                 for o in set {
@@ -402,7 +404,7 @@ open class NSManagedObjectContext : NSObject
                 }
             }
         }
-        
+
         for ps in persistentStoreCoordinator!.persistentStores {
             if ps is NSIncrementalStore {
                 let obj_ids = idsByStore[ps.identifier]!
@@ -417,3 +419,6 @@ open class NSManagedObjectContext : NSObject
     
     
 }
+
+
+#endif

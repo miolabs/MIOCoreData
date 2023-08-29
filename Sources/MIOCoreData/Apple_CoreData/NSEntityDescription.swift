@@ -5,8 +5,9 @@
 //  Created by Javier Segura Perez on 21/05/2019.
 //
 
-import Foundation
+#if !APPLE_CORE_DATA
 
+import Foundation
 import MIOCore
 
 open class NSEntityDescription : NSObject
@@ -94,7 +95,7 @@ open class NSEntityDescription : NSObject
     #if os(Linux)
     open var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
     open var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
-    #else
+    #else //APPLE_CORE_DATA
     open override var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
     open override var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
     #endif
@@ -218,3 +219,5 @@ open class NSEntityDescription : NSObject
         }
     }
 }
+
+#endif

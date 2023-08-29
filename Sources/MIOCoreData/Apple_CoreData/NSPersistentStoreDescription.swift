@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 12/05/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 open class NSPersistentStoreDescription : NSObject
@@ -58,3 +60,6 @@ open class NSPersistentStoreDescription : NSObject
         super.init()
     }
 }
+
+
+#endif

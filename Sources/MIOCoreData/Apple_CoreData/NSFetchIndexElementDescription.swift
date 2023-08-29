@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 02/09/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 public enum NSFetchIndexElementType : UInt
@@ -37,3 +39,5 @@ open class NSFetchIndexElementDescription : NSObject
     unowned(unsafe) open var indexDescription: NSFetchIndexDescription? { get { nil } }
 
 }
+
+#endif
