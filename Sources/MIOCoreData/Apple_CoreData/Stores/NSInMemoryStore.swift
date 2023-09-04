@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 15/3/21.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 class NSInMemoryStore : NSPersistentStore
@@ -27,3 +29,4 @@ class NSInMemoryStore : NSPersistentStore
         
     }
 }
+#endif

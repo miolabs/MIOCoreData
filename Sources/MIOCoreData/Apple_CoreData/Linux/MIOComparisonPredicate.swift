@@ -4,6 +4,7 @@
 //
 //  Created by Javier Segura Perez on 05/06/2020.
 //
+#if !APPLE_CORE_DATA
 
 import Foundation
 
@@ -93,3 +94,4 @@ open class MIOComparisonPredicate : MIOPredicate
     }
 
 }
+#endif

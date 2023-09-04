@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 03/06/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 
@@ -186,3 +188,5 @@ open class MIOExpression : NSObject
         }
     }
 }
+
+#endif

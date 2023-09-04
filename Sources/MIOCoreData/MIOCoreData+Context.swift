@@ -7,6 +7,10 @@
 
 import Foundation
 
+#if APPLE_CORE_DATA
+import CoreData
+#endif
+
 public protocol MIOCoreDataContextProtocol
 {
     var mom: NSManagedObjectModel { get }

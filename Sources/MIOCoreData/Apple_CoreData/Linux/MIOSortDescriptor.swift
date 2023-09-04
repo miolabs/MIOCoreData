@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 22/05/2019.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 public typealias NSSortDescriptor = MIOSortDescriptor
@@ -89,6 +91,7 @@ extension Array
    
 }
 
+#endif
 
 /*
 extension NSArray {
@@ -120,3 +123,4 @@ extension NSMutableOrderedSet {
 }
 
 */
+

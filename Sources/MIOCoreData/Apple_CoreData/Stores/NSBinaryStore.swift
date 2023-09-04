@@ -5,6 +5,8 @@
 //  Created by Javier Segura Perez on 15/3/21.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 
 class NSBinaryStore : NSPersistentStore
@@ -13,3 +15,5 @@ class NSBinaryStore : NSPersistentStore
         self.metadata = [NSStoreUUIDKey: UUID().uuidString.uppercased(), NSStoreTypeKey: NSBinaryStoreType]        
     }
 }
+
+#endif
