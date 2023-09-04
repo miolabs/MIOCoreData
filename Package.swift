@@ -2,6 +2,16 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
+
+let swiftSettings: [SwiftSetting]
+
+let enable_cd = !( ["0","false"].contains(ProcessInfo.processInfo.environment["APPLE_CORE_DATA"]) )
+if enable_cd {
+    swiftSettings = [ .define("APPLE_CORE_DATA")]
+} else {
+    swiftSettings = []
+}
 
 let package = Package(
     name: "MIOCoreData",
@@ -24,7 +34,9 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "MIOCoreData",
-            dependencies: ["MIOCore"]),
+            dependencies: ["MIOCore"],
+            swiftSettings: swiftSettings
+        ),
         .testTarget(
             name: "MIOCoreDataTests",
             dependencies: ["MIOCoreData"]),
