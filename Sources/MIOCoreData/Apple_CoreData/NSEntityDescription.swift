@@ -92,10 +92,10 @@ open class NSEntityDescription : NSObject
     var _toManyRelationshipKeys: [String] = []
     var _toOneRelationshipKeys: [String] = []
     
-    #if !APPLE_CORE_DATA && os(Linux)
+    #if os(Linux)
     open var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
     open var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
-    #elseif !APPLE_CORE_DATA
+    #else
     open override var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
     open override var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
     #endif

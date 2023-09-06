@@ -9,6 +9,7 @@ import Foundation
 
 #if APPLE_CORE_DATA
 import CoreData
+//@_exported import CoreData
 #endif
 
 public protocol MIOCoreDataContextProtocol
