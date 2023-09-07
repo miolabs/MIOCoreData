@@ -6,14 +6,13 @@ import Foundation
 
 let swiftSettings: [SwiftSetting]
 
-/*let cd_env = ( ProcessInfo.processInfo.environment["APPLE_CORE_DATA"] ?? "0" ).lowercased()
+let cd_env = ( ProcessInfo.processInfo.environment["APPLE_CORE_DATA"] ?? "0" ).lowercased()
 let enable_cd = !( cd_env == "0" || cd_env == "false" )
 if enable_cd {
     swiftSettings = [ .define("APPLE_CORE_DATA")]
 } else {
     swiftSettings = []
-}*/
-swiftSettings = [ .define("APPLE_CORE_DATA")]
+}
 
 let package = Package(
     name: "MIOCoreData",
