@@ -13,7 +13,7 @@ if enable_cd {
 } else {
     swiftSettings = []
 }
-//swiftSettings = [ .define("APPLE_CORE_DATA")]
+swiftSettings = [ .define("APPLE_CORE_DATA")]
 
 let package = Package(
     name: "MIOCoreData",
