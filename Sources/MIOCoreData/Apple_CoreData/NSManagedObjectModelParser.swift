@@ -38,7 +38,7 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         
         print("MIOManagedObjectModelParser:parse: Parsing contents of \(url.standardizedFileURL)")
                 
-        guard let parser = XMLParser(contentsOf: url.standardizedFileURL) else {
+        guard let parser = XMLParser( contentsOf: url.standardizedFileURL ) else {
             print("MIOManagedObjectModelParser:parse: XMLParser is nil. file couldn't be read")
             completion( MIOManagedObjectModelParserError.invalidURL )
             return
@@ -49,7 +49,7 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         let result = parser.parse()
         
         if result == false {
-            completion( MIOManagedObjectModelParserError.invalidURL )
+            completion( parser.parserError )
         }
     }
     
