@@ -22,11 +22,15 @@ public protocol MIOCoreDataContextProtocol
     var moc: NSManagedObjectContext { get }
     
     func save() throws
-    
+
+#if APPLE_CORE_DATA
     func createEntity<T:NSManagedObject> ( _ entityName: String ) throws -> T
     func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription
+#endif
+    
 }
 
+#if APPLE_CORE_DATA
 extension MIOCoreDataContextProtocol
 {
     func createEntity<T:NSManagedObject> ( _ entityType: T.Type ) throws -> T {
@@ -40,3 +44,4 @@ extension MIOCoreDataContextProtocol
         return e
     }
 }
+#endif
