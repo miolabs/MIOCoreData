@@ -8,7 +8,9 @@
 import Foundation
 
 #if APPLE_CORE_DATA
-import CoreData
+@_exported import CoreData
+#else
+@_exported import CoreDataSwift
 #endif
 
 enum MIOCoreDataContextProtocolError : Error

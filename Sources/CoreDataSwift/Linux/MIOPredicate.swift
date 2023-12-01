@@ -1,28 +1,19 @@
 //
-//  File.swift
+//  MIOPredicate.swift
 //  
 //
 //  Created by Javier Segura Perez on 01/06/2020.
 //
 
+#if !APPLE_CORE_DATA
+
 import Foundation
 import MIOCore
-
-
-#if APPLE_CORE_DATA
-
-public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> NSPredicate
-{
-    return NSPredicate(format: format, args )
-}
-
-#else
 
 
 #if canImport(CoreFoundation)
 import CoreFoundation
 #endif
-
 
 public typealias NSExpression = MIOExpression
 public typealias NSComparisonPredicate = MIOComparisonPredicate
@@ -517,7 +508,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
         }
 
 //        if obj_value is UUID { obj_value = (obj_value as! UUID).uuidString.uppercased() }
-        if obj_value is UUID { value = try? MIOCoreUUIDValue( value ) ?? nil }
+        if obj_value is UUID { value = try? MIOCoreUUIDValue( value ) ?? value }
         
         switch cmp.predicateOperatorType {
             case .equalTo             : return  MIOPredicateEvaluateEqual(     obj_value, value )
@@ -673,7 +664,7 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
 
     let value = String((rightValue as! String).dropFirst().dropLast())
                     .components(separatedBy: ",")
-                    .map { inferType( String( $0.trimmingCharacters(in: .whitespaces) ) ) }
+                    .map { inferType( String( $0.trimmingCharacters(in: .whitespaces) ), leftValue! ) }
 
     
     if let str_list = value as? [String] {
@@ -689,7 +680,7 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
             return (uuid_list).contains( lv )
         }
         else {
-            return (uuid_list).contains( UUID(uuidString: leftValue as! String )! )
+            return (uuid_list).contains( leftValue as! UUID )
         }
     }
 
@@ -698,18 +689,23 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
 }
 
 
-func inferType ( _ value: String ) -> Any {
+func inferType ( _ value: String, _ obj_value: Any ) -> Any {
+    var v = value
     if value.starts(with: "\"" ) {
-        return value.replacingOccurrences(of: "\"", with: "")
+        v = value.replacingOccurrences(of: "\"", with: "")
     }
     else if value.starts(with: "'" ) {
-        return value.replacingOccurrences(of: "'", with: "")
+        v = value.replacingOccurrences(of: "'", with: "")
     }
-    else if let uuid = UUID(uuidString: value) {
-        return uuid
-    }
+        
+    if obj_value is UUID { return UUID(uuidString: v)! }
+    if obj_value is Int { return MIOCoreIntValue( v )! }
+    if obj_value is Int8 { return MIOCoreInt8Value( v )! }
+    if obj_value is Int16 { return MIOCoreInt16Value( v )! }
+    if obj_value is Int32 { return MIOCoreInt32Value( v )! }
+    if obj_value is Int64 { return MIOCoreInt64Value( v )! }
     
-    return MIOCoreInt32Value( value )!
+    return value
 }
 
 

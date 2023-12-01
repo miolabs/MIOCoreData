@@ -6,9 +6,8 @@
 //
 
 #if !APPLE_CORE_DATA
-
 import Foundation
-
+import CoreDataSwift
 
 extension NSPropertyDescription
 {

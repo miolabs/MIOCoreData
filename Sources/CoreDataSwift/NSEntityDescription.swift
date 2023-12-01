@@ -91,15 +91,7 @@ open class NSEntityDescription : NSObject
 
     var _toManyRelationshipKeys: [String] = []
     var _toOneRelationshipKeys: [String] = []
-    
-    #if !APPLE_CORE_DATA && os(Linux)
-    open var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
-    open var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
-    #elseif !APPLE_CORE_DATA
-    open override var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
-    open override var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
-    #endif
-        
+            
     init(entityName:String, parentEntity:NSEntityDescription?, isAbstract:String, managedObjectModel model:NSManagedObjectModel) {
         _name = entityName
         managedObjectClassName = entityName
@@ -220,4 +212,18 @@ open class NSEntityDescription : NSObject
     }
 }
 
+#endif
+
+#if os(Linux)
+extension NSEntityDescription
+{
+    open var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
+    open var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
+}
+#elseif !APPLE_CORE_DATA
+extension NSEntityDescription
+{
+    open override var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
+    open override var toOneRelationshipKeys: [ String ] { get { return _toOneRelationshipKeys } }
+}
 #endif
