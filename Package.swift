@@ -9,7 +9,7 @@ import Foundation
 
 // NO CORE DATA SUPPORT
 let swiftSettings:[SwiftSetting] = []
-let targets:[String] = [ "MIOCoreData", "CoreDataSwift" ]
+//let targets:[String] = [ "MIOCoreData", "CoreDataSwift" ]
 
 
 let package = Package(
