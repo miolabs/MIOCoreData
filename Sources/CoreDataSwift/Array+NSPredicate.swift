@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  Array+NSPredicate.swift
+//
 //
 //  Created by David Trallero on 05/10/2020.
 //

@@ -13,7 +13,7 @@ import Foundation
 @_exported import CoreDataSwift
 #endif
 
-enum MIOCoreDataContextProtocolError : Error
+enum MIOCoreDataContextError : Error
 {
     case entityDescriptionNotFound
 }
@@ -23,26 +23,32 @@ public protocol MIOCoreDataContextProtocol
     var mom: NSManagedObjectModel { get }
     var moc: NSManagedObjectContext { get }
     
-    func save() throws
+//    func save() throws
     
     func createEntity<T:NSManagedObject> ( _ entityName: String, id:UUID? ) throws -> T
     
     func entity ( _ entityName: String ) throws -> NSEntityDescription
-//    func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription
+    func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription
 }
 
-#if APPLE_CORE_DATA
+
 extension MIOCoreDataContextProtocol
 {
-    func createEntity<T:NSManagedObject> ( _ entityType: T.Type ) throws -> T {
+    
+    public func createEntity<T:NSManagedObject> ( _ entityType: T.Type ) throws -> T {
         return NSEntityDescription.insertNewObject( forEntityName: entityType.description(), into: moc ) as! T
     }
-    
-    func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription {
-        guard let e = mom.entitiesByName[ entityType.description() ] else {
-            throw MIOCoreDataContextProtocolError.entityDescriptionNotFound
-        }
-        return e
+
+    public func entity ( _ entityName: String ) throws -> NSEntityDescription {
+        let e = mom.entitiesByName[ entityName ]
+        if e != nil { return e! }
+        
+        throw MIOCoreDataContextError.entityDescriptionNotFound
     }
+    
+    public func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription {
+        return try entity( entityType.description() )
+    }
+    
 }
-#endif
+

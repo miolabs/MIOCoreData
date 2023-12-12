@@ -8,7 +8,6 @@
 #if !APPLE_CORE_DATA
 
 import Foundation
-
 import MIOCore
 
 enum NSManagedObjectContextError: Error

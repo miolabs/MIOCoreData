@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  MIOCompoundPredicate.swift
 //  
 //
 //  Created by Javier Segura Perez on 22/09/2020.
