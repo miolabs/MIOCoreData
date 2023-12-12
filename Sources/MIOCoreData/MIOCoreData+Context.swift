@@ -28,7 +28,7 @@ public protocol MIOCoreDataContextProtocol
     func createEntity<T:NSManagedObject> ( _ entityName: String, id:UUID? ) throws -> T
     
     func entity ( _ entityName: String ) throws -> NSEntityDescription
-    func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription
+//    func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription
 }
 
 
@@ -46,9 +46,9 @@ extension MIOCoreDataContextProtocol
         throw MIOCoreDataContextError.entityDescriptionNotFound
     }
     
-    public func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription {
-        return try entity( entityType.description() )
-    }
+//    public func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription {
+//        return try entity( entityType.description() )
+//    }
     
 }
 
