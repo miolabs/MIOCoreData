@@ -4,11 +4,11 @@
 import PackageDescription
 import Foundation
 
-let swiftSettings:[SwiftSetting] = [ .define("APPLE_CORE_DATA") ]
+//let swiftSettings:[SwiftSetting] = [ .define("APPLE_CORE_DATA") ]
 //let targets:[String] = [ "MIOCoreData" ]
 
 // NO CORE DATA SUPPORT
-//let swiftSettings:[SwiftSetting] = []
+let swiftSettings:[SwiftSetting] = []
 //let targets:[String] = [ "MIOCoreData", "CoreDataSwift" ]
 
 
