@@ -25,7 +25,7 @@ public protocol MIOCoreDataContextProtocol
     
 //    func save() throws
     
-    func createEntity<T:NSManagedObject> ( _ entityName: String ) throws -> T
+//    func createEntity<T:NSManagedObject> ( _ entityName: String ) throws -> T
     func entity ( _ entityName: String ) throws -> NSEntityDescription
 
     // func entity ( _ entityType: NSManagedObject.Type ) throws -> NSEntityDescription
@@ -39,12 +39,12 @@ extension MIOCoreDataContextProtocol
         return NSEntityDescription.insertNewObject( forEntityName: entityName, into: moc ) as! T
     }
     
-    public func entity ( _ entityName: String ) throws -> NSEntityDescription {
-        let e = mom.entitiesByName[ entityName ]
-        if e != nil { return e! }
-        
-        throw MIOCoreDataContextError.entityDescriptionNotFound
-    }
+//    public func entity ( _ entityName: String ) throws -> NSEntityDescription {
+//        let e = mom.entitiesByName[ entityName ]
+//        if e != nil { return e! }
+//        
+//        throw MIOCoreDataContextError.entityDescriptionNotFound
+//    }
 
 //    public func createEntity<T:NSManagedObject> ( _ entityType: T.Type ) throws -> T {
 //        return NSEntityDescription.insertNewObject( forEntityName: entityType.description(), into: moc ) as! T
