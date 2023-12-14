@@ -35,9 +35,9 @@ public protocol MIOCoreDataContextProtocol
 
 extension MIOCoreDataContextProtocol
 {
-    public func createEntity<T:NSManagedObject> ( _ entityName: String ) throws -> T {
-        return NSEntityDescription.insertNewObject( forEntityName: entityName, into: moc ) as! T
-    }
+//    public func createEntity<T:NSManagedObject> ( _ entityName: String ) throws -> T {
+//        return NSEntityDescription.insertNewObject( forEntityName: entityName, into: moc ) as! T
+//    }
     
 //    public func entity ( _ entityName: String ) throws -> NSEntityDescription {
 //        let e = mom.entitiesByName[ entityName ]
