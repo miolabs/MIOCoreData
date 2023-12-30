@@ -6,6 +6,7 @@
 //
 
 #if !APPLE_CORE_DATA
+
 import Foundation
 import CoreDataSwift
 
@@ -15,5 +16,6 @@ extension NSPropertyDescription
         return userInfo?[ "DBName" ] as? String ?? name.camelCaseToSnakeCase( )
     }
 }
+
 #endif
 
