@@ -24,7 +24,6 @@ public protocol MIOCoreDataContextProtocol
     var moc: NSManagedObjectContext { get }
     
 //    func save() throws
-    
 //    func createEntity<T:NSManagedObject> ( _ entityName: String ) throws -> T
     func entity ( _ entityName: String ) throws -> NSEntityDescription
 
