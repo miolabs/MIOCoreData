@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		14F0E7062B34C69000359FD1 /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */; };
 		14F0E7202B34C82100359FD1 /* MIOPredicate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E71C2B34C82100359FD1 /* MIOPredicate.swift */; };
-		14F0E7212B34C82100359FD1 /* NSPropertyDescription+DBNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E71D2B34C82100359FD1 /* NSPropertyDescription+DBNames.swift */; };
-		14F0E7222B34C82100359FD1 /* NSEntityDescription+DBNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E71E2B34C82100359FD1 /* NSEntityDescription+DBNames.swift */; };
 		14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */; };
 		14F0E72A2B34C83800359FD1 /* MIOManagedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7252B34C83800359FD1 /* MIOManagedTests.swift */; };
 		14F0E72B2B34C83800359FD1 /* XCTestManifests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7262B34C83800359FD1 /* XCTestManifests.swift */; };
@@ -33,8 +31,6 @@
 		14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MIOCoreData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		14F0E7052B34C69000359FD1 /* MIOCoreDataTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MIOCoreDataTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		14F0E71C2B34C82100359FD1 /* MIOPredicate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MIOPredicate.swift; sourceTree = "<group>"; };
-		14F0E71D2B34C82100359FD1 /* NSPropertyDescription+DBNames.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSPropertyDescription+DBNames.swift"; sourceTree = "<group>"; };
-		14F0E71E2B34C82100359FD1 /* NSEntityDescription+DBNames.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSEntityDescription+DBNames.swift"; sourceTree = "<group>"; };
 		14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "MIOCoreData+Context.swift"; sourceTree = "<group>"; };
 		14F0E7252B34C83800359FD1 /* MIOManagedTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MIOManagedTests.swift; sourceTree = "<group>"; };
 		14F0E7262B34C83800359FD1 /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCTestManifests.swift; sourceTree = "<group>"; };
@@ -84,8 +80,6 @@
 			isa = PBXGroup;
 			children = (
 				14F0E71C2B34C82100359FD1 /* MIOPredicate.swift */,
-				14F0E71D2B34C82100359FD1 /* NSPropertyDescription+DBNames.swift */,
-				14F0E71E2B34C82100359FD1 /* NSEntityDescription+DBNames.swift */,
 				14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */,
 			);
 			name = MIOCoreData;
@@ -218,8 +212,6 @@
 			files = (
 				14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */,
 				14F0E7202B34C82100359FD1 /* MIOPredicate.swift in Sources */,
-				14F0E7222B34C82100359FD1 /* NSEntityDescription+DBNames.swift in Sources */,
-				14F0E7212B34C82100359FD1 /* NSPropertyDescription+DBNames.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

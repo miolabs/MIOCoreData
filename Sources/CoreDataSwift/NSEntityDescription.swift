@@ -71,6 +71,7 @@ open class NSEntityDescription : NSObject
     var _relationshipsByName:[String : NSRelationshipDescription] = [:]
     open var relationshipsByName: [String : NSRelationshipDescription] { get { return _relationshipsByName } }
 
+    
     /* Returns/sets the version hash modifier for the entity.  This value is included in the version hash for the entity, allowing developers to mark/denote an entity as being a different "version" than another, even if all of the values which affect persistence are equal.  (Such a difference is important in cases where the structure of an entity is unchanged, but the format or content of data has changed.)
     */
     open var versionHashModifier: String? = nil

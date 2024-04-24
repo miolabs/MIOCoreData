@@ -22,7 +22,16 @@ public typealias NSCompoundPredicate = MIOCompoundPredicate
 
 enum MIOPredicateError : Error
 {
-    case invalidFunction
+    case invalidFunction(_ value:String)
+}
+
+extension MIOPredicateError: LocalizedError
+{
+    var errorDescription: String? {
+        switch self {
+        case .invalidFunction(let token): return "invalid function token found: \(token)"
+        }
+    }
 }
 
 open class MIOPredicate: NSObject, NSCopying
@@ -223,7 +232,7 @@ func MIOPredicateParseTokens(lexer: MIOCoreLexer, _ args: [Any]) throws -> MIOPr
                     MIOPredicateParseOperatorOrFunction(lexer, op: &op, functionType: &functionType)
                     
                 default:
-                    throw MIOPredicateError.invalidFunction
+                    throw MIOPredicateError.invalidFunction(token?.value ?? "Unknown" )
                 }
             }
             
@@ -684,8 +693,8 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
         }
     }
 
-    
-    return (value as! [Int32]).contains( MIOCoreInt32Value( leftValue!)! )
+    let ints = value.map { MIOCoreIntValue( $0, 0 )! }
+    return ints.contains( MIOCoreIntValue( leftValue!)! )
 }
 
 
