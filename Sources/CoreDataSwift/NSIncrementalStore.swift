@@ -9,6 +9,10 @@
 
 import Foundation
 
+enum NSIncrementalStoreError : Error
+{
+    case unimplemented( functionName: String = #function )
+}
 
 open class NSIncrementalStore : NSPersistentStore
 {
@@ -56,13 +60,13 @@ open class NSIncrementalStore : NSPersistentStore
     // If the relationship is a to-many, should return an NSSet or NSArray containing the NSManagedObjectIDs of the related objects.
     // Should return nil and set the error if the source object cannot be found.
     open func newValue(forRelationship relationship: NSRelationshipDescription, forObjectWith objectID: NSManagedObjectID, with context: NSManagedObjectContext?) throws -> Any {
-        return ""
+        throw NSIncrementalStoreError.unimplemented()
     }
 
     
     // API methods that may be overriden:
     open class func identifierForNewStore(at storeURL: URL) -> Any {
-        return ""
+        return "NSIncrementalStoreURL"
     }
 
     
