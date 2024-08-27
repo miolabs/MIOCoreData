@@ -406,7 +406,10 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer, _ args: [Any]) -> NSExpre
         return MIOExpression(forConstantValue: v)
         
     case MIOPredicateTokenType.arraySymbol.rawValue:
-        return MIOExpression(forConstantValue: token!.value)
+        // Convert to array of objects
+        let array = ( try? JSONSerialization.jsonObject(with: token!.value.data(using: .utf8)!, options: .fragmentsAllowed ) ) ?? token!.value
+        return MIOExpression( forConstantValue: array )
+//        return MIOExpression( forConstantValue: token!.value )
         
     case MIOPredicateTokenType.nullValue.rawValue:
         return MIOExpression(forConstantValue: nil)
@@ -520,13 +523,14 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
         if obj_value is UUID { value = try? MIOCoreUUIDValue( value ) ?? value }
         
         switch cmp.predicateOperatorType {
-            case .equalTo             : return  MIOPredicateEvaluateEqual(     obj_value, value )
-            case .notEqualTo          : return !MIOPredicateEvaluateEqual(     obj_value, value )
-            case .lessThan            : return  MIOPredicateEvaluateLess(      obj_value, value )
+            case .equalTo             : return  MIOPredicateEvaluateEqual    ( obj_value, value )
+            case .notEqualTo          : return !MIOPredicateEvaluateEqual    ( obj_value, value )
+            case .lessThan            : return  MIOPredicateEvaluateLess     ( obj_value, value )
             case .lessThanOrEqualTo   : return  MIOPredicateEvaluateLessEqual( obj_value, value )
             case .greaterThan         : return !MIOPredicateEvaluateLessEqual( obj_value, value )
-            case .greaterThanOrEqualTo: return !MIOPredicateEvaluateLess(      obj_value, value )
-            case .in                  : return  MIOPredicateEvaluateIn(        obj_value, value )
+            case .greaterThanOrEqualTo: return !MIOPredicateEvaluateLess     ( obj_value, value )
+            case .in                  : return  MIOPredicateEvaluateIn       ( obj_value, value )
+            case .contains            : return  MIOPredicateEvaluateContains ( obj_value, value )
             default:break
         }
 
@@ -666,16 +670,23 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     }
 }
 
-func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
+func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool 
+{
     if leftValue == nil && rightValue == nil { return true }
     if leftValue == nil && rightValue != nil { return false }
     if leftValue != nil && rightValue == nil { return false }
 
-    let value = String((rightValue as! String).dropFirst().dropLast())
-                    .components(separatedBy: ",")
-                    .map { inferType( String( $0.trimmingCharacters(in: .whitespaces) ), leftValue! ) }
-
+    var value:[Any] = []
     
+    if let str = rightValue as? String {
+        value = String( str.dropFirst().dropLast() )
+                        .components(separatedBy: ",")
+                        .map { inferType( String( $0.trimmingCharacters(in: .whitespaces) ), leftValue! ) }
+    }
+    else {
+        value = rightValue as? [Any] ?? []
+    }
+        
     if let str_list = value as? [String] {
         if let lv = leftValue as? UUID {
             return (str_list).contains( lv.uuidString )
@@ -695,6 +706,16 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
 
     let ints = value.map { MIOCoreIntValue( $0, 0 )! }
     return ints.contains( MIOCoreIntValue( leftValue!)! )
+}
+
+func MIOPredicateEvaluateContains( _ leftValue: Any?, _ rightValue:Any?) -> Bool
+{
+    if leftValue == nil && rightValue == nil { return false }
+    if let l = leftValue as? String, let r = rightValue as? String {
+        return l.contains( r )
+    }
+    
+    return false
 }
 
 
