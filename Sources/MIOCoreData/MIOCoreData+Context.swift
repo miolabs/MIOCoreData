@@ -7,11 +7,7 @@
 
 import Foundation
 
-#if APPLE_CORE_DATA
-@_exported import CoreData
-#else
 @_exported import CoreDataSwift
-#endif
 
 enum MIOCoreDataContextError : Error
 {
