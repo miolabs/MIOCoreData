@@ -7,8 +7,6 @@
 
 import Foundation
 
-@_exported import CoreDataSwift
-
 enum MIOCoreDataContextError : Error
 {
     case entityDescriptionNotFound
