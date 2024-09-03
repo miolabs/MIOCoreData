@@ -237,7 +237,7 @@ class SwiftModelOutputDelegate : ModelOutputDelegate
         }
         
         if !_objc_support {
-            _model_register_content += "\n\t\t_MIOCoreRegisterClass(type: " + self.currentClassName + ".self, forKey: \"" + self.currentClassName + "\")"
+            _model_register_content += "\n\t_MIOCoreRegisterClass(type: " + self.currentClassName + ".self, forKey: \"" + self.currentClassName + "\")"
         }
     }
     
@@ -246,7 +246,7 @@ class SwiftModelOutputDelegate : ModelOutputDelegate
         if !_objc_support {
             let modelPath = parser.modelPath
             
-            _model_register_content += "\n\t}\n}\n"
+            _model_register_content += "\n}\n"
             
             let path = modelPath + "/_CoreDataClasses.swift"
             WriteTextFile(content:_model_register_content, path:path)

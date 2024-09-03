@@ -7,6 +7,10 @@
 
 #if !APPLE_CORE_DATA
 @_exported import CoreDataSwift
+
+public typealias NSPredicate = MIOPredicate
+public typealias NSSortDescriptor = MIOSortDescriptor
+
 #else
 
 @_exported import CoreData

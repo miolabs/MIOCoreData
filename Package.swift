@@ -4,10 +4,7 @@
 import PackageDescription
 import Foundation
 
-var swift_settings:[SwiftSetting]? = [ .define( "APPLE_CORE_DATA" ) ]
-if ProcessInfo.processInfo.environment["APPLE_CORE_DATA_AVAILABLE"] != nil {
-    swift_settings = [ .define( "APPLE_CORE_DATA" ) ]
-}
+//var swift_settings:[SwiftSetting]? = [ .define( "APPLE_CORE_DATA" ) ]
 
 let package = Package(
     name: "MIOCoreData",
@@ -43,13 +40,11 @@ let package = Package(
         ),
         .target(
             name: "CoreDataSwift",
-            dependencies: ["MIOCore"],
-            swiftSettings: swift_settings
+            dependencies: ["MIOCore"]
         ),
         .target(
             name: "MIOCoreData",
-            dependencies: ["MIOCore", "CoreDataSwift"],
-            swiftSettings: swift_settings
+            dependencies: ["MIOCore", "CoreDataSwift"]
         ),
         .testTarget(
             name: "MIOCoreDataTests",
