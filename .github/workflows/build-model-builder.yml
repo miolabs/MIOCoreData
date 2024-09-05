@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-22.04  # specific version because swift and static swift sdk depend on specfic version of ubuntu
     steps:
       - name: Checkout
-        uses: actions/checkout@latest
+        uses: actions/checkout@v4
           
       - name: Install dependencias for swift compiler  # https://www.swift.org/install/linux/tarball/  Instructions depends on version of Ubuntu
         run: |
