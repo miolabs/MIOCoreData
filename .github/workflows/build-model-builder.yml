@@ -77,8 +77,21 @@ jobs:
           swift build -c release --swift-sdk swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
           ls .build
           echo "otro ls"
-          ls .build/release
+          ls .build/release/ModelBuilder
 
+      - name: Create release
+        id: create-release
+        uses: softprops/action-gh-release@v2
+        # if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: 'ModelBuilder linux_x86_64'
+          files:
+            .build/release/ModelBuilder
+
+      - name: Output Data
+        run: |
+          echo "URL asset[0]: ${{ fromJSON(steps.create-release.outputs.assets)[0].browser_download_url }}"
+          echo "URL release: ${{ steps.create-release.outputs.assets)[0].browser_download_url }}"
       
           
           
