@@ -1,11 +1,9 @@
 name: Build Linux Plugin
 
 on:
-  workflow_dispatch:
-    inputs:
-      CLIENT:
-        description: 'customization folder name'
-        required: true
+  push:
+    tags:
+      - '*'  
 
 
 jobs:
@@ -16,15 +14,6 @@ jobs:
         with:
           ref: 'entity_core'
           
-      - name: Set up Git user
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          TAG_NAME="v1-0-1"  # Ejemplo de tag usando timestamp
-          echo $TAG_NAME >> $GITHUB_ENV
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
-        
       - name: Install dependencias for swift compiler  # https://www.swift.org/install/linux/tarball/  Instructions depends on version of Ubuntu
         run: |
           sudo apt-get update
@@ -96,7 +85,7 @@ jobs:
         # if: startsWith(github.ref, 'refs/tags/')
         with:
           name: 'ModelBuilder linux_x86_64'
-          tag_name: $TAG_NAME
+          #tag_name: $TAG_NAME
           files:
             .build/release/ModelBuilder
 
