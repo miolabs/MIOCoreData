@@ -53,6 +53,7 @@ jobs:
           mkdir temp && tar -xzf swift.tar.gz -C temp
           #mv temp/*/* ./  # Mueve los archivos de la carpeta interna al directorio actual
           ls temp/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-ubuntu22.04/
+          which swift
           sudo cp -fr temp/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-ubuntu22.04/usr/* /usr/
           PWD=`pwd`
           #SWIFT_PATH="${PWD}/usr/bin"
