@@ -52,7 +52,8 @@ jobs:
         run: |
           mkdir temp && tar -xzf swift.tar.gz -C temp
           #mv temp/*/* ./  # Mueve los archivos de la carpeta interna al directorio actual
-          sudo cp -r temp/usr/* /usr/
+          ls temp
+          sudo cp -r temp/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/usr/* /usr/
           PWD=`pwd`
           #SWIFT_PATH="${PWD}/usr/bin"
           #echo "${SWIFT_PATH}" >> $GITHUB_PATH
