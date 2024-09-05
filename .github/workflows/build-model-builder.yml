@@ -71,7 +71,7 @@ jobs:
         run: |
           swift build -help
           echo "building"
-          swift build --swift-sdk x86_64-swift-linux-musl
+          swift build --sdk x86_64-swift-linux-musl
           ls .build
           echo "otro ls"
           ls .build/x86_64-swift-linux-musl
