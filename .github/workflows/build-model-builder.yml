@@ -12,6 +12,10 @@ jobs:
   build-linux-model:
     runs-on: ubuntu-22.04  # specific version because swift and static swift sdk depend on specfic version of ubuntu
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'entity_core'
+          
       - name: Set up Git user
         run: |
           git config user.name "github-actions"
@@ -75,9 +79,7 @@ jobs:
           swift sdk install https://download.swift.org/swift-6.0-branch/static-sdk/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1.artifactbundle.tar.gz --checksum 42a361e1a240e97e4bb3a388f2f947409011dcd3d3f20b396c28999e9736df36 
           swift sdk list
 
-      - uses: actions/checkout@v4
-        with:
-          ref: 'entity_core'
+    
 
       - name: Build program
         run: |
