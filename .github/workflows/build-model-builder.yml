@@ -77,7 +77,9 @@ jobs:
           swift build --swift-sdk swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
           ls .build
           echo "otro ls"
-          ls .build/x86_64-swift-linux-musl
+          ls .build/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
+
+      
           
           
 
