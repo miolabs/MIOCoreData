@@ -91,7 +91,7 @@ jobs:
       - name: Output Data
         run: |
           echo "URL asset[0]: ${{ fromJSON(steps.create-release.outputs.assets)[0].browser_download_url }}"
-          echo "URL release: ${{ steps.create-release.outputs.assets)[0].browser_download_url }}"
+          echo "URL release: ${{ steps.create-release.outputs.url }}"
       
           
           
