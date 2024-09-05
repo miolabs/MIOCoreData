@@ -91,8 +91,7 @@ jobs:
           cd binaries
           mkdir linux
           cp ../.build/release/ModelBuilder linux
-          cat <<EOF > info.json
-            {
+          json_content='{
                 "schemaVersion": "1.0",
                 "artifacts": {
                     "model-builder": {
@@ -110,10 +109,12 @@ jobs:
                         ]
                     }
                 }
-            }
-            EOF
+            }'
+          echo "$json_content" > info.json
           cd ..
           tar -czvf model-builder.tar.gz binaries/
+          echo "Compression done"
+          pwd
           ls
 
       - name: Create release
