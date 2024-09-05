@@ -114,6 +114,7 @@ jobs:
             EOF
           cd ..
           tar -czvf model-builder.tar.gz binaries/
+          ls
 
       - name: Create release
         id: create-release
