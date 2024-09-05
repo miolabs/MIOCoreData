@@ -69,7 +69,11 @@ jobs:
 
       - name: Build program
         run: |
-          ls
+          swift build --swift-sdk aarch64-swift-linux-musl
+          ls .build
+          echo "otro ls"
+          ls .build/x86_64-swift-linux-musl
+          
           
 
         
