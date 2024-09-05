@@ -74,10 +74,10 @@ jobs:
         run: |
           swift --version
           echo "building"
-          swift build --swift-sdk swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
+          swift build -c release --swift-sdk swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
           ls .build
           echo "otro ls"
-          ls .build/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
+          ls .build/release
 
       
           
