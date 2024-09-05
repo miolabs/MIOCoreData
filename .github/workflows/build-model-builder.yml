@@ -51,11 +51,12 @@ jobs:
       - name: Install swift 
         run: |
           mkdir temp && tar -xzf swift.tar.gz -C temp
-          mv temp/*/* ./  # Mueve los archivos de la carpeta interna al directorio actual
+          #mv temp/*/* ./  # Mueve los archivos de la carpeta interna al directorio actual
+          sudo cp -r temp/usr/* /usr/
           PWD=`pwd`
-          SWIFT_PATH="${PWD}/usr/bin"
-          echo "${SWIFT_PATH}" >> $GITHUB_PATH
-          export PATH="${SWIFT_PATH}:${PATH}" # the currently running action cannot access the updated path variable.
+          #SWIFT_PATH="${PWD}/usr/bin"
+          #echo "${SWIFT_PATH}" >> $GITHUB_PATH
+          #export PATH="${SWIFT_PATH}:${PATH}" # the currently running action cannot access the updated path variable.
           swift --version
 
       - name: Install static linux sdk
