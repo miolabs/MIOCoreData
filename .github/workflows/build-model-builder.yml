@@ -22,15 +22,18 @@ jobs:
           swift --version
           echo "222"
           #brew uninstall swift
-          sudo rm /usr/bin/swift /usr/bin/swiftc
+          #sudo rm /usr/bin/swift /usr/bin/swiftc
           echo "333"
           curl -o swift.pkg https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
           sudo installer -pkg swift.pkg -target /
           echo "Instalación completa"
           ls /Library/Developer/Toolchains/
+          ls /usr/local/bin/swift --version
           # https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
           # brew install swift
           swift --version
+          echo $PATH
+          which swift
 
       - name: Build program
         run: |
