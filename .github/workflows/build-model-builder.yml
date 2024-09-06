@@ -34,7 +34,7 @@ jobs:
         run: |
           swift --version
           echo "building"
-          swift build -c release  --arch arm64 --arch x86_64
+          swift build -c release --arch arm64 --arch x86_64
           ls .build
           echo "ls .build/release"
           ls .build/release
@@ -223,7 +223,7 @@ jobs:
         with:
           name: 'ModelBuilder'
           tag_name: ${{ env.TAGNAME }}
-          body: "ModelBuilder checksum: ${{ env.CRC }}"
+          body: "model-builder.artifactbundle checksum: ${{ env.CRC }}"
           files:
             model-builder.artifactbundle.zip
 
