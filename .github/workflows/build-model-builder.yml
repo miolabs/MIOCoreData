@@ -34,7 +34,12 @@ jobs:
           # brew install swift
           xcrun --toolchain swift swift --version
           echo "333"
+          ls -l /Library/Developer/Toolchains/
+          echo "444"
+          xcrun --show-sdk-path --toolchain swift
+          echo "555"
           export TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw /Library/Developer/Toolchains/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a.xctoolchain/Info.plist)
+          echo "TOOLCHAINS=$TOOLCHAINS" >> $GITHUB_ENV
           swift --version
           echo "path:"
           echo $PATH
