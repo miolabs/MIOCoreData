@@ -74,8 +74,6 @@ jobs:
           swift sdk install https://download.swift.org/swift-6.0-branch/static-sdk/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1.artifactbundle.tar.gz --checksum 42a361e1a240e97e4bb3a388f2f947409011dcd3d3f20b396c28999e9736df36 
           swift sdk list
 
-    
-
       - name: Build program
         run: |
           swift --version
@@ -113,7 +111,7 @@ jobs:
           echo "$json_content" > info.json
           cd ..
           #tar -czvf model-builder.tar.gz binaries/
-          zip -r model-builder.zip binaries/
+          zip -r model-builder.artifact.zip binaries/
           echo "Compression done"
           pwd
           ls
@@ -126,7 +124,7 @@ jobs:
           name: 'ModelBuilder linux_x86_64'
           tag_name: "v1.0.0"
           files:
-            model-builder.zip
+            model-builder.artifact.zip
 
       - name: Output Data
         run: |
