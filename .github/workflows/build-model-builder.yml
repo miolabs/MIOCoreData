@@ -36,15 +36,15 @@ jobs:
           echo "building"
           swift build -c release --arch arm64 --arch x86_64
           ls .build
-          echo "ls .build/release"
-          ls .build/release
-          echo "file .build/release/ModelBuilder"
-          file .build/release/ModelBuilder
+          echo "ls .build/apple/Products/Release"
+          ls .build/apple/Products/Release
+          echo "file .build/apple/Products/Release"
+          file .build/apple/Products/Release/ModelBuilder
 
       - uses: actions/upload-artifact@v4
         with:
           name: mac-output
-          path: .build/release/ModelBuilder
+          path: .build/apple/Products/Release/ModelBuilder
 
   build-linux:
     runs-on: ubuntu-22.04  # specific version because swift and static swift sdk depend on specfic version of ubuntu
