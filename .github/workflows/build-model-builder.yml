@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       NEW_RELEASE_TAG:
-        description: 'Tag for new release'
+        description: 'Tag for new release (v.1.0.2)'
         required: true      
 
 
@@ -15,36 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install swift
-        run: |
-          #ls /usr/bin
-          echo "111"
-          swift --version
-          echo "222"
-          #brew uninstall swift
-          #sudo rm /usr/bin/swift /usr/bin/swiftc
-          
-          curl -o swift.pkg https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
-          sudo installer -pkg swift.pkg -target /
-          echo "Instalación completa"
-          which swift
-          ls /Library/Developer/Toolchains/
-          #ls /usr/local/bin/swift 
-          # https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
-          # brew install swift
-          xcrun --toolchain swift swift --version
-          echo "333"
-          ls -l /Library/Developer/Toolchains/
-          echo "444"
-          xcrun --show-sdk-path --toolchain swift
-          echo "555"
-          export TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw /Library/Developer/Toolchains/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a.xctoolchain/Info.plist)
-          echo "TOOLCHAINS=$TOOLCHAINS" >> $GITHUB_ENV
-          swift --version
-          echo "path:"
-          echo $PATH
-          echo "which"
-          which swift
+      # - name: Replace installed swift with version 6
+      #   run: |
+      #     swift --version
+      #     curl -o swift.pkg https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
+      #     sudo installer -pkg swift.pkg -target /
+      #     echo "Instalación completa"
+      #     which swift
+      #     #ls /Library/Developer/Toolchains/
+      #     xcrun --toolchain swift swift --version
+      #     #ls -l /Library/Developer/Toolchains/
+      #     #xcrun --show-sdk-path --toolchain swift
+      #     export TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw /Library/Developer/Toolchains/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a.xctoolchain/Info.plist)
+      #     echo "TOOLCHAINS=$TOOLCHAINS" >> $GITHUB_ENV
+      #     swift --version
 
       - name: Build program
         run: |
@@ -59,10 +43,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: mac-output
-          path: pp
+          path: .build/release/ModelBuilder
 
   build-linux:
-    needs: build-mac
     runs-on: ubuntu-22.04  # specific version because swift and static swift sdk depend on specfic version of ubuntu
     steps:
       - name: Checkout
@@ -191,6 +174,7 @@ jobs:
           ls binaries/macos
           cd binaries
           mv linux/ModelBuilder linux/model-builder_linux_x86_64
+          mv macos/ModelBuilder macos/model-builder_macos_universal
           echo "$json_content" > info.json
           cd ..
           echo "ls"
@@ -246,3 +230,4 @@ jobs:
         run: |
           echo "URL asset[0]: ${{ fromJSON(steps.create-release.outputs.assets)[0].browser_download_url }}"
           echo "URL release: ${{ steps.create-release.outputs.url }}"
+
