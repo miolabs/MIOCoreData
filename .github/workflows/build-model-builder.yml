@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       NEW_RELEASE_TAG:
-        description: 'Tag for new release (e.g. v.1.0.2)'
+        description: 'Tag for new release (e.g. v1.0.2)'
         required: true      
 
 
