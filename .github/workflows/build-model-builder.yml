@@ -111,7 +111,7 @@ jobs:
           echo "$json_content" > info.json
           cd ..
           #tar -czvf model-builder.tar.gz binaries/
-          zip -r model-builder.artifact.zip binaries/
+          zip -r model-builder.artifactbundle.zip binaries/
           echo "Compression done"
           pwd
           ls
@@ -124,7 +124,7 @@ jobs:
           name: 'ModelBuilder linux_x86_64'
           tag_name: "v1.0.0"
           files:
-            model-builder.artifact.zip
+            model-builder.artifactbundle.zip
 
       - name: Output Data
         run: |
