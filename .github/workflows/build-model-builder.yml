@@ -219,9 +219,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         # if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: 'ModelBuilder linux_x86_64'
-          tag_name: $TAGNAME
-          body: $CRC
+          name: 'ModelBuilder'
+          tag_name: ${{ env.TAGNAME }}
+          body: ${{ env.CRC }}
           files:
             model-builder.artifactbundle.zip
 
