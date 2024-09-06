@@ -223,7 +223,7 @@ jobs:
         with:
           name: 'ModelBuilder'
           tag_name: ${{ env.TAGNAME }}
-          body: ${{ env.CRC }}
+          body: "ModelBuilder checksum: ${{ env.CRC }}"
           files:
             model-builder.artifactbundle.zip
 
