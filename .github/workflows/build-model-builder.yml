@@ -17,7 +17,7 @@ jobs:
 
       - name: Install swift
         run: |
-          ls /usr/bin
+          #ls /usr/bin
           echo "111"
           swift --version
           echo "222"
