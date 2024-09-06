@@ -1,44 +1,46 @@
-name: Build Linux Plugin
-
-#on:
-#  push:
-#    tags:
-#      - '*'  
+name: Build ModelBuilder
 
 on:
   workflow_dispatch:
     inputs:
       NEW_RELEASE_TAG:
-        description: 'customization folder name'
-        required: false      
+        description: 'Tag for new release'
+        required: true      
 
 
 jobs:
-  build-linux-model:
-    runs-on: ubuntu-22.04  # specific version because swift and static swift sdk depend on specfic version of ubuntu
+  build-mac:
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Git
+      - name: Install swift
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          brew install swift
+          swift --version
 
-      - name: Get version from package.json
-        id: get_version
+      - name: Build program
         run: |
-          # $(jq -r '.version' package.json)
-          VERSION="1.0.1" 
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          swift --version
+          echo "building"
+          swift build -c release
+          ls .build
+          echo "ls .build/release"
+          ls .build/release
+          ls DAMEERRORAQUI
 
-      - name: Create tag
-        run: |
-          TAGNAME="${{ github.event.inputs.NEW_RELEASE_TAG }}"
-          git tag -a "$TAGNAME" -m "Release version $TAGNAME"
-          git push origin "$TAGNAME"
-          #git tag -a "v${{ env.VERSION }}" -m "Release version ${{ env.VERSION }}"
-          #git push origin "v${{ env.VERSION }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-output
+          path: pp
+
+  build-linux:
+    needs: build-mac
+    runs-on: ubuntu-22.04  # specific version because swift and static swift sdk depend on specfic version of ubuntu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
           
       - name: Install dependencias for swift compiler  # https://www.swift.org/install/linux/tarball/  Instructions depends on version of Ubuntu
         run: |
@@ -99,42 +101,109 @@ jobs:
           swift --version
           echo "building"
           swift build -c release --swift-sdk swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
+          echo "ls .build"
           ls .build
-          echo "otro ls"
-          ls .build/release/ModelBuilder
+          echo "ls .build/release"
+          ls .build/release
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-output
+          path: .build/release/ModelBuilder
+      
+
+  build-release:
+    needs: [build-mac, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download mac artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-output
+          path: binaries/macos
+
+      - name: Download linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-output
+          path: binaries/linux
+          merge-multiple: true
+     
+      - name: Prepare info.json file
+        run: |
+          json_content='{
+                  "schemaVersion": "1.0",
+                  "artifacts": {
+                      "model-builder": {
+                          "type": "executable",
+                          "version": "1.0.0",
+                          "variants": [
+                              {
+                                  "path": "macos/model-builder_macos_universal",
+                                  "supportedTriples": ["x86_64-apple-macosx", "arm64-apple-macosx"]
+                              },
+                              {
+                                  "path": "linux/model-builder_linux_x86_64",
+                                  "supportedTriples": ["x86_64-unknown-linux-gnu"]
+                              }
+                          ]
+                      }
+                  }
+              }'
+            echo "json_content=$json_content" >> $GITHUB_ENV
+     
       - name: Build zip
         run: |
-          mkdir binaries
+          echo "ls"
+          ls
+          echo "ls linux"
+          ls binaries/linux
+          echo "ls mac"
+          ls binaries/macos
           cd binaries
-          mkdir linux
-          cp ../.build/release/ModelBuilder linux
-          json_content='{
-                "schemaVersion": "1.0",
-                "artifacts": {
-                    "model-builder": {
-                        "type": "executable",
-                        "version": "1.0.0",
-                        "variants": [
-                            {
-                                "path": "macos/model-builder_macos_universal",
-                                "supportedTriples": ["x86_64-apple-macosx", "arm64-apple-macosx"]
-                            },
-                            {
-                                "path": "linux/model-builder_linux_x86_64",
-                                "supportedTriples": ["x86_64-unknown-linux-gnu"]
-                            }
-                        ]
-                    }
-                }
-            }'
+          mv linux/ModelBuilder linux/model-builder_linux_x86_64
           echo "$json_content" > info.json
           cd ..
+          echo "ls"
+          ls
+          echo "ls linux"
+          ls binaries/linux
+          echo "ls mac"
+          ls binaries/macos
           #tar -czvf model-builder.tar.gz binaries/
           zip -r model-builder.artifactbundle.zip binaries/
           echo "Compression done"
           pwd
           ls
+    
+      - name: COMPUTE CRC
+        run: |
+          CRC=$(swift package compute-checksum model-builder.artifactbundle.zip)
+          echo "CRC=$CRC" >> $GITHUB_ENV
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # - name: Get version from package.json
+      #   id: get_version
+      #   run: |
+      #     # $(jq -r '.version' package.json)
+      #     VERSION="1.0.1" 
+      #     echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Create tag
+        run: |
+          TAGNAME="${{ github.event.inputs.NEW_RELEASE_TAG }}"
+          echo "TAGNAME=$TAGNAME" >> $GITHUB_ENV
+          git tag -a "$TAGNAME" -m "Release version $TAGNAME"
+          git push origin "$TAGNAME"
+          #git tag -a "v${{ env.VERSION }}" -m "Release version ${{ env.VERSION }}"
+          #git push origin "v${{ env.VERSION }}"
 
       - name: Create release
         id: create-release
@@ -142,18 +211,12 @@ jobs:
         # if: startsWith(github.ref, 'refs/tags/')
         with:
           name: 'ModelBuilder linux_x86_64'
-          tag_name: "v1.0.0"
+          tag_name: $TAGNAME
+          body: $CRC
           files:
             model-builder.artifactbundle.zip
 
-      - name: Output Data
+      - name: OUTPUT URLs
         run: |
           echo "URL asset[0]: ${{ fromJSON(steps.create-release.outputs.assets)[0].browser_download_url }}"
           echo "URL release: ${{ steps.create-release.outputs.url }}"
-      
-          
-          
-
-        
-
-          
