@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       NEW_RELEASE_TAG:
-        description: 'Tag for new release (v.1.0.2)'
+        description: 'Tag for new release (e.g. v.1.0.2)'
         required: true      
 
 
@@ -140,8 +140,17 @@ jobs:
           path: binaries/linux
           merge-multiple: true
      
-      - name: Prepare info.json file
+      - name: Build zip
         run: |
+          echo "ls"
+          ls
+          echo "ls linux"
+          ls binaries/linux
+          echo "ls mac"
+          ls binaries/macos
+          cd binaries
+          mv linux/ModelBuilder linux/model-builder_linux_x86_64
+          mv macos/ModelBuilder macos/model-builder_macos_universal
           json_content='{
                   "schemaVersion": "1.0",
                   "artifacts": {
@@ -161,19 +170,6 @@ jobs:
                       }
                   }
               }'
-            echo "json_content=$json_content" >> $GITHUB_ENV
-     
-      - name: Build zip
-        run: |
-          echo "ls"
-          ls
-          echo "ls linux"
-          ls binaries/linux
-          echo "ls mac"
-          ls binaries/macos
-          cd binaries
-          mv linux/ModelBuilder linux/model-builder_linux_x86_64
-          mv macos/ModelBuilder macos/model-builder_macos_universal
           echo "$json_content" > info.json
           cd ..
           echo "ls"
