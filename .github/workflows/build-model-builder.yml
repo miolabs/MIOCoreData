@@ -38,6 +38,8 @@ jobs:
           ls .build
           echo "ls .build/release"
           ls .build/release
+          echo "file .build/release/ModelBuilder"
+          file .build/release/ModelBuilder
 
       - uses: actions/upload-artifact@v4
         with:
