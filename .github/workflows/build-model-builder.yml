@@ -204,9 +204,13 @@ jobs:
       - name: Create tag
         run: |
           TAGNAME="${{ github.event.inputs.NEW_RELEASE_TAG }}"
+          echo "1"
           echo "TAGNAME=$TAGNAME" >> $GITHUB_ENV
+          echo "2"
           git tag -a "$TAGNAME" -m "Release version $TAGNAME"
+          echo "3"
           git push origin "$TAGNAME"
+          echo "4"
           #git tag -a "v${{ env.VERSION }}" -m "Release version ${{ env.VERSION }}"
           #git push origin "v${{ env.VERSION }}"
 
