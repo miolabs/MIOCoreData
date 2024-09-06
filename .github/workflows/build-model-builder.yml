@@ -17,8 +17,12 @@ jobs:
 
       - name: Install swift
         run: |
+          ls /usr/bin
+          echo "111"
           swift --version
+          echo "222"
           brew uninstall swift
+          echo "333"
           curl -o swift.pkg https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
           sudo installer -pkg swift.pkg -target /
           echo "Instalación completa"
