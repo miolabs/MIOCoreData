@@ -34,7 +34,7 @@ jobs:
         run: |
           swift --version
           echo "building"
-          swift build -c release
+          swift build -c release  --arch arm64 --arch x86_64
           ls .build
           echo "ls .build/release"
           ls .build/release
