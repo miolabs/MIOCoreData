@@ -38,7 +38,6 @@ jobs:
           ls .build
           echo "ls .build/release"
           ls .build/release
-          ls DAMEERRORAQUI
 
       - uses: actions/upload-artifact@v4
         with:
