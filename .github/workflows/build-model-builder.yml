@@ -112,7 +112,8 @@ jobs:
             }'
           echo "$json_content" > info.json
           cd ..
-          tar -czvf model-builder.tar.gz binaries/
+          #tar -czvf model-builder.tar.gz binaries/
+          zip -r model-builder.zip binaries/
           echo "Compression done"
           pwd
           ls
