@@ -34,9 +34,11 @@ jobs:
           # brew install swift
           xcrun --toolchain swift swift --version
           echo "333"
-          export TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw /Library/Developer/Toolchains/<toolchain name>.xctoolchain/Info.plist)
+          export TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw /Library/Developer/Toolchains/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a.xctoolchain/Info.plist)
           swift --version
+          echo "path:"
           echo $PATH
+          echo "which"
           which swift
 
       - name: Build program
