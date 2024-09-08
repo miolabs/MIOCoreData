@@ -10,7 +10,7 @@ let binary_target = Target.binaryTarget( name: "model-builder",
                                          url: "https://github.com/miolabs/MIOCoreData/releases/download/v1.0.4/model-builder.artifactbundle.zip",
                                          checksum: "3cbada33032de1aad58a50774c342addf5d857eb24a1c6dc7dcf3b6fe540054e" )
 #else
-let binay_target = Target.binaryTarget( name: "model-builder", path: "Binaries/model-builder.artifactbundle" )
+let binary_target = Target.binaryTarget( name: "model-builder", path: "Binaries/model-builder.artifactbundle" )
 #endif
 
 let package = Package(
@@ -46,7 +46,7 @@ let package = Package(
             capability: .buildTool(),
             dependencies: [ "model-builder" ]
         ),
-        binay_target,
+        binary_target,
         .target(
             name: "CoreDataSwift",
             dependencies: ["MIOCore"]
