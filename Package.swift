@@ -5,6 +5,13 @@ import PackageDescription
 import Foundation
 
 //var swift_settings:[SwiftSetting]? = [ .define( "APPLE_CORE_DATA" ) ]
+#if os(Linux)
+let binary_target = Target.binaryTarget( name: "model-builder",
+                                         url: "https://github.com/miolabs/MIOCoreData/releases/download/v1.0.4/model-builder.artifactbundle.zip",
+                                         checksum: "3cbada33032de1aad58a50774c342addf5d857eb24a1c6dc7dcf3b6fe540054e" )
+#else
+let binay_target = Target.binaryTarget( name: "model-builder", path: "Binaries/model-builder.artifactbundle" )
+#endif
 
 let package = Package(
     name: "MIOCoreData",
@@ -14,15 +21,10 @@ let package = Package(
     ],
     products: [
         // Products define the executables and libraries produced by a package, and make them visible to other packages.
-        .library(
-            name: "CoreDataSwift",
-            targets: ["MIOCoreData"]
-        ),
-        .library(
-            name: "MIOCoreData",
-            targets: ["MIOCoreData"]
-        ),
-        .executable( name: "ModelBuilder", targets: ["ModelBuilder"] )
+        .library( name: "CoreDataSwift", targets: ["MIOCoreData"] ),
+        .library( name: "MIOCoreData", targets: ["MIOCoreData"] ),
+        .plugin( name: "ModelBuilderPlugin", targets: ["ModelBuilderPlugin"] ),
+  //      .executable( name: "ModelBuilder", targets: ["ModelBuilder"] )
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -33,11 +35,18 @@ let package = Package(
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
-        .executableTarget( name: "ModelBuilder",
-                 dependencies: [
-                    .product( name: "ArgumentParser", package: "swift-argument-parser" )
-                ]
+        .executableTarget(
+            name: "ModelBuilder",
+            dependencies: [
+                .product( name: "ArgumentParser", package: "swift-argument-parser" )
+            ]
         ),
+        .plugin(
+            name: "ModelBuilderPlugin",
+            capability: .buildTool(),
+            dependencies: [ "model-builder" ]
+        ),
+        binay_target,
         .target(
             name: "CoreDataSwift",
             dependencies: ["MIOCore"]
