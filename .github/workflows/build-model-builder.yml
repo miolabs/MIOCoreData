@@ -111,6 +111,7 @@ jobs:
         run: |
           swift --version
           echo "building"
+          export BUILD_PLUGIN="TRUE"
           swift build -c release --swift-sdk swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-02-a_static-linux-0.0.1
           echo "ls .build"
           ls .build
