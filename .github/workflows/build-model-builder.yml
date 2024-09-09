@@ -9,42 +9,43 @@ on:
 
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # We build this locally for not setting up the code signing for the macos build
+  # build-mac:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      # - name: Replace installed swift with version 6
-      #   run: |
-      #     swift --version
-      #     curl -o swift.pkg https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
-      #     sudo installer -pkg swift.pkg -target /
-      #     echo "Instalación completa"
-      #     which swift
-      #     #ls /Library/Developer/Toolchains/
-      #     xcrun --toolchain swift swift --version
-      #     #ls -l /Library/Developer/Toolchains/
-      #     #xcrun --show-sdk-path --toolchain swift
-      #     export TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw /Library/Developer/Toolchains/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a.xctoolchain/Info.plist)
-      #     echo "TOOLCHAINS=$TOOLCHAINS" >> $GITHUB_ENV
-      #     swift --version
+  #     # - name: Replace installed swift with version 6
+  #     #   run: |
+  #     #     swift --version
+  #     #     curl -o swift.pkg https://download.swift.org/swift-6.0-branch/xcode/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a-osx.pkg
+  #     #     sudo installer -pkg swift.pkg -target /
+  #     #     echo "Instalación completa"
+  #     #     which swift
+  #     #     #ls /Library/Developer/Toolchains/
+  #     #     xcrun --toolchain swift swift --version
+  #     #     #ls -l /Library/Developer/Toolchains/
+  #     #     #xcrun --show-sdk-path --toolchain swift
+  #     #     export TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw /Library/Developer/Toolchains/swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-22-a.xctoolchain/Info.plist)
+  #     #     echo "TOOLCHAINS=$TOOLCHAINS" >> $GITHUB_ENV
+  #     #     swift --version
 
-      - name: Build program
-        run: |
-          swift --version
-          echo "building"
-          swift build -c release --arch arm64 --arch x86_64
-          ls .build
-          echo "ls .build/apple/Products/Release"
-          ls .build/apple/Products/Release
-          echo "file .build/apple/Products/Release"
-          file .build/apple/Products/Release/ModelBuilder
+  #     - name: Build program
+  #       run: |
+  #         swift --version
+  #         echo "building"
+  #         swift build -c release --arch arm64 --arch x86_64
+  #         ls .build
+  #         echo "ls .build/apple/Products/Release"
+  #         ls .build/apple/Products/Release
+  #         echo "file .build/apple/Products/Release"
+  #         file .build/apple/Products/Release/ModelBuilder
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mac-output
-          path: .build/apple/Products/Release/ModelBuilder
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: mac-output
+  #         path: .build/apple/Products/Release/ModelBuilder
 
   build-linux:
     runs-on: ubuntu-22.04  # specific version because swift and static swift sdk depend on specfic version of ubuntu
@@ -123,17 +124,18 @@ jobs:
       
 
   build-release:
-    needs: [build-mac, build-linux]
+    #needs: [build-mac, build-linux]
+    needs: build-linux
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download mac artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: mac-output
-          path: binaries/macos
+      # - name: Download mac artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: mac-output
+      #     path: binaries/macos
 
       - name: Download linux artifact
         uses: actions/download-artifact@v4
@@ -144,6 +146,8 @@ jobs:
      
       - name: Build zip
         run: |
+          mkdir -p binaries/macos
+          cp Binaries/model-builder.artifactbundle/macos/* binaries/macos/
           echo "ls"
           ls
           echo "ls linux"
@@ -152,7 +156,7 @@ jobs:
           ls binaries/macos
           cd binaries
           mv linux/ModelBuilder linux/model-builder_linux_x86_64
-          mv macos/ModelBuilder macos/model-builder_macos_universal
+          #mv macos/ModelBuilder macos/model-builder_macos_universal
           json_content='{
                   "schemaVersion": "1.0",
                   "artifacts": {
