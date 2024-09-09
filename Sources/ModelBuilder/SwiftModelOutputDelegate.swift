@@ -144,7 +144,6 @@ class SwiftModelOutputDelegate : ModelOutputDelegate
             if _objc_support {
                 fileContent += "    @NSManaged public var \(name):Set<\(destinationEntity)>?\n"
                 
-                           
                 var content = "// MARK: Generated accessors for \(name)\n"
                 content += "extension \(self.currentClassName)\n"
                 content += "{\n"
@@ -173,16 +172,12 @@ class SwiftModelOutputDelegate : ModelOutputDelegate
                 var content = "// MARK: Generated accessors for \(name)\n"
                 content += "extension \(self.currentClassName)\n"
                 content += "{\n"
-                content += "    @objc(add\(cname)Object:)\n"
                 content += "    public func add\(cname)Object(_ value: \(destinationEntity)) { _addObject(value, forKey: \"\(name)\") }\n"
                 content += "\n"
-                content += "    @objc(remove\(cname)Object:)\n"
                 content += "    public func remove\(cname)Object(_ value: \(destinationEntity)) { _removeObject(value, forKey: \"\(name)\") }\n"
                 content += "\n"
-                content += "    @objc(add\(cname):)\n"
                 content += "    public func add\(cname)(_ values: Set<\(destinationEntity)>) { for obj in values { _addObject(obj, forKey: \"\(name)\") } }\n"
                 content += "\n"
-                content += "    @objc(remove\(cname):)\n"
                 content += "    public func remove\(cname)(_ values: Set<\(destinationEntity)>) { for obj in values { _removeObject(obj, forKey: \"\(name)\") } }\n"
                 content += "}\n"
                 
