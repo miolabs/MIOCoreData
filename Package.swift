@@ -42,8 +42,8 @@ if ( ProcessInfo.processInfo.environment["BUILD_PLUGIN"]?.lowercased() == "true"
     
 #if os(Linux)
     targets.append( .binaryTarget( name: "model-builder",
-                                    url: "https://github.com/miolabs/MIOCoreData/releases/download/v1.0.5/model-builder.artifactbundle.zip",
-                               checksum: "fb29b743b267af19ba0c24894d2b369ef5cd81ba1058941ec974065fb9acbefa" ) )
+                                    url: "https://github.com/miolabs/MIOCoreData/releases/download/v1.0.0/model-builder.artifactbundle.zip",
+                               checksum: "c47c3202ae4f33f4f9bd2f1e182f51cb4607e90ebb6d13e563d20bccd8a04e2b" ) )
 #else
     targets.append( .binaryTarget( name: "model-builder", path: "Binaries/model-builder.artifactbundle" ) )
 #endif
