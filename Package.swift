@@ -8,7 +8,7 @@ import Foundation
 #if os(Linux)
 let binary_target = Target.binaryTarget( name: "model-builder",
                                          url: "https://github.com/miolabs/MIOCoreData/releases/download/v1.0.5/model-builder.artifactbundle.zip",
-                                         checksum: "3cbada33032de1aad58a50774c342addf5d857eb24a1c6dc7dcf3b6fe540054e" )
+                                         checksum: "fb29b743b267af19ba0c24894d2b369ef5cd81ba1058941ec974065fb9acbefa" )
 #else
 let binary_target = Target.binaryTarget( name: "model-builder", path: "Binaries/model-builder.artifactbundle" )
 #endif
