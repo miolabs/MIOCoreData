@@ -6,16 +6,6 @@ import Foundation
 
 //var swift_settings:[SwiftSetting]? = [ .define( "APPLE_CORE_DATA" ) ]
 
-let build_plugin = ( ProcessInfo.processInfo.environment["BUILD_PLUGIN"]?.lowercased() == "true" )
-
-#if os(Linux)
-let binary_target = Target.binaryTarget( name: "model-builder",
-                                         url: "https://github.com/miolabs/MIOCoreData/releases/download/v1.0.5/model-builder.artifactbundle.zip",
-                                         checksum: "fb29b743b267af19ba0c24894d2b369ef5cd81ba1058941ec974065fb9acbefa" )
-#else
-let binary_target = Target.binaryTarget( name: "model-builder", path: "Binaries/model-builder.artifactbundle" )
-#endif
-
 var products:[Product] = [
     .library(name: "CoreDataSwift", targets: ["CoreDataSwift"]),
     .library(name: "MIOCoreData", targets: ["MIOCoreData"]),
@@ -46,10 +36,18 @@ var targets:[Target] = [
     )
 ]
 
-if build_plugin {
+if ( ProcessInfo.processInfo.environment["BUILD_PLUGIN"]?.lowercased() == "true" ) == false {
     products.append( .plugin(name: "ModelBuilderPlugin", targets: ["ModelBuilderPlugin"]) )
-    targets.append( binary_target )
     targets.append( .plugin(name: "ModelBuilderPlugin", capability: .buildTool(), dependencies: ["model-builder"]) )
+    
+#if os(Linux)
+    targets.append( .binaryTarget( name: "model-builder",
+                                    url: "https://github.com/miolabs/MIOCoreData/releases/download/v1.0.5/model-builder.artifactbundle.zip",
+                               checksum: "fb29b743b267af19ba0c24894d2b369ef5cd81ba1058941ec974065fb9acbefa" ) )
+#else
+    targets.append( .binaryTarget( name: "model-builder", path: "Binaries/model-builder.artifactbundle" ) )
+#endif
+    
 }
 
 let package = Package(
