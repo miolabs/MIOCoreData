@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		148A8D5F2C8F977500198836 /* FetchedResultsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148A8D5E2C8F976400198836 /* FetchedResultsController.swift */; };
+		148A8D612C8F998800198836 /* MIOCoreData+RPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148A8D602C8F998300198836 /* MIOCoreData+RPC.swift */; };
 		14F0E7062B34C69000359FD1 /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */; };
 		14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */; };
 		14F0E72A2B34C83800359FD1 /* MIOManagedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7252B34C83800359FD1 /* MIOManagedTests.swift */; };
@@ -28,6 +30,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		148A8D5E2C8F976400198836 /* FetchedResultsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchedResultsController.swift; sourceTree = "<group>"; };
+		148A8D602C8F998300198836 /* MIOCoreData+RPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MIOCoreData+RPC.swift"; sourceTree = "<group>"; };
 		14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MIOCoreData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		14F0E7052B34C69000359FD1 /* MIOCoreDataTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MIOCoreDataTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "MIOCoreData+Context.swift"; sourceTree = "<group>"; };
@@ -79,6 +83,8 @@
 		14F0E71B2B34C82100359FD1 /* MIOCoreData */ = {
 			isa = PBXGroup;
 			children = (
+				148A8D602C8F998300198836 /* MIOCoreData+RPC.swift */,
+				148A8D5E2C8F976400198836 /* FetchedResultsController.swift */,
 				873053CA2C86FAA900117645 /* MIOCoreData.swift */,
 				14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */,
 			);
@@ -209,8 +215,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				148A8D612C8F998800198836 /* MIOCoreData+RPC.swift in Sources */,
 				873053CB2C86FAA900117645 /* MIOCoreData.swift in Sources */,
 				14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */,
+				148A8D5F2C8F977500198836 /* FetchedResultsController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
