@@ -14,11 +14,11 @@ class FetchedResultsController<T:NSFetchRequestResult>
     init( type: FetchedResultsControllerType = .local, request: NSFetchRequest<T>, sectionNameKeyPath:String? = nil, cacheName:String? = nil ) {
         _type = type
         
-        if _type != .local { MIOCoreDataRPCManager.shared.register( ) }
+//        if _type != .local { MIOCoreDataRPCManager.shared.register( ) }
     }
     
     deinit {
-        if _type != .local { MIOCoreDataRPCManager.shared.unregister( ) }
+//        if _type != .local { MIOCoreDataRPCManager.shared.unregister( ) }
     }
     
     func performFetch() throws {
