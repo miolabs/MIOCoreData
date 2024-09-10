@@ -114,6 +114,7 @@ let g_tokens = [
     ( MIOPredicateTokenType.stringValue.rawValue,  try! NSRegularExpression(pattern: "^\"([^\"]*)\"|^'([^']*)'") ),
     ( MIOPredicateTokenType.numberValue.rawValue,  try! NSRegularExpression(pattern:"^-?\\d+(?:\\.\\d+)?(?:e[+\\-]?\\d+)?", options:.caseInsensitive) ),
     ( MIOPredicateTokenType.booleanValue.rawValue, try! NSRegularExpression(pattern:"^(true|false)", options:.caseInsensitive) ),
+    ( MIOPredicateTokenType.booleanValue.rawValue, try! NSRegularExpression(pattern:"^(yes|no)", options:.caseInsensitive) ),
     ( MIOPredicateTokenType.nullValue.rawValue,    try! NSRegularExpression(pattern:"^(null|nil)", options:.caseInsensitive) ),
     ( MIOPredicateTokenType.arraySymbol.rawValue,  try! NSRegularExpression(pattern: "^\\[([^\\]]*)\\]") ),
     ( MIOPredicateTokenType.openParenthesisSymbol.rawValue,  try!  NSRegularExpression(pattern:"^\\(") ),
@@ -402,7 +403,7 @@ func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer, _ args: [Any]) -> NSExpre
         }
 
     case MIOPredicateTokenType.booleanValue.rawValue:
-        let v = token!.value.lowercased() == "true" ? (true as NSNumber) : (false as NSNumber)
+        let v = ( token!.value.lowercased() == "true" || token!.value.lowercased() == "yes" ) ? (true as NSNumber) : (false as NSNumber)
         return MIOExpression(forConstantValue: v)
         
     case MIOPredicateTokenType.arraySymbol.rawValue:
