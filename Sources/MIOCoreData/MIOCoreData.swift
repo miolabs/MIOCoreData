@@ -22,5 +22,3 @@ public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> NSPred
 
 #endif
 
-
-
