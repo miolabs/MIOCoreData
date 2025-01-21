@@ -50,6 +50,13 @@ public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPre
     return predicate
 }
 
+public func MIOPredicateWithFormat(format: String, _ args: [Any]) -> MIOPredicate
+{
+    let lexer = MIOPredicateTokenize(format)
+    let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
+    
+    return predicate
+}
 
 /*
  extension NSPredicate {
