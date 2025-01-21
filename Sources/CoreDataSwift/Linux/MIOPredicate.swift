@@ -124,6 +124,7 @@ let g_tokens = [
     ( MIOPredicateTokenType.booleanValue.rawValue, try! NSRegularExpression(pattern:"^(yes|no)\\b", options:.caseInsensitive) ),
     ( MIOPredicateTokenType.nullValue.rawValue,    try! NSRegularExpression(pattern:"^(null|nil)\\b", options:.caseInsensitive) ),
     ( MIOPredicateTokenType.arraySymbol.rawValue,  try! NSRegularExpression(pattern: "^\\[([^\\]]*)\\]") ),
+    ( MIOPredicateTokenType.arraySymbol.rawValue,  try! NSRegularExpression(pattern: "^\\{([^\\}]*)\\}") ),
     ( MIOPredicateTokenType.openParenthesisSymbol.rawValue,  try!  NSRegularExpression(pattern:"^\\(") ),
     ( MIOPredicateTokenType.closeParenthesisSymbol.rawValue, try! NSRegularExpression(pattern:"^\\)") ),
     ( MIOPredicateTokenType.minorOrEqualComparator.rawValue, try! NSRegularExpression(pattern:"^<=") ),
