@@ -44,13 +44,9 @@ open class MIOPredicate: NSObject, NSCopying
 
 public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPredicate
 {
-    _log.debug("MIOPredicateWithFormat: \(format), variadic args: \(args)")
+    _log.debug("[MIOPredicateWithFormat] format: \(format), variadic args: \(args)")
     let lexer = MIOPredicateTokenize(format)
-    // We do that to avoid mistakes if we pass 1 argument which is an array, the complier think we passed several arguemnts which is not true.
-    var array:[Any] = []
-    array.append( args )
-    _log.debug("MIOPredicateWithFormat: expand variadic args: \(array)")
-    let predicate = try! MIOPredicateParseTokens(lexer: lexer, array)
+    let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
     
     return predicate
 }

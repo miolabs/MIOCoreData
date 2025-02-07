@@ -42,7 +42,7 @@ open class MIOExpression : NSObject
     public convenience init(forConstantValue obj: Any?) {
         self.init(expressionType: MIOExpression.ExpressionType.constantValue)
         _constantValue = obj
-        _log.debug( "MIOExpression: init constant value \(String(describing: obj))")
+        _log.debug( "[MIOExpression] init constant value: \(String(describing: obj))")
     }
     
 //    open class func expressionForEvaluatedObject() -> NSExpression { NSUnsupported() } // Expression that returns the object being evaluated
@@ -54,7 +54,7 @@ open class MIOExpression : NSObject
     public convenience init(forKeyPath keyPath: String) {
         self.init(expressionType: MIOExpression.ExpressionType.keyPath)
         _keyPath = keyPath
-        _log.debug( "MIOExpression: init key path \(String(describing: keyPath))")
+        _log.debug( "[MIOExpression] init key path: \(String(describing: keyPath))")
     }
     
     var _functionName:String?
@@ -67,7 +67,7 @@ open class MIOExpression : NSObject
         _arguments = parameters as? [MIOExpression]
         
         if !MIOExpression.isFunctionNameSupported(name) {
-            _log.warning("MIOExpression: Function \(name) is not supported")
+            _log.warning("[MIOExpression] Function \(name) is not supported")
         }
     }
     
