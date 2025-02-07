@@ -44,7 +44,7 @@ open class MIOPredicate: NSObject, NSCopying
 
 public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPredicate
 {
-    _log.debug("[MIOPredicateWithFormat] format: \(format), variadic args: \(args)")
+    _log.debug("MIOPredicateWithFormat \(format), variadic args: \(args)")
     let lexer = MIOPredicateTokenize(format)
     let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
     
@@ -602,7 +602,7 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
         return (leftValue as! Date) == (rightValue as! Date)
 
     default:
-        print( "[FATAL]: MIOPredicateEvaluate equal cannot compare \(leftValue ?? "nil") with \(rightValue ?? "nil")" )
+        _log.critical ( "MIOPredicateEvaluate equal cannot compare \(leftValue ?? "nil") with \(rightValue ?? "nil")" )
         return false
     }
 }
