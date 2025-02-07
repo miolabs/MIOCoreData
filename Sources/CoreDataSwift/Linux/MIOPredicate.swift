@@ -44,6 +44,7 @@ open class MIOPredicate: NSObject, NSCopying
 
 public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPredicate
 {
+    _log.debug("MIOPredicateWithFormat: \(format), variadic args: \(args)")
     let lexer = MIOPredicateTokenize(format)
     let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
     
@@ -52,6 +53,7 @@ public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPre
 
 public func MIOPredicateWithFormat(format: String, _ args: [Any]) -> MIOPredicate
 {
+    _log.debug("MIOPredicateWithFormat: \(format), array args: \(args)")
     let lexer = MIOPredicateTokenize(format)
     let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
     
