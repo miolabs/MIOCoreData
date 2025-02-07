@@ -22,11 +22,18 @@ let package = Package(
     targets: [
         .target(
             name: "CoreDataSwift",
-            dependencies: ["MIOCore"]
+            dependencies: [
+                .product(name: "MIOCore", package: "MIOCore"),
+                .product(name: "MIOCoreLogger", package: "MIOCore"),
+            ]
         ),
         .target(
             name: "MIOCoreData",
-            dependencies: ["MIOCore", "CoreDataSwift"]
+            dependencies: [
+                "CoreDataSwift",
+                .product(name: "MIOCore", package: "MIOCore"),
+                .product(name: "MIOCoreLogger", package: "MIOCore"),
+            ]
     //        swiftSettings: [ .define( "APPLE_CORE_DATA" ) ]
         ),
         .testTarget(
