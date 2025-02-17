@@ -21,16 +21,12 @@ open class NSManagedObjectID : NSObject
     var _isTemporaryID = true
     open var isTemporaryID: Bool { get { return _isTemporaryID } }
 
-    var _storeIdentifier:String?
+//    var _storeIdentifier:String?
     open var _referenceObject:Any
     
     // URI which provides an archivable reference to the object which this ID refers
     open func uriRepresentation() -> URL {
-        
-        let host = isTemporaryID ? "": "/\(_storeIdentifier!)"
-        
-        let url = URL(string: "x-coredata://\(host)/\(_referenceObject)/\(_entity.name!)")
-        return url!
+        return URL(string: "x-coredata://\(_persistentStore?.identifier ?? "")/\(_referenceObject)/\(_entity.name!)")!
     }
 
     init(WithEntity entity:NSEntityDescription, referenceObject:Any?){
@@ -49,7 +45,7 @@ open class NSManagedObjectID : NSObject
     // Private methods
     //
     
-    func setReferenceObject(referenceObject:Any) {
+    func _set_reference_object(referenceObject:Any) {
         _isTemporaryID = false
         _referenceObject = referenceObject
     }

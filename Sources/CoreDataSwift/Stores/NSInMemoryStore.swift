@@ -18,15 +18,29 @@ class NSInMemoryStore : NSPersistentStore
     override func save (insertedObjects: Set<NSManagedObject>, updatedObjects: Set<NSManagedObject>, deletedObjects: Set <NSManagedObject>, context:NSManagedObjectContext) throws {
         
         for o in insertedObjects {
-            var objects = objectsByEntityName[ o.entity.name!.hashValue ]
-            if objects == nil {
-                objects = [ Int: [ String:Any ] ]()
-                objectsByEntityName[ o.entity.name!.hashValue ] = objects
-            }
-            let id = o.objectID.uriRepresentation().absoluteURL.hashValue
-            objects![id] = o.changedValues()
+            o.objectID._isTemporaryID = false
+            o.objectID._persistentStore = self
+
+            var objects = objectsByEntityName[ o.entity.name! ] ?? [:]
+            let id = o.objectID.uriRepresentation().absoluteString
+            objects[id] = o.changedValues()
+            objectsByEntityName[ o.entity.name! ] = objects
         }
         
+        for o in updatedObjects {
+            var objects = objectsByEntityName[ o.entity.name! ]!
+            let id = o.objectID.uriRepresentation().absoluteString
+            let values = objects[ id ]!
+            objects[ id ] = values.merging( o.changedValues() ) { (_, new) in new }
+            objectsByEntityName[ o.entity.name! ] = objects
+        }
+        
+        for o in deletedObjects {
+            var objects = objectsByEntityName[ o.entity.name! ]!
+            let id = o.objectID.uriRepresentation().absoluteString
+            objects.removeValue(forKey: id)
+            objectsByEntityName[ o.entity.name! ] = objects
+        }
     }
 }
 #endif

@@ -204,7 +204,6 @@ open class NSManagedObject : NSObject
         willAccessValue(forKey:key)
         
         var value:Any?
-        
         if property is NSAttributeDescription {
             
             if _changedValues.keys.contains(key) {
@@ -358,28 +357,32 @@ open class NSManagedObject : NSObject
                 if hasFault(forRelationshipNamed: key) && objectID.persistentStore != nil {
                     unfaultRelationshipNamed(key, fromStore: objectID.persistentStore!)
                 }
+                
+                if let v = storedValues[key] as? [NSManagedObjectID] {
+                    values[key] = Set(v.map{ try? managedObjectContext!.existingObject(with: $0 ) } )
+                }
+                else if let v = storedValues[key] as? [NSManagedObject] {
+                    values[key] = Set(v)
+                }
+                else if let v = storedValues[key] as? Set<NSManagedObjectID> {
+                    values[key] = Set(v.map{ try? managedObjectContext!.existingObject(with: $0 ) } )
+                }
+                else if let v = storedValues[key] as? Set<NSManagedObject> {
+                    values[key] = v
+                }
+                else if let v = storedValues[key] as? NSManagedObjectID {
+                    values[key] = try? managedObjectContext!.existingObject(with: v )
+                }
+                else if let v = storedValues[key] as? NSManagedObject {
+                    values[key] = v
+                }
+                // TODO: Check if the relationship is to many or not
+                else {
+                    values[key] = Set<NSManagedObject>()
+                }
             }
-            if let v = storedValues[key] as? [NSManagedObjectID] {
-                values[key] = Set(v.map{ try? managedObjectContext!.existingObject(with: $0 ) } )
-            }
-            else if let v = storedValues[key] as? [NSManagedObject] {
-                values[key] = Set(v)
-            }
-            else if let v = storedValues[key] as? Set<NSManagedObjectID> {
-                values[key] = Set(v.map{ try? managedObjectContext!.existingObject(with: $0 ) } )
-            }
-            else if let v = storedValues[key] as? Set<NSManagedObject> {
-                values[key] = v
-            }
-            else if let v = storedValues[key] as? NSManagedObjectID {
-                values[key] = try? managedObjectContext!.existingObject(with: v )
-            }
-            else if let v = storedValues[key] as? NSManagedObject {
-                values[key] = v
-            }
-            // TODO: Check if the relationship is to many or not
-            else {
-                values[key] = Set<NSManagedObject>()
+            else if entity.propertiesByName[key] is NSAttributeDescription {
+                values[ key ] = storedValues[ key ]
             }
         }
         return values
@@ -428,9 +431,9 @@ open class NSManagedObject : NSObject
     // Custom methods
     //
     
-    func setIsFault(_ value:Bool) {
-        
-        if value == _isFault { return }
+    func setIsFault(_ value:Bool)
+    {
+//        if value == _isFault { return }
         
         willChangeValue(forKey: "hasChanges")
         willChangeValue(forKey:"isFault")
@@ -460,17 +463,27 @@ open class NSManagedObject : NSObject
     
     func unfaultAttributes(fromStore store:NSPersistentStore?) {
         //if _isDeleted == true { return }
-        
-        guard let incrementalStore = store as? NSIncrementalStore else { return }
-        
         _storedValues = [:]
         
-        let node = try? incrementalStore.newValuesForObject(with: objectID, with: managedObjectContext!)
-        if node == nil { return }
-        
-        for (key, attr) in entity.attributesByName {
-            let value = node!.value(for: attr)
-            _storedValues[key] = value
+        if let memory_store = store as? NSInMemoryStore {
+            let objects = memory_store.objectsByEntityName[ objectID.entity.name! ]
+            let values = objects?[objectID.uriRepresentation().absoluteString] as? [String:Any] ?? [:]
+
+            for (key, attr) in entity.attributesByName {
+                var v = values[ key ]
+                if attr.isOptional == false && ( v == nil || v is NSNull ) { v = attr.defaultValue }
+                _storedValues[key] = v
+            }
+        }
+        else if let incremental_store = store as? NSIncrementalStore {
+            
+            let node = try? incremental_store.newValuesForObject(with: objectID, with: managedObjectContext!)
+            if node == nil { return }
+            
+            for (key, attr) in entity.attributesByName {
+                let value = node!.value(for: attr)
+                _storedValues[key] = value
+            }
         }
         
         _isFault = false
@@ -496,6 +509,7 @@ open class NSManagedObject : NSObject
     }
     
     func _didCommit() {
+//        _storedValues = _storedValues.merging(_changedValues) { (_, new) in new }
         _changedValues = [:]
         setIsFault(true)
     }

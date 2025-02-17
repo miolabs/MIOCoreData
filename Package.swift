@@ -18,6 +18,7 @@ let package = Package(
         // .package(url: /* package url */, from: "1.0.0"),
         .package( url: "https://github.com/miolabs/MIOCore.git", branch:"master" ),
         .package( url: "https://github.com/apple/swift-argument-parser", from: "1.5.0" ),
+        .package(url: "https://github.com/miolabs/MIOCoreDataTools.git", branch: "main")
     ],
     targets: [
         .target(
@@ -36,9 +37,16 @@ let package = Package(
             ]
     //        swiftSettings: [ .define( "APPLE_CORE_DATA" ) ]
         ),
+        .target(
+            name: "TestModel",
+            dependencies: ["MIOCoreData"],
+            path: "Tests/TestModel",
+            plugins: [ .plugin( name: "ModelBuilderPlugin", package: "MIOCoreDataTools" ) ]
+        ),
         .testTarget(
             name: "MIOCoreDataTests",
-            dependencies: ["MIOCoreData"]),
+            dependencies: ["MIOCoreData", "TestModel"]
+        ),
         .testTarget(
             name: "AppleCoreDataTests"
         )

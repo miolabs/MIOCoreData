@@ -36,10 +36,10 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
     var completion:MIOManagedObjectModelParserCompletion? = nil
     public func parse(completion:@escaping MIOManagedObjectModelParserCompletion) {
         
-        print("MIOManagedObjectModelParser:parse: Parsing contents of \(url.standardizedFileURL)")
+        _log.debug("Parsing contents of \(url.standardizedFileURL)")
                 
         guard let parser = XMLParser( contentsOf: url.standardizedFileURL ) else {
-            print("MIOManagedObjectModelParser:parse: XMLParser is nil. file couldn't be read")
+            _log.error( "XMLParser is nil. file couldn't be read" )
             completion( MIOManagedObjectModelParserError.invalidURL )
             return
         }
@@ -175,18 +175,22 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         }
     }
     
+    func parser(_ parser: XMLParser, parseErrorOccurred parseError: any Error) {
+        _log.error( "\(parseError)" )
+    }
+    
     func parserDidEndDocument(_ parser: XMLParser) {
                 
         #if !os(Linux)
         buildGraph()
         #endif
         
-        print("ManagedObjectModelParser:parserDidEndDocument: Parser finished")
+        _log.debug("Model parser finished")
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
     }
     
     func buildGraph(){
-        print("ManagedObjectModelParser:parserDidEndDocument: Check relationships")
+        _log.debug( "Model parser check relationships" )
         
         model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
         
