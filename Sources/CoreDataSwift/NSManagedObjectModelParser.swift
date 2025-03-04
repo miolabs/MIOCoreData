@@ -9,6 +9,7 @@
 
 import Foundation
 import MIOCore
+import MIOCoreLogger
 
 #if canImport(FoundationXML)
 import FoundationXML
@@ -36,10 +37,10 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
     var completion:MIOManagedObjectModelParserCompletion? = nil
     public func parse(completion:@escaping MIOManagedObjectModelParserCompletion) {
         
-        _log.debug("Parsing contents of \(url.standardizedFileURL)")
+        Log.debug("Parsing contents of \(url.standardizedFileURL)")
                 
         guard let parser = XMLParser( contentsOf: url.standardizedFileURL ) else {
-            _log.error( "XMLParser is nil. file couldn't be read" )
+            Log.error( "XMLParser is nil. file couldn't be read" )
             completion( MIOManagedObjectModelParserError.invalidURL )
             return
         }
@@ -176,7 +177,7 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
     }
     
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: any Error) {
-        _log.error( "\(parseError)" )
+        Log.error( "\(parseError)" )
     }
     
     func parserDidEndDocument(_ parser: XMLParser) {
@@ -185,12 +186,12 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         buildGraph()
         #endif
         
-        _log.debug("Model parser finished")
+        Log.debug("Model parser finished")
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
     }
     
     func buildGraph(){
-        _log.debug( "Model parser check relationships" )
+        Log.debug( "Model parser check relationships" )
         
         model.setEntities(Array(entitiesByName.values), forConfigurationName: "Default")
         

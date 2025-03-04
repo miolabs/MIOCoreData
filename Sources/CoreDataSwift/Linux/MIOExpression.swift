@@ -8,6 +8,7 @@
 #if !APPLE_CORE_DATA
 
 import Foundation
+import MIOCoreLogger
 
 
 // Expressions are the core of the predicate implementation. When expressionValueWithObject: is called, the expression is evaluated, and a value returned which can then be handled by an operator. Expressions can be anything from constants to method invocations. Scalars should be wrapped in appropriate NSValue classes.
@@ -42,7 +43,7 @@ open class MIOExpression : NSObject
     public convenience init(forConstantValue obj: Any?) {
         self.init(expressionType: MIOExpression.ExpressionType.constantValue)
         _constantValue = obj
-        _log.debug( "MIOExpression Init constant value: \(String(describing: obj))")
+        Log.debug( "MIOExpression Init constant value: \(String(describing: obj))")
     }
     
 //    open class func expressionForEvaluatedObject() -> NSExpression { NSUnsupported() } // Expression that returns the object being evaluated
@@ -54,7 +55,7 @@ open class MIOExpression : NSObject
     public convenience init(forKeyPath keyPath: String) {
         self.init(expressionType: MIOExpression.ExpressionType.keyPath)
         _keyPath = keyPath
-        _log.debug( "MIOExpression Init key path: \(String(describing: keyPath))")
+        Log.debug( "MIOExpression Init key path: \(String(describing: keyPath))")
     }
     
     var _functionName:String?
@@ -67,7 +68,7 @@ open class MIOExpression : NSObject
         _arguments = parameters as? [MIOExpression]
         
         if !MIOExpression.isFunctionNameSupported(name) {
-            _log.warning("MIOExpression Function \(name) is not supported")
+            Log.warning("MIOExpression Function \(name) is not supported")
         }
     }
     
