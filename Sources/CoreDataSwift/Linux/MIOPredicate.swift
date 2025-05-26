@@ -52,14 +52,14 @@ public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPre
     return predicate
 }
 
-//public func MIOPredicateWithFormat(format: String, _ args: [Any]) -> MIOPredicate
-//{
-//    _log.debug("MIOPredicateWithFormat: \(format), array args: \(args)")
-//    let lexer = MIOPredicateTokenize(format)
-//    let predicate = try! MIOPredicateParseTokens(lexer: lexer, args)
-//    
-//    return predicate
-//}
+public func MIOPredicateWithFormat(format: String, arguments: [[Any]]) -> MIOPredicate
+{
+    Log.debug("MIOPredicateWithFormat: \(format), array args: \(arguments)")
+    let lexer = MIOPredicateTokenize(format)
+    let predicate = try! MIOPredicateParseTokens(lexer: lexer, arguments)
+    
+    return predicate
+}
 
 /*
  extension NSPredicate {

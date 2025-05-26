@@ -609,4 +609,23 @@ final class MIOPredicateTests: XCTestCase {
 
     }
 
+    func testArgumentsPredicate ( ) {
+        
+        let predicate = MIOPredicateWithFormat(format: "name in %@", arguments: [["pepe", "otilio"]])
+        
+        XCTAssertTrue( (predicate as? MIOComparisonPredicate) != nil, "??" )
+        let cmpPredicate = predicate as! MIOComparisonPredicate
+        XCTAssertTrue( cmpPredicate.predicateOperatorType == MIOComparisonPredicate.Operator.in, "MIOComparisonPredicate operator type is not IN" )
+        
+        XCTAssertTrue( cmpPredicate.leftExpression.expressionType == MIOExpression.ExpressionType.keyPath, "MIOComparisonPredicate left expression is not KeyPath type" )
+        XCTAssertTrue( cmpPredicate.leftExpression.keyPath == "name", "MIOComparisonPredicate left expression keypath value is wrong" )
+
+        XCTAssertTrue( cmpPredicate.rightExpression.expressionType == MIOExpression.ExpressionType.constantValue, "MIOComparisonPredicate right expression is not ConstantValue type" )
+        guard let value = cmpPredicate.rightExpression.constantValue as? [Any] else {
+            XCTAssertTrue(false, "MIOComparisonPredicate rigth expression constant value cast type is wrong")
+            return
+        }
+        
+        XCTAssertTrue( ( value as? [String] ) == ["pepe", "otilio"], "MIOComparisonPredicate rigth expression constant value is wrong" )
+    }
 }
