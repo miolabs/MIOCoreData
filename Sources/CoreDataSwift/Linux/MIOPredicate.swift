@@ -580,20 +580,20 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     }
     
     switch leftValue! {
-    case is String:  return ( leftValue as! String  ) == ( rightValue as! String  )
-    case is Bool:    return ( leftValue as! Bool    ) == MIOCoreBoolValue ( rightValue )
-    case is Int:     return ( leftValue as! Int     ) == MIOCoreIntValue  ( rightValue )
-    case is Int8:    return ( leftValue as! Int8    ) == MIOCoreInt8Value ( rightValue )
-    case is Int16:   return ( leftValue as! Int16   ) == MIOCoreInt16Value( rightValue )
-    case is Int32:   return ( leftValue as! Int32   ) == MIOCoreInt32Value( rightValue )
-    case is Int64:   return ( leftValue as! Int64   ) == MIOCoreInt64Value( rightValue )
-    case is Float:   return ( leftValue as! Float   ) == MIOCoreFloatValue( rightValue )
-    case is Double:  return ( leftValue as! Double  ) == MIOCoreDoubleValue( rightValue )
+    case is String : return ( leftValue as! String  ) == ( rightValue as! String  )
+    case is Bool   : return ( leftValue as! Bool    ) == MIOCoreBoolValue ( rightValue )
+    case is Int    : return ( leftValue as! Int     ) == MIOCoreIntValue  ( rightValue )
+    case is Int8   : return ( leftValue as! Int8    ) == MIOCoreInt8Value ( rightValue )
+    case is Int16  : return ( leftValue as! Int16   ) == MIOCoreInt16Value( rightValue )
+    case is Int32  : return ( leftValue as! Int32   ) == MIOCoreInt32Value( rightValue )
+    case is Int64  : return ( leftValue as! Int64   ) == MIOCoreInt64Value( rightValue )
+    case is Float  : return ( leftValue as! Float   ) == MIOCoreFloatValue( rightValue )
+    case is Double : return ( leftValue as! Double  ) == MIOCoreDoubleValue( rightValue )
     case is Decimal: return ( leftValue as! Decimal ) == MCDecimalValue( rightValue )
-    case is UUID: return ( (leftValue as! UUID).uuidString ) == ( (rightValue as! UUID).uuidString )
+    case is UUID   : return ( leftValue as! UUID    ) == ( rightValue as! UUID )
     case is Date:
         if rightValue is String {
-            let rightDate = parse_date_or_nil( (rightValue as! String) )
+            let rightDate = MIOCoreDate( fromString: (rightValue as! String) )
             
             return rightDate == nil ?
                      false
@@ -632,7 +632,7 @@ func MIOPredicateEvaluateLessEqual( _ leftValue: Any?, _ rightValue:Any?) -> Boo
     case is UUID: return ( (leftValue as! UUID).uuidString ) <= ( (rightValue as! UUID).uuidString )
     case is Date:
         if rightValue is String {
-            let rightDate = parse_date_or_nil( (rightValue as! String) )
+            let rightDate = MIOCoreDate( fromString: (rightValue as! String) )
             
             return rightDate == nil ?
                      false
@@ -669,7 +669,7 @@ func MIOPredicateEvaluateLess( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
     case is UUID: return ( (leftValue as! UUID).uuidString ) < ( (rightValue as! UUID).uuidString )
     case is Date:
         if rightValue is String {
-            let rightDate = parse_date_or_nil( (rightValue as! String) )
+            let rightDate = MIOCoreDate( fromString: (rightValue as! String) )
             
             return rightDate == nil ?
                      false
