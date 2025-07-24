@@ -52,7 +52,7 @@ public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPre
     return predicate
 }
 
-public func MIOPredicateWithFormat(format: String, arguments: [[Any]]) -> MIOPredicate
+public func MIOPredicateWithFormat(format: String, arguments: [Any]) -> MIOPredicate
 {
     Log.debug("MIOPredicateWithFormat: \(format), array args: \(arguments)")
     let lexer = MIOPredicateTokenize(format)
