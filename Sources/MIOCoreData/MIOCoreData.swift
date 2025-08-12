@@ -15,9 +15,12 @@ public typealias NSSortDescriptor = MIOSortDescriptor
 
 @_exported import CoreData
 
-public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> NSPredicate
-{
+public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> NSPredicate {
     return NSPredicate(format: format, args )
+}
+
+public func MIOPredicateWithFormat(format: String, arguments: [Any]) -> NSPredicate {
+    return NSPredicate(format: format, arguments )
 }
 
 #endif
