@@ -79,7 +79,7 @@ open class NSPersistentStore : NSObject
     
     // Private methods
 
-    var objectsByEntityName:[ String: [ String: [ String:Any ] ] ] = [:]
+    public var objectsByEntityName:[ String: [ String: [ String:Any ] ] ] = [:]
     
     func save (insertedObjects: Set<NSManagedObject>, updatedObjects: Set<NSManagedObject>, deletedObjects: Set <NSManagedObject>, context:NSManagedObjectContext) throws {}
 

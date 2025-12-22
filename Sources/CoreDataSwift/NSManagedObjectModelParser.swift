@@ -37,7 +37,7 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
     var completion:MIOManagedObjectModelParserCompletion? = nil
     public func parse(completion:@escaping MIOManagedObjectModelParserCompletion) {
         
-        Log.debug("Parsing contents of \(url.standardizedFileURL)")
+        Log.debug("Parsing contents of \(self.url.standardizedFileURL)")
                 
         guard let parser = XMLParser( contentsOf: url.standardizedFileURL ) else {
             Log.error( "XMLParser is nil. file couldn't be read" )

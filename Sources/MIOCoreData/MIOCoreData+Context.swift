@@ -9,7 +9,7 @@ import Foundation
 
 enum MIOCoreDataContextError : Error
 {
-    case entityDescriptionNotFound
+    case entityDescriptionNotFound( _ name: String )
 }
 
 public protocol MIOCoreDataContextProtocol
@@ -27,7 +27,7 @@ extension MIOCoreDataContextProtocol
         let e = mom.entitiesByName[ entityName ]
         if e != nil { return e! }
         
-        throw MIOCoreDataContextError.entityDescriptionNotFound
+        throw MIOCoreDataContextError.entityDescriptionNotFound( entityName )
     }
 }
 
