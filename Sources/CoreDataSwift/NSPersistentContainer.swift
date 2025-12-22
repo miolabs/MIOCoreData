@@ -8,6 +8,7 @@
 #if !APPLE_CORE_DATA
 
 import Foundation
+import MIOCoreLogger
 
 open class NSPersistentContainer : NSObject
 {
@@ -40,6 +41,10 @@ open class NSPersistentContainer : NSObject
         _managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         _managedObjectContext?.persistentStoreCoordinator = _coordinator
         super.init()
+    }
+    
+    deinit {
+        Log.warning("NSPersistentContainer deinit")
     }
     
     public func loadPersistentStores(completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {

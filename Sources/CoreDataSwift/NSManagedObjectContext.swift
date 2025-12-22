@@ -9,6 +9,8 @@
 
 import Foundation
 import MIOCore
+import MIOCoreLogger
+
 
 enum NSManagedObjectContextError: Error
 {
@@ -44,6 +46,10 @@ open class NSManagedObjectContext : NSObject
     public init(concurrencyType ct: NSManagedObjectContextConcurrencyType) {
         super.init()
         _concurrencyType = ct
+    }
+    
+    deinit {
+        Log.warning("NSManagedObjectContext deinit - objects: \(objectsByID.count)")
     }
     
     /* asynchronously performs the block on the context's queue.  Encapsulates an autorelease pool and a call to processPendingChanges */
@@ -373,7 +379,7 @@ open class NSManagedObjectContext : NSObject
         if object.objectID.persistentStore is NSIncrementalStore {
             let store = object.objectID.persistentStore as! NSIncrementalStore
             store.managedObjectContextDidUnregisterObjects(with:[object.objectID])
-        }        
+        }
     }
     
     func _unregisterObjectForEntityName(_ object: NSManagedObject, _ entity:NSEntityDescription) {
