@@ -50,6 +50,8 @@ open class NSManagedObjectContext : NSObject
     
     deinit {
         Log.warning("NSManagedObjectContext deinit - objects: \(objectsByID.count)")
+        objectsByID.removeAll()
+        objectsByEntityName.removeAll()
     }
     
     /* asynchronously performs the block on the context's queue.  Encapsulates an autorelease pool and a call to processPendingChanges */
