@@ -8,6 +8,7 @@
 #if !APPLE_CORE_DATA
 
 import Foundation
+import MIOCoreLogger
 
 open class NSPersistentStore : NSObject
 {
@@ -40,6 +41,11 @@ open class NSPersistentStore : NSObject
         self.url = url
         try? loadMetadata()
         identifier = metadata[NSStoreUUIDKey] as? String
+    }
+    
+    deinit {
+        Log.trace( "NSPersistentStore deinit. Objects: \(objectsByEntityName.count)" )
+        objectsByEntityName.removeAll()
     }
     
     /*  Store metadata must be accessible before -load: is called, but there is no way to return an error if the store is invalid
@@ -79,7 +85,7 @@ open class NSPersistentStore : NSObject
     
     // Private methods
 
-    public var objectsByEntityName:[ String: [ String: [ String:Any ] ] ] = [:]
+    open var objectsByEntityName:[ String: [ String: [ String:Any ] ] ] = [:]
     
     func save (insertedObjects: Set<NSManagedObject>, updatedObjects: Set<NSManagedObject>, deletedObjects: Set <NSManagedObject>, context:NSManagedObjectContext) throws {}
 
