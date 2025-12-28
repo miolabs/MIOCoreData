@@ -43,13 +43,19 @@ open class NSManagedObjectContext : NSObject
 {
     var mergePolicy = NSMergePolicy.none
     
+    private static var instanceCount = 0
+    private static let countQueue = DispatchQueue(label: "context.count")
+    
     public init(concurrencyType ct: NSManagedObjectContextConcurrencyType) {
+        Self.countQueue.sync { Self.instanceCount += 1 }
+        
         super.init()
         _concurrencyType = ct
     }
     
     deinit {
-        Log.debug("NSManagedObjectContext deinit - objects: \(objectsByID.count)")
+        Self.countQueue.sync { Self.instanceCount -= 1 }
+        Log.debug("NSManagedObjectContext deinit - objects: \(objectsByID.count) - alive: \(Self.instanceCount)")
         objectsByID.removeAll()
         objectsByEntityName.removeAll()
     }
@@ -334,7 +340,7 @@ open class NSManagedObjectContext : NSObject
     func _registerObject(_ object: NSManagedObject, notifyStore:Bool = true) {
 
         if objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
-            NSLog("Trying to register a managed object that has already been registered")
+            Log.trace("Trying to register a managed object that has already been registered")
             return
         }
 
@@ -367,7 +373,7 @@ open class NSManagedObjectContext : NSObject
     func _unregisterObject(_ object: NSManagedObject, notifyStore:Bool = true) {
         
         if !objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
-            NSLog("Trying to unregister a managed object that has not been registered")
+            Log.trace("Trying to unregister a managed object that has not been registered")
             return
         }
 
