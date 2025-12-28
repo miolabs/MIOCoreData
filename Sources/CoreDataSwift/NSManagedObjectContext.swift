@@ -49,7 +49,7 @@ open class NSManagedObjectContext : NSObject
     }
     
     deinit {
-        Log.warning("NSManagedObjectContext deinit - objects: \(objectsByID.count)")
+        Log.debug("NSManagedObjectContext deinit - objects: \(objectsByID.count)")
         objectsByID.removeAll()
         objectsByEntityName.removeAll()
     }
