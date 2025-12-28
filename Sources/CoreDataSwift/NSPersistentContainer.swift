@@ -44,7 +44,7 @@ open class NSPersistentContainer : NSObject
     }
     
     deinit {
-        Log.warning("NSPersistentContainer deinit")
+        Log.trace("NSPersistentContainer deinit")
     }
     
     public func loadPersistentStores(completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {
