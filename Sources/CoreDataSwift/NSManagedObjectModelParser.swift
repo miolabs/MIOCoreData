@@ -235,10 +235,14 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         case "Float":
             attrType = NSAttributeType.floatAttributeType
             defaultValue = defaultValueString != nil ? Float(defaultValueString!) : nil
-            
+
+        case "Double":
+            attrType = NSAttributeType.doubleAttributeType
+            defaultValue = defaultValueString != nil ? Double(defaultValueString!) : nil
+
         case "Decimal":
             attrType = NSAttributeType.decimalAttributeType
-            defaultValue = defaultValueString != nil ? Double(defaultValueString!) : nil
+            defaultValue = defaultValueString != nil ? MCDecimalValue(defaultValueString, 0)! : nil
             
         case "String":
             attrType = NSAttributeType.stringAttributeType
