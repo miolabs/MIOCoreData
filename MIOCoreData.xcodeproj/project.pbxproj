@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -44,18 +44,14 @@
 /* Begin PBXFrameworksBuildPhase section */
 		14F0E6F82B34C69000359FD1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		14F0E7022B34C69000359FD1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				14F0E7062B34C69000359FD1 /* MIOCoreData.framework in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -107,10 +103,8 @@
 /* Begin PBXHeadersBuildPhase section */
 		14F0E6F62B34C69000359FD1 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
@@ -125,8 +119,6 @@
 				14F0E6F92B34C69000359FD1 /* Resources */,
 			);
 			buildRules = (
-			);
-			dependencies = (
 			);
 			name = MIOCoreData;
 			productName = MIOCoreData;
@@ -170,7 +162,6 @@
 				};
 			};
 			buildConfigurationList = 14F0E6F52B34C69000359FD1 /* Build configuration list for PBXProject "MIOCoreData" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -180,6 +171,7 @@
 			mainGroup = 14F0E6F12B34C69000359FD1;
 			packageReferences = (
 			);
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 14F0E6FC2B34C69000359FD1 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -193,34 +185,27 @@
 /* Begin PBXResourcesBuildPhase section */
 		14F0E6F92B34C69000359FD1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		14F0E7032B34C69000359FD1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		14F0E6F72B34C69000359FD1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				873053CB2C86FAA900117645 /* MIOCoreData.swift in Sources */,
 				14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */,
 				148A8D5F2C8F977500198836 /* FetchedResultsController.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		14F0E7012B34C69000359FD1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				14F0E72C2B34C83800359FD1 /* MIOCoreDataTests.swift in Sources */,
 				14F0E72A2B34C83800359FD1 /* MIOManagedTests.swift in Sources */,
@@ -228,7 +213,6 @@
 				14F0E72B2B34C83800359FD1 /* XCTestManifests.swift in Sources */,
 				14F0E72E2B34C83800359FD1 /* MIOPredicateTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -241,7 +225,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		14F0E70D2B34C69000359FD1 /* Debug */ = {
+		14F0E70D2B34C69000359FD1 /* Debug configuration for PBXProject "MIOCoreData" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -305,7 +289,7 @@
 			};
 			name = Debug;
 		};
-		14F0E70E2B34C69000359FD1 /* Release */ = {
+		14F0E70E2B34C69000359FD1 /* Release configuration for PBXProject "MIOCoreData" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -361,7 +345,7 @@
 			};
 			name = Release;
 		};
-		14F0E7102B34C69000359FD1 /* Debug */ = {
+		14F0E7102B34C69000359FD1 /* Debug configuration for PBXNativeTarget "MIOCoreData" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -373,7 +357,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
@@ -400,7 +384,7 @@
 			};
 			name = Debug;
 		};
-		14F0E7112B34C69000359FD1 /* Release */ = {
+		14F0E7112B34C69000359FD1 /* Release configuration for PBXNativeTarget "MIOCoreData" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -412,7 +396,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
@@ -439,7 +423,7 @@
 			};
 			name = Release;
 		};
-		14F0E7132B34C69000359FD1 /* Debug */ = {
+		14F0E7132B34C69000359FD1 /* Debug configuration for PBXNativeTarget "MIOCoreDataTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
@@ -459,7 +443,7 @@
 			};
 			name = Debug;
 		};
-		14F0E7142B34C69000359FD1 /* Release */ = {
+		14F0E7142B34C69000359FD1 /* Release configuration for PBXNativeTarget "MIOCoreDataTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
@@ -485,28 +469,25 @@
 		14F0E6F52B34C69000359FD1 /* Build configuration list for PBXProject "MIOCoreData" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				14F0E70D2B34C69000359FD1 /* Debug */,
-				14F0E70E2B34C69000359FD1 /* Release */,
+				14F0E70D2B34C69000359FD1 /* Debug configuration for PBXProject "MIOCoreData" */,
+				14F0E70E2B34C69000359FD1 /* Release configuration for PBXProject "MIOCoreData" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		14F0E70F2B34C69000359FD1 /* Build configuration list for PBXNativeTarget "MIOCoreData" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				14F0E7102B34C69000359FD1 /* Debug */,
-				14F0E7112B34C69000359FD1 /* Release */,
+				14F0E7102B34C69000359FD1 /* Debug configuration for PBXNativeTarget "MIOCoreData" */,
+				14F0E7112B34C69000359FD1 /* Release configuration for PBXNativeTarget "MIOCoreData" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		14F0E7122B34C69000359FD1 /* Build configuration list for PBXNativeTarget "MIOCoreDataTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				14F0E7132B34C69000359FD1 /* Debug */,
-				14F0E7142B34C69000359FD1 /* Release */,
+				14F0E7132B34C69000359FD1 /* Debug configuration for PBXNativeTarget "MIOCoreDataTests" */,
+				14F0E7142B34C69000359FD1 /* Release configuration for PBXNativeTarget "MIOCoreDataTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
