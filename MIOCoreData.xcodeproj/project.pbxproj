@@ -13,7 +13,6 @@
 		14F0E72A2B34C83800359FD1 /* MIOManagedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7252B34C83800359FD1 /* MIOManagedTests.swift */; };
 		14F0E72B2B34C83800359FD1 /* XCTestManifests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7262B34C83800359FD1 /* XCTestManifests.swift */; };
 		14F0E72C2B34C83800359FD1 /* MIOCoreDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7272B34C83800359FD1 /* MIOCoreDataTests.swift */; };
-		14F0E72D2B34C83800359FD1 /* MIOManagedObjectContextTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7282B34C83800359FD1 /* MIOManagedObjectContextTest.swift */; };
 		14F0E72E2B34C83800359FD1 /* MIOPredicateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7292B34C83800359FD1 /* MIOPredicateTests.swift */; };
 		873053CB2C86FAA900117645 /* MIOCoreData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873053CA2C86FAA900117645 /* MIOCoreData.swift */; };
 /* End PBXBuildFile section */
@@ -36,7 +35,6 @@
 		14F0E7252B34C83800359FD1 /* MIOManagedTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MIOManagedTests.swift; sourceTree = "<group>"; };
 		14F0E7262B34C83800359FD1 /* XCTestManifests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCTestManifests.swift; sourceTree = "<group>"; };
 		14F0E7272B34C83800359FD1 /* MIOCoreDataTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MIOCoreDataTests.swift; sourceTree = "<group>"; };
-		14F0E7282B34C83800359FD1 /* MIOManagedObjectContextTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MIOManagedObjectContextTest.swift; sourceTree = "<group>"; };
 		14F0E7292B34C83800359FD1 /* MIOPredicateTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MIOPredicateTests.swift; sourceTree = "<group>"; };
 		873053CA2C86FAA900117645 /* MIOCoreData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MIOCoreData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -91,7 +89,6 @@
 				14F0E7252B34C83800359FD1 /* MIOManagedTests.swift */,
 				14F0E7262B34C83800359FD1 /* XCTestManifests.swift */,
 				14F0E7272B34C83800359FD1 /* MIOCoreDataTests.swift */,
-				14F0E7282B34C83800359FD1 /* MIOManagedObjectContextTest.swift */,
 				14F0E7292B34C83800359FD1 /* MIOPredicateTests.swift */,
 			);
 			name = MIOCoreDataTests;
@@ -209,7 +206,6 @@
 			files = (
 				14F0E72C2B34C83800359FD1 /* MIOCoreDataTests.swift in Sources */,
 				14F0E72A2B34C83800359FD1 /* MIOManagedTests.swift in Sources */,
-				14F0E72D2B34C83800359FD1 /* MIOManagedObjectContextTest.swift in Sources */,
 				14F0E72B2B34C83800359FD1 /* XCTestManifests.swift in Sources */,
 				14F0E72E2B34C83800359FD1 /* MIOPredicateTests.swift in Sources */,
 			);
