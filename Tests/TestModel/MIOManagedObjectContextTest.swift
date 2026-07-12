@@ -10,8 +10,10 @@ import MIOCoreData
 
 func document_path() -> String
 {
-    let documentPath = CommandLine.arguments.count < 2 ? "\(FileManager().currentDirectoryPath)" : CommandLine.arguments[1]
-    return documentPath
+    // Anchored to this source file so tests work regardless of the process
+    // working directory (the CommandLine/cwd variants both resolved to paths
+    // that don't exist under `swift test`, silently yielding an empty model).
+    return URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().path
 }
 
 func model_path() -> String
@@ -57,7 +59,7 @@ public func InMemoryStoreMOCTest () -> NSManagedObjectContext
     })
 
     _in_memory_persistent_container = container
-    mom.registerDataModelRuntimeObjects()
+    _CORE_DATA_SWIFT_RegisterRuntimeObjects()
     
     return _in_memory_persistent_container!.viewContext
 }
@@ -102,7 +104,7 @@ public func IncrementalStoreMOCTest () -> NSManagedObjectContext
     })
 
     _incremental_persistent_container = container
-    mom.registerDataModelRuntimeObjects()
+    _CORE_DATA_SWIFT_RegisterRuntimeObjects()
     
     return _incremental_persistent_container!.viewContext
 }

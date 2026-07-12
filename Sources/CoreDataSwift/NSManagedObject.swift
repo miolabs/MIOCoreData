@@ -467,7 +467,7 @@ open class NSManagedObject : NSObject
         
         if let memory_store = store as? NSInMemoryStore {
             let objects = memory_store.objectsByEntityName[ objectID.entity.name! ]
-            let values = objects?[objectID.uriRepresentation().absoluteString] as? [String:Any] ?? [:]
+            let values = objects?[objectID.uriString] as? [String:Any] ?? [:]
 
             for (key, attr) in entity.attributesByName {
                 var v = values[ key ]
@@ -688,7 +688,24 @@ open class NSManagedObject : NSObject
     }
     
     public func printAsJSON() throws -> String? {
-        let data = try JSONSerialization.data(withJSONObject: self)
+        // JSONSerialization cannot serialize a managed object (or Date/UUID/Decimal
+        // values) directly, so build a JSON-safe dictionary from the attributes.
+        var json:[String:Any] = [:]
+        for key in entity.attributesByName.keys {
+            switch value(forKey: key) {
+            case nil:                json[key] = NSNull()
+            case is NSNull:          json[key] = NSNull()
+            case let v as String:    json[key] = v
+            case let v as Bool:      json[key] = v
+            case let v as Date:      json[key] = ISO8601DateFormatter().string(from: v)
+            case let v as UUID:      json[key] = v.uuidString
+            case let v as Decimal:   json[key] = "\(v)"
+            case let v as Data:      json[key] = v.base64EncodedString()
+            case let v as NSNumber:  json[key] = v
+            case let v?:             json[key] = "\(v)"
+            }
+        }
+        let data = try JSONSerialization.data(withJSONObject: json)
         return String(data: data, encoding: .utf8)
     }
 }

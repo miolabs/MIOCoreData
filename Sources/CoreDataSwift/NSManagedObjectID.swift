@@ -14,7 +14,7 @@ open class NSManagedObjectID : NSObject
     var _entity:NSEntityDescription
     open var entity: NSEntityDescription { get { return _entity } } // entity for the object identified by an ID
 
-    weak var _persistentStore:NSPersistentStore?
+    weak var _persistentStore:NSPersistentStore? { didSet { _uriString = nil } }
     weak open var persistentStore: NSPersistentStore? { get { return _persistentStore } } // persistent store that fetched the object identified by an ID
 
     // indicates whether or not this ID will be replaced later, such as after a save operation (temporary IDs are assigned to newly inserted objects and replaced with permanent IDs when an object is written to a persistent store); most IDs return NO
@@ -22,11 +22,24 @@ open class NSManagedObjectID : NSObject
     open var isTemporaryID: Bool { get { return _isTemporaryID } }
 
 //    var _storeIdentifier:String?
-    open var _referenceObject:Any
-    
+    open var _referenceObject:Any { didSet { _uriString = nil } }
+
+    // The URI string doubles as the identity key in every context registry, so
+    // it is cached: interpolating and parsing a URL on each identity check was
+    // one of the hottest allocation paths in the library. The didSet observers
+    // above invalidate it when the reference object or the store changes
+    // (temporary -> permanent ID promotion on save).
+    private var _uriString: String?
+    var uriString: String {
+        if _uriString == nil {
+            _uriString = "x-coredata://\(_persistentStore?.identifier ?? "")/\(_referenceObject)/\(_entity.name!)"
+        }
+        return _uriString!
+    }
+
     // URI which provides an archivable reference to the object which this ID refers
     open func uriRepresentation() -> URL {
-        return URL(string: "x-coredata://\(_persistentStore?.identifier ?? "")/\(_referenceObject)/\(_entity.name!)")!
+        return URL(string: uriString)!
     }
 
     init(WithEntity entity:NSEntityDescription, referenceObject:Any?){

@@ -28,17 +28,21 @@ open class NSPersistentContainer : NSObject
 
     open var persistentStoreDescriptions: [NSPersistentStoreDescription] = []
     
+#if DEBUG
     private static var instanceCount = 0
     private static let countQueue = DispatchQueue(label: "context.count")
+#endif
 
     public convenience init(name: String){
 //        let url = URL(fileURLWithPath: name)
 //        let model = NSManagedObjectModel(contentsOf: url)
         self.init(name:name, managedObjectModel:NSManagedObjectModel())
     }
-    
+
     public init(name: String, managedObjectModel model: NSManagedObjectModel) {
+#if DEBUG
         Self.countQueue.sync { Self.instanceCount += 1 }
+#endif
         _name = name
         _managedObjectModel = model
         _coordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
@@ -48,8 +52,10 @@ open class NSPersistentContainer : NSObject
     }
     
     deinit {
+#if DEBUG
         Self.countQueue.sync { Self.instanceCount -= 1 }
         Log.debug("NSPersistentContainer deinit. Alive: \(Self.instanceCount)")
+#endif
     }
     
     public func loadPersistentStores(completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {

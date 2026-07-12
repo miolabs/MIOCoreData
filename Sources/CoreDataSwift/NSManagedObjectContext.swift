@@ -43,31 +43,38 @@ open class NSManagedObjectContext : NSObject
 {
     var mergePolicy = NSMergePolicy.none
     
+#if DEBUG
     private static var instanceCount = 0
     private static let countQueue = DispatchQueue(label: "context.count")
-    
+#endif
+
     public init(concurrencyType ct: NSManagedObjectContextConcurrencyType) {
+#if DEBUG
         Self.countQueue.sync { Self.instanceCount += 1 }
-        
+#endif
         super.init()
         _concurrencyType = ct
     }
-    
+
     deinit {
+#if DEBUG
         Self.countQueue.sync { Self.instanceCount -= 1 }
         Log.debug("NSManagedObjectContext deinit - objects: \(objectsByID.count) - alive: \(Self.instanceCount)")
+#endif
         objectsByID.removeAll()
         objectsByEntityName.removeAll()
     }
     
     /* asynchronously performs the block on the context's queue.  Encapsulates an autorelease pool and a call to processPendingChanges */
     open func perform(_ block: @escaping () -> Void) {
-        
+        // TODO: queue confinement. Executed inline so the block is not silently dropped.
+        block()
     }
-    
+
     /* synchronously performs the block on the context's queue.  May safely be called reentrantly.  */
     open func performAndWait(_ block: () -> Void) {
-        
+        // TODO: queue confinement. Executed inline so the block is not silently dropped.
+        block()
     }
     
     /* coordinator which provides model and handles persistency (multiple contexts can share a coordinator) */
@@ -80,8 +87,7 @@ open class NSManagedObjectContext : NSObject
     
     //open var undoManager: UndoManager?
     
-    var managedObjectChanges:[String:Any] = [:]
-    open var hasChanges: Bool { get { return managedObjectChanges.count > 0 } }
+    open var hasChanges: Bool { get { return insertedObjects.count > 0 || updatedObjects.count > 0 || deletedObjects.count > 0 } }
     
     var _userInfo = NSMutableDictionary()
     open var userInfo: NSMutableDictionary { get { return _userInfo } }
@@ -90,12 +96,14 @@ open class NSManagedObjectContext : NSObject
     open var concurrencyType: NSManagedObjectContextConcurrencyType { get { return _concurrencyType } }
     
     
-    var objectsByID:[Int:NSManagedObject] = [:]
-    
+    // Keyed by the full URI string, not its hashValue: hashing alone made a
+    // collision silently return the wrong object.
+    var objectsByID:[String:NSManagedObject] = [:]
+
     /* returns the object for the specified ID if it is already registered in the context, or faults the object into the context.  It might perform I/O if the data is uncached.  If the object cannot be fetched, or does not exist, or cannot be faulted, it returns nil.  Unlike -objectWithID: it never returns a fault.  */
     open func existingObject(with objectID: NSManagedObjectID) throws -> NSManagedObject {
-        
-        var obj = objectsByID[objectID.uriRepresentation().absoluteString.hashValue]
+
+        var obj = objectsByID[objectID.uriString]
         
         //let store = objectID.persistentStore as! NSIncrementalStore
         //let node = try store.newValuesForObject(with: objectID, with: self)
@@ -152,13 +160,15 @@ open class NSManagedObjectContext : NSObject
 //        if request.predicate != nil {
 //            cached_objs?.filter(using: request.predicate!)
 //        }
-        var results = objs!.filter(using: request.predicate) as! [T]        
+        var results = objs!.filter(using: request.predicate) as! [T]
         if request.sortDescriptors != nil { results = results.sortedArray(using: request.sortDescriptors!) }
+
+        // An offset past the end returns an empty result, like Core Data (slicing there would trap)
+        if offset >= results.count { return offset == 0 ? results : [] }
+        if request.fetchLimit == 0 { return Array( results[ offset... ] ) }
+
         let limit = min( offset + request.fetchLimit, results.count )
-        
-        return  results.count == 0      ? results
-              : request.fetchLimit == 0 ? Array( results[ offset...      ] )
-              :                           Array( results[ offset..<limit ] )
+        return Array( results[ offset..<limit ] )
     }
     
 //    open func execute(_ request: NSPersistentStoreRequest) throws -> NSPersistentStoreResult {
@@ -258,43 +268,9 @@ open class NSManagedObjectContext : NSObject
         // There's changes, so keep going...
         //MIONotificationCenter.defaultCenter().postNotification(MIOManagedObjectContextWillSaveNotification, this);
 
-        // Deleted objects
-        var deletedObjectsByEntityName:[String:[NSManagedObject]] = [:]
-        for delObj in deletedObjects {
-            // Track object for save notification
-            let entityName = delObj.entity.name!
-            if deletedObjectsByEntityName[entityName] == nil {
-                deletedObjectsByEntityName[entityName] = []
-            }
-            deletedObjectsByEntityName[entityName]!.append(delObj)
-        }
-
-        // Inserted objects
-        
-        var insertedObjectsByEntityName:[String:[NSManagedObject]] = [:]
-        for insObj in insertedObjects {
-            //_obtainPermanentIDForObject(insObj)
-            
-            // Track object for save notification
-            let entityName = insObj.entity.name!
-            if insertedObjectsByEntityName[entityName] == nil {
-                insertedObjectsByEntityName[entityName] = []
-            }
-            
-            insertedObjectsByEntityName[entityName]!.append(insObj)
-        }
-
-        // Updated objects
-        var updatedObjectsByEntityName:[String:[NSManagedObject]] = [:]
-        for updObj in updatedObjects {
-
-            // Track object for save notification
-            let entityName = updObj.entity.name!
-            if updatedObjectsByEntityName[entityName] == nil {
-                updatedObjectsByEntityName[entityName] = []
-            }
-            updatedObjectsByEntityName[entityName]!.append(updObj)
-        }
+        // NOTE: when the DidSave notification (commented out below) gets
+        // implemented, rebuild the per-entity-name change dictionaries here —
+        // the old ones were built on every save and never read.
 
         if parent == nil {
                         
@@ -339,31 +315,31 @@ open class NSManagedObjectContext : NSObject
     var objectsByEntityName: [ String: Set<NSManagedObject> ] = [:]
     func _registerObject(_ object: NSManagedObject, notifyStore:Bool = true) {
 
-        if objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
+        let key = object.objectID.uriString
+        if objectsByID[key] != nil {
             Log.trace("Trying to register a managed object that has already been registered")
             return
         }
 
-        //this.registerObjects.addObject(object);
-        objectsByID[object.objectID.uriRepresentation().absoluteString.hashValue] = object
+        objectsByID[key] = object
 
         _registerObjectForEntityName(object, object.entity)
-        
+
         if notifyStore == false { return }
-        
+
         if object.objectID.persistentStore is NSIncrementalStore {
             let store = object.objectID.persistentStore as! NSIncrementalStore
             store.managedObjectContextDidRegisterObjects(with:[object.objectID])
         }
     }
-    
+
     func _registerObjectForEntityName(_ object: NSManagedObject, _ entity:NSEntityDescription) {
 
-        let entityName = entity.name!
-        var set = objectsByEntityName[entityName] ?? Set()
-        set.insert(object)
-        objectsByEntityName[entityName] = set
-        
+        // Subscript-with-default mutates the set inside the dictionary storage.
+        // Copying the set out, inserting and writing it back copied the whole
+        // set on every registration — O(n^2) over a fetch.
+        objectsByEntityName[entity.name!, default: []].insert(object)
+
         if entity.superentity != nil {
             _registerObjectForEntityName(object, entity.superentity!)
         }
@@ -371,32 +347,26 @@ open class NSManagedObjectContext : NSObject
     }
 
     func _unregisterObject(_ object: NSManagedObject, notifyStore:Bool = true) {
-        
-        if !objectsByID.keys.contains(object.objectID.uriRepresentation().absoluteString.hashValue) {
+
+        let key = object.objectID.uriString
+        if objectsByID.removeValue(forKey: key) == nil {
             Log.trace("Trying to unregister a managed object that has not been registered")
             return
         }
 
-        // this.registerObjects.removeObject(object);
-        objectsByID.removeValue(forKey: object.objectID.uriRepresentation().absoluteString.hashValue)
-        
         _unregisterObjectForEntityName(object, object.entity)
-        
+
         if notifyStore == false { return }
-        
+
         if object.objectID.persistentStore is NSIncrementalStore {
             let store = object.objectID.persistentStore as! NSIncrementalStore
             store.managedObjectContextDidUnregisterObjects(with:[object.objectID])
         }
     }
-    
+
     func _unregisterObjectForEntityName(_ object: NSManagedObject, _ entity:NSEntityDescription) {
-        let entityName = entity.name!
-        if var set = objectsByEntityName[entityName] {
-            set.remove(object)
-            objectsByEntityName[entityName] = set
-        }
-        
+        objectsByEntityName[entity.name!]?.remove(object)
+
         if entity.superentity != nil {
             _unregisterObjectForEntityName(object, entity.superentity!)
         }
