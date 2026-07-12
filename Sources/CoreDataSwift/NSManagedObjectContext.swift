@@ -108,11 +108,7 @@ open class NSManagedObjectContext : NSObject
         //let store = objectID.persistentStore as! NSIncrementalStore
         //let node = try store.newValuesForObject(with: objectID, with: self)
 
-        if obj != nil {
-            obj!.setIsFault(true)
-        }
-        else {
-            
+        if obj == nil {
             //FIX: let objectClass = NSClassFromString(objectID.entity.name!) as! NSManagedObject.Type -> Doesn't work on Linux
             let objectClass = _MIOCoreClassFromString(objectID.entity.name!) as! NSManagedObject.Type
             obj = objectClass.init()
@@ -122,6 +118,9 @@ open class NSManagedObjectContext : NSObject
             obj!.awakeFromFetch()
             _registerObject(obj!)
         }
+        // NOTE: an already-registered object is returned as-is. Refaulting it
+        // here (the old behavior) discarded its cached values, so reading a
+        // relationship with N members caused N store round-trips.
 
         return obj!
     }
@@ -134,32 +133,28 @@ open class NSManagedObjectContext : NSObject
 
         if let store = persistentStoreCoordinator!.persistentStores[0] as? NSIncrementalStore {
             // --- NSLog("Fetch entity: \(request.entityName!)")
-            
+
             request.entity = self.persistentStoreCoordinator?.managedObjectModel.entitiesByName[request.entityName!]
             if request.entity == nil {
                 throw NSManagedObjectContextError.fetchRequestEntityInvalid(request.entityName!)
             }
-            
-            let original_objs = try store.execute(request, with: self) as! [T]
-            
-            // TODO: IF there is an offset, we do not support filter by dynamics properties.
-            // For this reason, we return now.
-            // CASE:
-            // moc.reset deletes all the items in memory
-            // do a fetch with an offset (ex: offset = 2500, limit = 500)
-            if offset > 0 {
-                return original_objs
-            }
+
+            // Fetches return committed state only: the store executed the
+            // entire request in SQL (predicate, ORDER BY, limit, offset) and
+            // its result is authoritative — no in-memory re-filter or re-sort.
+            // Objects inserted in this context are not part of any fetch until
+            // save() commits them.
+            // NOTE: Apple merges unsaved changes into fetch results when
+            // NSFetchRequest.includesPendingChanges is true (its default);
+            // wire that flag through here if that behavior is ever needed.
+            return try store.execute(request, with: self) as! [T]
         }
-                
+
+        // Non-incremental stores (in-memory) have no ordered source: filter
+        // and sort the registered objects here.
         let objs = objectsByEntityName[request.entityName!]
         if objs == nil { return [] }
-        
-//        let cached_objs = objectsByEntityName[ request.entityName! ]
-//
-//        if request.predicate != nil {
-//            cached_objs?.filter(using: request.predicate!)
-//        }
+
         var results = objs!.filter(using: request.predicate) as! [T]
         if request.sortDescriptors != nil { results = results.sortedArray(using: request.sortDescriptors!) }
 
@@ -221,13 +216,32 @@ open class NSManagedObjectContext : NSObject
         
     // if flag is YES, merges an object with the state of the object available in the persistent store coordinator; if flag is NO, simply refaults an object without merging (which also causes other related managed objects to be released, so you can use this method to trim the portion of your object graph you want to hold in memory)
     open func refresh(_ object: NSManagedObject, mergeChanges flag: Bool) {
+        if flag == false {
+            // Apple semantics: discard the unsaved changes, then refault. The
+            // old implementation kept the pending changes and marked the object
+            // updated — refresh is not a way to dirty an object (use setValue),
+            // it is a way to reload it.
+            object._changedValues = [:]
+            if updatedObjects.contains(object) {
+                updatedObjects.remove(object)
+                object._setIsUpdated(false)
+            }
+        }
+
+        // Drop the snapshot so the next access reloads from the store; with
+        // mergeChanges == true the pending changes stay applied on top.
         object.setIsFault(true)
-        
+    }
+
+    // Track an object as dirty for the next save, without touching its
+    // in-memory state. This is what setValue and friends call.
+    func _markUpdated(_ object: NSManagedObject) {
         if insertedObjects.contains(object) { return }
         if deletedObjects.contains(object) { return }
-        
-        updatedObjects.insert(object)
-        object._setIsUpdated(true)
+
+        if updatedObjects.insert(object).inserted {
+            object._setIsUpdated(true)
+        }
     }
     
 //    open func delete(_ object: NSManagedObject) {
@@ -280,11 +294,13 @@ open class NSManagedObjectContext : NSObject
 
             //Clear values
             for obj in insertedObjects {
-                obj._didCommit()
+                obj._didCommit(inserted: true)
+                obj._setIsInserted(false)
             }
 
             for obj in updatedObjects {
                 obj._didCommit()
+                obj._setIsUpdated(false)
             }
 
             for obj in deletedObjects {

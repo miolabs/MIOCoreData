@@ -274,27 +274,10 @@ open class NSManagedObject : NSObject
         if property is NSRelationshipDescription {
             let relationship = property as! NSRelationshipDescription
             if relationship.isToMany == false {
-//                let last_obj = self.committedValues(forKeys: [key] )[ key ] as? NSManagedObject
-//                let obj = value as? NSManagedObject
-                
-//                if last_obj == nil && obj == nil {
-//                    _changedValues[key] = NSNull()
-//                }
-//                else if last_obj == nil && obj != nil {
-//                    _changedValues[key] = obj!.objectID
-//                    addInverseRelationship( relationship, obj!, cache: &cache )
-//                }
-//                else if last_obj != nil && obj == nil {
-//                    removeInverseRelationship(relationship, last_obj!, cache: &cache)
-//                    _changedValues[key] = NSNull()
-//                }
-//                else if last_obj != nil && obj != nil && last_obj!.objectID != obj!.objectID {
-//                    removeInverseRelationship(relationship, last_obj!, cache: &cache)
-//                    _changedValues[key] = obj!.objectID
-//                    addInverseRelationship( relationship, obj!, cache: &cache )
-//                }
-                                
-                if let last_obj = self.committedValues(forKeys: [key] )[ key ] as? NSManagedObject {
+                // Undo the inverse of the CURRENT value (pending change first,
+                // committed otherwise) — and only when an inverse exists, so a
+                // plain to-one set does not force a store round-trip.
+                if relationship.inverseRelationship != nil, let last_obj = _currentToOneObject(forKey: key) {
                     removeInverseRelationship(relationship, last_obj, cache: &cache)
                 }
 
@@ -307,10 +290,10 @@ open class NSManagedObject : NSObject
                 }
             }
             else {
-                if let objects = self.committedValues(forKeys: [key] )[ key ] as? Set<NSManagedObject> {
-                    for obj in objects { removeInverseRelationship( relationship, obj, cache: &cache ) }
+                if relationship.inverseRelationship != nil {
+                    for obj in _currentToManyObjects(forKey: key) { removeInverseRelationship( relationship, obj, cache: &cache ) }
                 }
-                
+
                 if let objects = value as? Set<NSManagedObject> {
                     var objIDs:Set<NSManagedObjectID> = Set( )
                     for obj in objects {
@@ -330,21 +313,58 @@ open class NSManagedObject : NSObject
 
         didChangeValue(forKey: key)
 
-        managedObjectContext?.refresh(self, mergeChanges: false)
-        
+        // Mark dirty without refaulting: the old refresh() here wiped the
+        // snapshot, so writing one attribute forced the next read of any other
+        // attribute to reload the whole object from the store.
+        managedObjectContext?._markUpdated(self)
+
         cache.remove( self )
+    }
+
+    // Current (pending-first) relationship values, used for inverse maintenance.
+    // Falls back to committedValues — which may fire the relationship fault —
+    // only when there is no pending change for the key.
+    func _currentToOneObject(forKey key: String) -> NSManagedObject? {
+        if _changedValues.keys.contains(key) {
+            guard let moc = managedObjectContext, let objID = _changedValues[key] as? NSManagedObjectID else { return nil }
+            return try? moc.existingObject(with: objID)
+        }
+        return committedValues(forKeys: [key])[key] as? NSManagedObject
+    }
+
+    func _currentToManyObjects(forKey key: String) -> Set<NSManagedObject> {
+        if _changedValues.keys.contains(key) {
+            guard let moc = managedObjectContext, let objIDs = _changedValues[key] as? Set<NSManagedObjectID> else { return [] }
+            return Set( objIDs.compactMap { try? moc.existingObject(with: $0) } )
+        }
+        return committedValues(forKeys: [key])[key] as? Set<NSManagedObject> ?? []
     }
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
     open func primitiveValue(forKey key: String) -> Any? {
+        // Pending changes ARE the current primitive state: after setValue or
+        // setPrimitiveValue the primitive must return the new value, and unsaved
+        // objects (temporary ID, empty snapshot) must read their values back.
+        if _changedValues.keys.contains(key) {
+            let value = _changedValues[key]
+            return value is NSNull ? nil : value
+        }
         if hasFault(forRelationshipNamed: key) && objectID.persistentStore != nil {
             unfaultRelationshipNamed( key, fromStore: objectID.persistentStore! )
         }
-        return storedValues[key]
+        let value = storedValues[key]
+        return value is NSNull ? nil : value
     }
-    
+
+    // NOTE: this deviates from Apple on purpose — the change IS tracked (shows
+    // up in changedValues() and gets saved) so that values written from
+    // awakeFromInsert/awakeFromFetch survive; what it skips versus setValue is
+    // the will/didChange observers and the inverse-relationship maintenance.
+    // Writing the old _storedValues dictionary lost the value whenever the
+    // object refaulted, and never persisted it for unsaved objects.
     open func setPrimitiveValue(_ value: Any?, forKey key: String) {
-        _storedValues[key] = value
+        _changedValues[key] = value ?? NSNull()
+        managedObjectContext?._markUpdated(self)
     }
     
     // returns a dictionary of the last fetched or saved keys and values of this object.  Pass nil to get all persistent modeled properties.
@@ -508,10 +528,21 @@ open class NSManagedObject : NSObject
         _storedValues[relation.name] = relation.isToMany ? Set( value! as! [NSManagedObjectID] ) : value!
     }
     
-    func _didCommit() {
-//        _storedValues = _storedValues.merging(_changedValues) { (_, new) in new }
+    func _didCommit( inserted: Bool = false ) {
+        // Merge the committed changes into the snapshot and stay realized:
+        // refaulting here forced a store round-trip on the next attribute read
+        // after every save. Inserted objects carry every meaningful value in
+        // _changedValues, so their merged snapshot is complete even though they
+        // were never unfaulted from a store. An updated object that is still a
+        // fault keeps refaulting (its snapshot is incomplete).
+        if inserted || _isFault == false {
+            _storedValues.merge(_changedValues) { (_, new) in new }
+            for key in _changedValues.keys where entity.relationshipsByName[key] != nil {
+                relationShipsNamedNotFault.insert(key)
+            }
+            _isFault = false
+        }
         _changedValues = [:]
-        setIsFault(true)
     }
     
     func _setIsInserted(_ value:Bool) {
@@ -558,8 +589,8 @@ open class NSManagedObject : NSObject
         
         objIDs.insert(object.objectID)
         _changedValues[key] = objIDs
-        managedObjectContext?.refresh(self, mergeChanges: false)
-        
+        managedObjectContext?._markUpdated(self)
+
         cache.remove( self )
     }
 
@@ -582,8 +613,8 @@ open class NSManagedObject : NSObject
         objIDs.remove( object.objectID )
 
         _changedValues[key] = objIDs
-        if refresh { managedObjectContext?.refresh(self, mergeChanges: false) }
-        
+        if refresh { managedObjectContext?._markUpdated(self) }
+
         cache.remove( self )
     }
 
@@ -666,7 +697,7 @@ open class NSManagedObject : NSObject
                 if obj.isDeleted == false { managedObjectContext?._delete(obj, cache: &cache) }
                 _removeObject(obj, forKey: relationship.name, cache: &cache, refresh: false)
             }
-            managedObjectContext?.refresh(self, mergeChanges: true)
+            managedObjectContext?._markUpdated(self)
         }
     }
     
