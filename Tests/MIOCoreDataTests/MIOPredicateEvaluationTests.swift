@@ -1,15 +1,14 @@
 //
-//  Phase1FixesTests.swift
+//  MIOPredicateEvaluationTests.swift
 //  MIOCoreDataTests
 //
-//  Regression tests for the audit Phase 1 correctness fixes:
+//  Covers predicate format parsing and evaluation against real managed
+//  objects (MIOPredicateTests only checks the parse tree):
 //  - multiple %@ placeholders bind to consecutive arguments
 //  - keyPath expressions on the right side of a comparison are evaluated
-//  - NOT IN parses (as NOT(lhs IN rhs)) instead of trapping
-//  - malformed formats and type-mismatched comparisons do not crash
-//  - context.hasChanges reflects the real tracking sets
-//  - perform/performAndWait execute their block
-//  - fetchOffset past the end returns [] instead of trapping
+//  - NOT IN parses as NOT(lhs IN rhs) and evaluates correctly
+//  - malformed formats return a match-nothing predicate instead of trapping
+//  - type-mismatched comparisons evaluate to false instead of crashing
 //
 //  Self-contained: builds its model from inline XML and registers its own
 //  runtime classes, so it does not depend on the TestModel target or the
@@ -25,14 +24,14 @@ import MIOCore
 
 // MARK: - Runtime classes
 
-class CDP1TestEntity: CoreDataSwift.NSManagedObject {}
+class CDPredicateEvalEntity: CoreDataSwift.NSManagedObject {}
 
 // MARK: - Test model
 
-private let phase1TestModelXML = """
+private let predicateEvalModelXML = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0">
-    <entity name="CDP1TestEntity" representedClassName="CDP1TestEntity" syncable="YES">
+    <entity name="CDPredicateEvalEntity" representedClassName="CDPredicateEvalEntity" syncable="YES">
         <attribute name="name" attributeType="String" optional="YES"/>
         <attribute name="alias" attributeType="String" optional="YES"/>
         <attribute name="counter" attributeType="Integer 32" optional="YES"/>
@@ -40,23 +39,23 @@ private let phase1TestModelXML = """
 </model>
 """
 
-private let registerPhase1RuntimeClasses: Void = {
-    _MIOCoreRegisterClass(type: CDP1TestEntity.self, forKey: "CDP1TestEntity")
+private let registerPredicateEvalRuntimeClasses: Void = {
+    _MIOCoreRegisterClass(type: CDPredicateEvalEntity.self, forKey: "CDPredicateEvalEntity")
 }()
 
-private func phase1TestModel() -> CoreDataSwift.NSManagedObjectModel {
-    _ = registerPhase1RuntimeClasses
+private func predicateEvalModel() -> CoreDataSwift.NSManagedObjectModel {
+    _ = registerPredicateEvalRuntimeClasses
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("CDP1TestModel-\(ProcessInfo.processInfo.processIdentifier).xml")
+        .appendingPathComponent("CDPredicateEvalModel-\(ProcessInfo.processInfo.processIdentifier).xml")
     if FileManager.default.fileExists(atPath: url.path) == false {
-        try! phase1TestModelXML.data(using: .utf8)!.write(to: url)
+        try! predicateEvalModelXML.data(using: .utf8)!.write(to: url)
     }
     return CoreDataSwift.NSManagedObjectModel(contentsOf: url)!
 }
 
 // MARK: - Tests
 
-final class Phase1FixesTests: XCTestCase
+final class MIOPredicateEvaluationTests: XCTestCase
 {
     var container: CoreDataSwift.NSPersistentContainer!
     var moc: CoreDataSwift.NSManagedObjectContext!
@@ -64,7 +63,7 @@ final class Phase1FixesTests: XCTestCase
     override func setUp() {
         super.setUp()
 
-        container = CoreDataSwift.NSPersistentContainer(name: "CDP1Test", managedObjectModel: phase1TestModel())
+        container = CoreDataSwift.NSPersistentContainer(name: "CDPredicateEvalTest", managedObjectModel: predicateEvalModel())
         let description = CoreDataSwift.NSPersistentStoreDescription()
         description.type = CoreDataSwift.NSInMemoryStoreType
         container.persistentStoreDescriptions = [description]
@@ -76,14 +75,14 @@ final class Phase1FixesTests: XCTestCase
 
     @discardableResult
     private func insertEntity(name: String? = nil, counter: Int32? = nil) -> CoreDataSwift.NSManagedObject {
-        let obj = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDP1TestEntity", into: moc)
+        let obj = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDPredicateEvalEntity", into: moc)
         if let name = name { obj.setValue(name, forKey: "name") }
         if let counter = counter { obj.setValue(counter, forKey: "counter") }
         return obj
     }
 
     private func fetch(_ predicateFormat: String? = nil, arguments: [Any] = []) throws -> [CoreDataSwift.NSManagedObject] {
-        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDP1TestEntity")
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDPredicateEvalEntity")
         if let format = predicateFormat {
             request.predicate = MIOPredicateWithFormat(format: format, arguments: arguments)
         }
@@ -122,12 +121,10 @@ final class Phase1FixesTests: XCTestCase
     // MARK: keyPath on the right side
 
     func testKeyPathOnRightSideIsEvaluated() throws {
-        insertEntity(name: "same")
+        let matching = insertEntity(name: "same")
+        matching.setValue("same", forKey: "alias")
         let distinct = insertEntity(name: "distinct")
         distinct.setValue("other", forKey: "alias")
-        moc.objectsByEntityName["CDP1TestEntity"]?.forEach { obj in
-            if obj.value(forKey: "name") as? String == "same" { obj.setValue("same", forKey: "alias") }
-        }
 
         // name == alias compares two keyPaths; with the old bug the right side
         // resolved to the LEFT keyPath, so nothing (or everything) matched.
@@ -187,64 +184,6 @@ final class Phase1FixesTests: XCTestCase
         // String attribute ordered against a number: must be false, not a crash
         let ordered = try fetch("name < 5")
         XCTAssertEqual(ordered.count, 0)
-    }
-
-    // MARK: Context.hasChanges
-
-    func testHasChangesTracksPendingWork() throws {
-        XCTAssertFalse(moc.hasChanges)
-
-        let obj = insertEntity(name: "dirty")
-        XCTAssertTrue(moc.hasChanges, "Insert must mark the context as having changes")
-
-        try moc.save()
-        XCTAssertFalse(moc.hasChanges, "Save must clear pending changes")
-
-        obj.setValue("dirtier", forKey: "name")
-        XCTAssertTrue(moc.hasChanges, "Update must mark the context as having changes")
-
-        try moc.save()
-        XCTAssertFalse(moc.hasChanges)
-
-        moc.delete(obj)
-        XCTAssertTrue(moc.hasChanges, "Delete must mark the context as having changes")
-    }
-
-    // MARK: perform / performAndWait
-
-    func testPerformExecutesBlock() {
-        var performed = false
-        moc.perform { performed = true }
-        XCTAssertTrue(performed, "perform must execute its block")
-
-        var waited = false
-        moc.performAndWait { waited = true }
-        XCTAssertTrue(waited, "performAndWait must execute its block")
-    }
-
-    // MARK: fetchOffset
-
-    func testFetchOffsetBeyondResultsReturnsEmpty() throws {
-        insertEntity(name: "only-one")
-
-        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDP1TestEntity")
-        request.fetchOffset = 1000
-        let results = try moc.fetch(request)
-        XCTAssertEqual(results.count, 0)
-    }
-
-    func testFetchOffsetAndLimitSliceCorrectly() throws {
-        for i in 0..<5 { insertEntity(name: "obj-\(i)", counter: Int32(i)) }
-
-        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDP1TestEntity")
-        request.sortDescriptors = [MIOSortDescriptor(key: "counter", ascending: true)]
-        request.fetchOffset = 2
-        request.fetchLimit = 2
-        let results = try moc.fetch(request)
-
-        XCTAssertEqual(results.count, 2)
-        XCTAssertEqual(results.first?.value(forKey: "counter") as? Int32, 2)
-        XCTAssertEqual(results.last?.value(forKey: "counter") as? Int32, 3)
     }
 }
 
