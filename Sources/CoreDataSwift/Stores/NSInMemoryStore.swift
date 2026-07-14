@@ -28,15 +28,19 @@ class NSInMemoryStore : NSPersistentStore
 
             var objects = objectsByEntityName[ o.entity.name! ] ?? [:]
             let id = o.objectID.uriString
-            objects[id] = o.changedValues()
+            // _changedValues carries relationships as NSManagedObjectID /
+            // Set<NSManagedObjectID> — persisting changedValues() stored LIVE
+            // NSManagedObject references, which the unfault path could not
+            // read back (relationships came back empty after a refault)
+            objects[id] = o._changedValues
             objectsByEntityName[ o.entity.name! ] = objects
         }
-        
+
         for o in updatedObjects {
             var objects = objectsByEntityName[ o.entity.name! ]!
             let id = o.objectID.uriString
             let values = objects[ id ]!
-            objects[ id ] = values.merging( o.changedValues() ) { (_, new) in new }
+            objects[ id ] = values.merging( o._changedValues ) { (_, new) in new }
             objectsByEntityName[ o.entity.name! ] = objects
         }
         

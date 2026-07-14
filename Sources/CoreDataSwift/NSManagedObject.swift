@@ -635,10 +635,20 @@ open class NSManagedObject : NSObject
         if isFault { unfaultAttributes(fromStore: store! ) }
         
         relationShipsNamedNotFault.insert(key)
-        
+
         guard let relation = entity.relationshipsByName[key] else { return }
+
+        // In-memory store rows carry relationships as object IDs directly
+        if let memory_store = store as? NSInMemoryStore {
+            let values = memory_store.objectsByEntityName[ objectID.entity.name! ]?[ objectID.uriString ]
+            if let value = values?[key], (value is NSNull) == false {
+                _storedValues[relation.name] = value
+            }
+            return
+        }
+
         guard let incrementalStore = store as? NSIncrementalStore else { return }
-        
+
         let value = try? incrementalStore.newValue(forRelationship: relation, forObjectWith: objectID, with: managedObjectContext)
         if value == nil { return }
 

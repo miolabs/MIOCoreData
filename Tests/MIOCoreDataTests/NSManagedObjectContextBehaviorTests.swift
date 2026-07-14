@@ -102,13 +102,24 @@ final class NSManagedObjectContextBehaviorTests: XCTestCase
     // MARK: perform / performAndWait
 
     func testPerformExecutesBlock() {
+        // perform is asynchronous on the context queue; performAndWait after
+        // it acts as a barrier on the same serial queue
         var performed = false
         moc.perform { performed = true }
-        XCTAssertTrue(performed, "perform must execute its block")
 
         var waited = false
         moc.performAndWait { waited = true }
-        XCTAssertTrue(waited, "performAndWait must execute its block")
+
+        XCTAssertTrue(performed, "perform must have executed its block before later queue work")
+        XCTAssertTrue(waited, "performAndWait must execute its block synchronously")
+    }
+
+    func testPerformAndWaitIsReentrant() {
+        var inner = false
+        moc.performAndWait {
+            moc.performAndWait { inner = true }   // must not deadlock
+        }
+        XCTAssertTrue(inner)
     }
 
     // MARK: fetchOffset

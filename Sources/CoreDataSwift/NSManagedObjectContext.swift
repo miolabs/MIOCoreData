@@ -64,6 +64,24 @@ public let NSInsertedObjectsKey = "inserted"
 public let NSUpdatedObjectsKey = "updated"
 public let NSDeletedObjectsKey = "deleted"
 
+/// Registry slot for one managed object. Holds the object weakly always, and
+/// strongly only while the context retains registered objects — flipping
+/// `retainsRegisteredObjects` just drops or restores the strong reference.
+/// Objects with pending changes are additionally retained by the
+/// inserted/updated/deleted tracking sets, so they never die mid-flight even
+/// in weak mode.
+final class MIORegisteredObjectBox {
+    weak var weakObject: NSManagedObject?
+    var strongObject: NSManagedObject?
+
+    var object: NSManagedObject? { return strongObject ?? weakObject }
+
+    init(_ object: NSManagedObject, retained: Bool) {
+        weakObject = object
+        if retained { strongObject = object }
+    }
+}
+
 
 public enum NSManagedObjectContextConcurrencyType : UInt
 {   
@@ -86,12 +104,28 @@ open class NSManagedObjectContext : NSObject
     private static let countQueue = DispatchQueue(label: "context.count")
 #endif
 
+#if !os(WASI)
+    // Serial work queue for perform/performAndWait. NOTE: deliberately a
+    // private queue even for mainQueueConcurrencyType — on a server the main
+    // thread may never drain DispatchQueue.main, and binding to it would make
+    // performAndWait hang forever. The per-instance specific key makes
+    // performAndWait reentrancy-safe.
+    let _queue: DispatchQueue
+    private let _queueKey = DispatchSpecificKey<Void>()
+#endif
+
     public init(concurrencyType ct: NSManagedObjectContextConcurrencyType) {
 #if DEBUG && !os(WASI)
         Self.countQueue.sync { Self.instanceCount += 1 }
 #endif
+#if !os(WASI)
+        _queue = DispatchQueue(label: "com.miocoredata.context")
+#endif
         super.init()
         _concurrencyType = ct
+#if !os(WASI)
+        _queue.setSpecific(key: _queueKey, value: ())
+#endif
     }
 
     deinit {
@@ -105,14 +139,27 @@ open class NSManagedObjectContext : NSObject
     
     /* asynchronously performs the block on the context's queue.  Encapsulates an autorelease pool and a call to processPendingChanges */
     open func perform(_ block: @escaping () -> Void) {
-        // TODO: queue confinement. Executed inline so the block is not silently dropped.
-        block()
+#if os(WASI)
+        block()   // wasm is single-threaded: run inline
+#else
+        _queue.async { block() }
+#endif
     }
 
     /* synchronously performs the block on the context's queue.  May safely be called reentrantly.  */
     open func performAndWait(_ block: () -> Void) {
-        // TODO: queue confinement. Executed inline so the block is not silently dropped.
-        block()
+#if os(WASI)
+        block()   // wasm is single-threaded: run inline
+#else
+        if DispatchQueue.getSpecific(key: _queueKey) != nil {
+            // Already on this context's queue (nested performAndWait, or a
+            // performAndWait inside perform) — run inline instead of deadlocking
+            block()
+        }
+        else {
+            _queue.sync { block() }
+        }
+#endif
     }
     
     /* coordinator which provides model and handles persistency (multiple contexts can share a coordinator) */
@@ -134,17 +181,34 @@ open class NSManagedObjectContext : NSObject
     open var concurrencyType: NSManagedObjectContextConcurrencyType { get { return _concurrencyType } }
     
     
+    /* When true (default, and a deliberate deviation from Apple's false) the
+       context keeps every registered object alive — the behavior existing
+       consumers rely on. Set to false on long-lived contexts so clean fetched
+       objects can be released once nothing else holds them; objects with
+       pending changes stay retained by the tracking sets either way. */
+    open var retainsRegisteredObjects = true {
+        didSet {
+            guard retainsRegisteredObjects != oldValue else { return }
+            for box in objectsByID.values {
+                box.strongObject = retainsRegisteredObjects ? box.weakObject : nil
+            }
+        }
+    }
+
     // Keyed by the full URI string, not its hashValue: hashing alone made a
     // collision silently return the wrong object.
-    var objectsByID:[String:NSManagedObject] = [:]
+    var objectsByID:[String:MIORegisteredObjectBox] = [:]
+
+    /* the registered objects that are still alive */
+    open var registeredObjects: Set<NSManagedObject> {
+        return Set( objectsByID.values.compactMap { $0.object } )
+    }
 
     /* returns the object for the specified ID if it is already registered in the context, or faults the object into the context.  It might perform I/O if the data is uncached.  If the object cannot be fetched, or does not exist, or cannot be faulted, it returns nil.  Unlike -objectWithID: it never returns a fault.  */
     open func existingObject(with objectID: NSManagedObjectID) throws -> NSManagedObject {
 
-        var obj = objectsByID[objectID.uriString]
-        
-        //let store = objectID.persistentStore as! NSIncrementalStore
-        //let node = try store.newValuesForObject(with: objectID, with: self)
+        // A dead weak box counts as unregistered: the object gets re-created
+        var obj = objectsByID[objectID.uriString]?.object
 
         if obj == nil {
             //FIX: let objectClass = NSClassFromString(objectID.entity.name!) as! NSManagedObject.Type -> Doesn't work on Linux
@@ -261,10 +325,7 @@ open class NSManagedObjectContext : NSObject
         if request.havingPredicate != nil { Self._warnUnsupportedFetchFlagOnce("havingPredicate") }
         if request.returnsDistinctResults { Self._warnUnsupportedFetchFlagOnce("returnsDistinctResults") }
 
-        let objs = objectsByEntityName[request.entityName!]
-        if objs == nil { return [] }
-
-        var results = objs!.filter(using: request.predicate) as! [T]
+        var results = _liveObjects(forEntityName: request.entityName!).filter(using: request.predicate) as! [T]
         if request.sortDescriptors != nil { results = results.sortedArray(using: request.sortDescriptors!) }
 
         // An offset past the end returns an empty result, like Core Data (slicing there would trap)
@@ -535,18 +596,44 @@ open class NSManagedObjectContext : NSObject
         #endif
     }
     
-    var objectsByEntityName: [ String: Set<NSManagedObject> ] = [:]
+    // entity name -> object URI -> shared registry box (one box per object,
+    // shared with objectsByID and every superentity bucket)
+    var objectsByEntityName: [ String: [String: MIORegisteredObjectBox] ] = [:]
+
+    /// Live objects registered under an entity name; dead weak boxes found on
+    /// the way are compacted out of every registry bucket.
+    func _liveObjects(forEntityName entityName: String) -> [NSManagedObject] {
+        guard let boxes = objectsByEntityName[entityName] else { return [] }
+
+        var live: [NSManagedObject] = []
+        live.reserveCapacity(boxes.count)
+        var dead: [String] = []
+
+        for (uri, box) in boxes {
+            if let object = box.object { live.append(object) }
+            else { dead.append(uri) }
+        }
+
+        for uri in dead {
+            objectsByID.removeValue(forKey: uri)
+            for name in objectsByEntityName.keys { objectsByEntityName[name]?.removeValue(forKey: uri) }
+        }
+
+        return live
+    }
+
     func _registerObject(_ object: NSManagedObject, notifyStore:Bool = true) {
 
         let key = object.objectID.uriString
-        if objectsByID[key] != nil {
+        if let existing = objectsByID[key], existing.object != nil {
             Log.trace("Trying to register a managed object that has already been registered")
             return
         }
 
-        objectsByID[key] = object
+        let box = MIORegisteredObjectBox(object, retained: retainsRegisteredObjects)
+        objectsByID[key] = box
 
-        _registerObjectForEntityName(object, object.entity)
+        _registerBox(box, uri: key, entity: object.entity)
 
         if notifyStore == false { return }
 
@@ -556,17 +643,12 @@ open class NSManagedObjectContext : NSObject
         }
     }
 
-    func _registerObjectForEntityName(_ object: NSManagedObject, _ entity:NSEntityDescription) {
-
-        // Subscript-with-default mutates the set inside the dictionary storage.
-        // Copying the set out, inserting and writing it back copied the whole
-        // set on every registration — O(n^2) over a fetch.
-        objectsByEntityName[entity.name!, default: []].insert(object)
+    func _registerBox(_ box: MIORegisteredObjectBox, uri: String, entity: NSEntityDescription) {
+        objectsByEntityName[entity.name!, default: [:]][uri] = box
 
         if entity.superentity != nil {
-            _registerObjectForEntityName(object, entity.superentity!)
+            _registerBox(box, uri: uri, entity: entity.superentity!)
         }
-
     }
 
     func _unregisterObject(_ object: NSManagedObject, notifyStore:Bool = true) {
@@ -588,7 +670,7 @@ open class NSManagedObjectContext : NSObject
     }
 
     func _unregisterObjectForEntityName(_ object: NSManagedObject, _ entity:NSEntityDescription) {
-        objectsByEntityName[entity.name!]?.remove(object)
+        objectsByEntityName[entity.name!]?.removeValue(forKey: object.objectID.uriString)
 
         if entity.superentity != nil {
             _unregisterObjectForEntityName(object, entity.superentity!)
@@ -603,11 +685,9 @@ open class NSManagedObjectContext : NSObject
         }
 
         for entityName in objectsByEntityName.keys {
-            if let set = objectsByEntityName[entityName] {
-                for o in set {
-                    idsByStore[o.objectID.persistentStore!.identifier]!.insert(o.objectID)
-                    _unregisterObject(o, notifyStore: false)
-                }
+            for o in _liveObjects(forEntityName: entityName) {
+                idsByStore[o.objectID.persistentStore!.identifier]!.insert(o.objectID)
+                _unregisterObject(o, notifyStore: false)
             }
         }
 

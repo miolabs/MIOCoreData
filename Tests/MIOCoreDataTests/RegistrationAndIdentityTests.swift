@@ -92,8 +92,8 @@ final class RegistrationAndIdentityTests: XCTestCase
     func testInsertRegistersObjectByURIString() {
         let obj = insertEntity("CDRegTestEntity")
 
-        XCTAssertTrue(moc.objectsByID[obj.objectID.uriString] === obj)
-        XCTAssertTrue(moc.objectsByEntityName["CDRegTestEntity"]?.contains(obj) ?? false)
+        XCTAssertTrue(moc.objectsByID[obj.objectID.uriString]?.object === obj)
+        XCTAssertTrue(moc.objectsByEntityName["CDRegTestEntity"]?.values.contains { $0.object === obj } ?? false)
     }
 
     func testRegisterIsIdempotent() {
@@ -109,18 +109,18 @@ final class RegistrationAndIdentityTests: XCTestCase
         moc._unregisterObject(obj)
 
         XCTAssertNil(moc.objectsByID[obj.objectID.uriString])
-        XCTAssertEqual(moc.objectsByEntityName["CDRegTestEntity"]?.contains(obj), false)
+        XCTAssertEqual(moc.objectsByEntityName["CDRegTestEntity"]?.values.contains { $0.object === obj }, false)
     }
 
     func testSubentityRegistersUnderEveryHierarchyLevel() {
         let obj = insertEntity("CDRegTestDerived")
 
-        XCTAssertTrue(moc.objectsByEntityName["CDRegTestDerived"]?.contains(obj) ?? false)
-        XCTAssertTrue(moc.objectsByEntityName["CDRegTestBase"]?.contains(obj) ?? false)
+        XCTAssertTrue(moc.objectsByEntityName["CDRegTestDerived"]?.values.contains { $0.object === obj } ?? false)
+        XCTAssertTrue(moc.objectsByEntityName["CDRegTestBase"]?.values.contains { $0.object === obj } ?? false)
 
         moc._unregisterObject(obj)
-        XCTAssertEqual(moc.objectsByEntityName["CDRegTestDerived"]?.contains(obj), false)
-        XCTAssertEqual(moc.objectsByEntityName["CDRegTestBase"]?.contains(obj), false)
+        XCTAssertEqual(moc.objectsByEntityName["CDRegTestDerived"]?.values.contains { $0.object === obj }, false)
+        XCTAssertEqual(moc.objectsByEntityName["CDRegTestBase"]?.values.contains { $0.object === obj }, false)
     }
 
     func testBulkRegistrationKeepsRegistriesConsistent() {
