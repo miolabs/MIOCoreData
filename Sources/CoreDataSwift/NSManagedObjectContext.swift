@@ -15,6 +15,7 @@ import MIOCoreLogger
 enum NSManagedObjectContextError: Error
 {
     case fetchRequestEntityInvalid(_ entityName: String, functionName: String = #function)
+    case parentContextsUnsupported
 }
 
 extension NSManagedObjectContextError: LocalizedError {
@@ -22,9 +23,46 @@ extension NSManagedObjectContextError: LocalizedError {
         switch self {
         case let .fetchRequestEntityInvalid(entityName, functionName):
             return "NSManagedObjectContextError.fetchRequestEntityInvalid:\(entityName) \(functionName)."
+        case .parentContextsUnsupported:
+            return "NSManagedObjectContextError.parentContextsUnsupported: saving a child context is not implemented — the changes would be silently lost."
         }
     }
 }
+
+public enum NSManagedObjectValidationError: Error, LocalizedError
+{
+    case missingMandatoryProperty(entity: String, property: String, objectID: String)
+    case tooFewObjects(entity: String, property: String, minimum: Int, count: Int)
+    case tooManyObjects(entity: String, property: String, maximum: Int, count: Int)
+    case deleteDenied(entity: String, relationship: String)
+    case multiple([Error])
+
+    public var errorDescription: String? {
+        switch self {
+        case let .missingMandatoryProperty(entity, property, objectID):
+            return "\(entity).\(property) is mandatory and has no value (object: \(objectID))."
+        case let .tooFewObjects(entity, property, minimum, count):
+            return "\(entity).\(property) requires at least \(minimum) objects, has \(count)."
+        case let .tooManyObjects(entity, property, maximum, count):
+            return "\(entity).\(property) allows at most \(maximum) objects, has \(count)."
+        case let .deleteDenied(entity, relationship):
+            return "\(entity) cannot be deleted while \(relationship) still contains objects (deny delete rule)."
+        case let .multiple(errors):
+            return "Multiple validation errors:\n" + errors.map { "  - \($0.localizedDescription)" }.joined(separator: "\n")
+        }
+    }
+}
+
+extension Notification.Name
+{
+    public static let NSManagedObjectContextWillSave = Notification.Name("NSManagedObjectContextWillSaveNotification")
+    public static let NSManagedObjectContextDidSave = Notification.Name("NSManagedObjectContextDidSaveNotification")
+}
+
+// userInfo keys of the DidSave notification; the values are Set<NSManagedObject>
+public let NSInsertedObjectsKey = "inserted"
+public let NSUpdatedObjectsKey = "updated"
+public let NSDeletedObjectsKey = "deleted"
 
 
 public enum NSManagedObjectContextConcurrencyType : UInt
@@ -43,13 +81,13 @@ open class NSManagedObjectContext : NSObject
 {
     var mergePolicy = NSMergePolicy.none
     
-#if DEBUG
+#if DEBUG && !os(WASI)
     private static var instanceCount = 0
     private static let countQueue = DispatchQueue(label: "context.count")
 #endif
 
     public init(concurrencyType ct: NSManagedObjectContextConcurrencyType) {
-#if DEBUG
+#if DEBUG && !os(WASI)
         Self.countQueue.sync { Self.instanceCount += 1 }
 #endif
         super.init()
@@ -57,7 +95,7 @@ open class NSManagedObjectContext : NSObject
     }
 
     deinit {
-#if DEBUG
+#if DEBUG && !os(WASI)
         Self.countQueue.sync { Self.instanceCount -= 1 }
         Log.debug("NSManagedObjectContext deinit - objects: \(objectsByID.count) - alive: \(Self.instanceCount)")
 #endif
@@ -139,15 +177,79 @@ open class NSManagedObjectContext : NSObject
                 throw NSManagedObjectContextError.fetchRequestEntityInvalid(request.entityName!)
             }
 
-            // Fetches return committed state only: the store executed the
-            // entire request in SQL (predicate, ORDER BY, limit, offset) and
-            // its result is authoritative — no in-memory re-filter or re-sort.
-            // Objects inserted in this context are not part of any fetch until
-            // save() commits them.
-            // NOTE: Apple merges unsaved changes into fetch results when
-            // NSFetchRequest.includesPendingChanges is true (its default);
-            // wire that flag through here if that behavior is ever needed.
-            return try store.execute(request, with: self) as! [T]
+            // The store executed the entire request in SQL (predicate,
+            // ORDER BY, limit, offset), so its result is the committed truth
+            // in DB order — never re-filtered or re-sorted here.
+            let store_objs = try store.execute(request, with: self) as! [T]
+
+            // includesPendingChanges == false: committed rows only (Apple
+            // parity for the non-default flag value).
+            if request.includesPendingChanges == false { return store_objs }
+            if request.resultType != .managedObjectResultType { return store_objs }
+            // The SQL offset already consumed committed rows; merging pending
+            // changes into an offset window is not meaningful.
+            if offset > 0 { return store_objs }
+            if insertedObjects.isEmpty && updatedObjects.isEmpty && deletedObjects.isEmpty {
+                return store_objs
+            }
+
+            // Apple parity for the default (includesPendingChanges == true):
+            // merge this context's unsaved changes into the committed result —
+            // pending deletes disappear, updated objects are re-evaluated
+            // against their in-memory values, unsaved inserts join in. Only
+            // when the merge actually changes something are the results
+            // re-sorted and the limit re-applied.
+            let fetch_entity_name = request.entity!.name
+            func belongs(_ obj: NSManagedObject) -> Bool {
+                var e: NSEntityDescription? = obj.entity
+                while let current = e {
+                    if current.name == fetch_entity_name { return true }
+                    e = current.superentity
+                }
+                return false
+            }
+            func matches(_ obj: NSManagedObject) -> Bool {
+                guard let predicate = request.predicate else { return true }
+                return MIOPredicateEvaluate(object: obj, using: predicate)
+            }
+
+            var results = store_objs.map { $0 as! NSManagedObject }
+            var merged = false
+
+            if deletedObjects.isEmpty == false {
+                let count = results.count
+                results.removeAll { deletedObjects.contains($0) }
+                merged = merged || results.count != count
+            }
+
+            if updatedObjects.isEmpty == false && request.predicate != nil {
+                let count = results.count
+                results.removeAll { updatedObjects.contains($0) && matches($0) == false }
+                merged = merged || results.count != count
+
+                let present = Set(results)
+                for obj in updatedObjects {
+                    if belongs(obj) && present.contains(obj) == false && matches(obj) {
+                        results.append(obj)
+                        merged = true
+                    }
+                }
+            }
+
+            for obj in insertedObjects {
+                if belongs(obj) && matches(obj) {
+                    results.append(obj)
+                    merged = true
+                }
+            }
+
+            if merged == false { return store_objs }
+
+            if request.sortDescriptors != nil { results = results.sortedArray(using: request.sortDescriptors!) }
+            if request.fetchLimit > 0 && results.count > request.fetchLimit {
+                results = Array(results.prefix(request.fetchLimit))
+            }
+            return results as! [T]
         }
 
         // Non-incremental stores (in-memory) have no ordered source: filter
@@ -208,10 +310,18 @@ open class NSManagedObjectContext : NSObject
 //        objectID._setPersistentStore(store)
 
         if updatedObjects.contains(object) { updatedObjects.remove(object) }
-        
+
         insertedObjects.insert(object)
         _registerObject(object)
         object._setIsInserted(true)
+
+        if object._managedObjectContext == nil { object._managedObjectContext = self }
+
+        // Defaults belong to creation, not save: any read after insert must
+        // already return them. This covers objects built with the plain init,
+        // which never ran the designated init's _setDefaultValues (the call is
+        // non-clobbering, so values set by the caller before insert survive).
+        object._setDefaultValues()
     }
         
     // if flag is YES, merges an object with the state of the object available in the persistent store coordinator; if flag is NO, simply refaults an object without merging (which also causes other related managed objects to be released, so you can use this method to trim the portion of your object graph you want to hold in memory)
@@ -221,10 +331,17 @@ open class NSManagedObjectContext : NSObject
             // old implementation kept the pending changes and marked the object
             // updated — refresh is not a way to dirty an object (use setValue),
             // it is a way to reload it.
-            object._changedValues = [:]
-            if updatedObjects.contains(object) {
-                updatedObjects.remove(object)
-                object._setIsUpdated(false)
+            //
+            // Inserted objects are exempt: they have no committed state to
+            // reload, so discarding their pending values (which include the
+            // model default values applied at init) would leave a hollow
+            // object. They keep their values.
+            if insertedObjects.contains(object) == false {
+                object._changedValues = [:]
+                if updatedObjects.contains(object) {
+                    updatedObjects.remove(object)
+                    object._setIsUpdated(false)
+                }
             }
         }
 
@@ -259,13 +376,17 @@ open class NSManagedObjectContext : NSObject
     
     func _delete(_ object: NSManagedObject, cache: inout Set<NSManagedObject>) {
         if deletedObjects.contains(object) { return }
-        
+
+        // Callback while the object graph is still intact, before delete
+        // propagation tears the relationships down
+        object.prepareForDeletion()
+
         insertedObjects.remove(object)
         object._setIsInserted(false)
         updatedObjects.remove(object)
         object._setIsUpdated(false)
         deletedObjects.insert(object)
-        
+
         object._setIsDeleted(true, cache: &cache)
     }
 
@@ -274,58 +395,128 @@ open class NSManagedObjectContext : NSObject
     public var updatedObjects: Set<NSManagedObject> = Set()
     public var deletedObjects: Set<NSManagedObject> = Set()
     
+    /* When false, save() skips the mandatory-property / delete-rule validation.
+       Escape hatch for existing data sets that predate validation — prefer
+       fixing the data over disabling the checks. */
+    open var validatesOnSave = true
+
+    /* How save() reacts to a non-optional property that has no value and no
+       DBDefaultFunction to fill it: fail the save (default), or downgrade to
+       a logged warning — an escape hatch for data sets that predate this
+       validation. Count limits, deny delete rules and the validateFor* hooks
+       always fail regardless of this policy. */
+    public enum MIOMandatoryValidationPolicy { case error, warning }
+    open var mandatoryValidationPolicy = MIOMandatoryValidationPolicy.error
+
     open func save() throws {
-    
+
         // Check if nothing changed... to avoid unnecessay methods calls
         if insertedObjects.count == 0 && updatedObjects.count == 0 && deletedObjects.count == 0 { return }
-        
-        // There's changes, so keep going...
-        //MIONotificationCenter.defaultCenter().postNotification(MIOManagedObjectContextWillSaveNotification, this);
 
-        // NOTE: when the DidSave notification (commented out below) gets
-        // implemented, rebuild the per-entity-name change dictionaries here —
-        // the old ones were built on every save and never read.
+        // The old implementation silently skipped the store save for child
+        // contexts, losing the changes. Fail loudly until parent propagation
+        // is implemented.
+        guard parent == nil else { throw NSManagedObjectContextError.parentContextsUnsupported }
 
-        if parent == nil {
-                        
-            // Save to persistent store
-            let store = persistentStoreCoordinator!.persistentStores[0]
-            try store.save(insertedObjects: insertedObjects, updatedObjects: updatedObjects, deletedObjects: deletedObjects, context: self)
-
-            //Clear values
-            for obj in insertedObjects {
-                obj._didCommit(inserted: true)
-                obj._setIsInserted(false)
-            }
-
-            for obj in updatedObjects {
-                obj._didCommit()
-                obj._setIsUpdated(false)
-            }
-
-            for obj in deletedObjects {
-                obj._didCommit()
-                _unregisterObject(obj)
-            }
-
-            // Clear
-            insertedObjects = Set()
-            updatedObjects = Set()
-            deletedObjects = Set()
+        // 1. willSave hooks. A willSave implementation may dirty other objects
+        //    (or itself) through setValue — loop so newly dirtied objects get
+        //    their willSave too. Each object is notified once; the iteration
+        //    cap breaks pathological chains.
+        var notified = Set<NSManagedObject>()
+        var iterations = 0
+        while iterations < 100 {
+            let pending = insertedObjects.union(updatedObjects).union(deletedObjects).subtracting(notified)
+            if pending.isEmpty { break }
+            for obj in pending { obj.willSave() }
+            notified.formUnion(pending)
+            iterations += 1
         }
 
-//        let objsChanges = {};
-//        objsChanges[MIOInsertedObjectsKey] = insertedObjectsByEntityName;
-//        objsChanges[MIOUpdatedObjectsKey] = updatedObjectsByEntityName;
-//        objsChanges[MIODeletedObjectsKey] = deletedObjectsByEntityName;
-//
-//        let noty = new MIONotification(MIOManagedObjectContextDidSaveNotification, this, objsChanges);
-//        if (this.parent != null) {
-//            this.parent.mergeChangesFromContextDidSaveNotification(noty);
-//        }
-//
-//        MIONotificationCenter.defaultCenter().postNotification(MIOManagedObjectContextDidSaveNotification, this, objsChanges);
-        
+        #if !os(WASI) // wasm Foundation lacks the legacy Notification.Name post API
+        NotificationCenter.default.post(name: .NSManagedObjectContextWillSave, object: self)
+        #endif
+
+        // 2. Validation — collect every failure instead of stopping at the
+        //    first one, then fail before anything reaches the store.
+        if validatesOnSave {
+            var errors: [Error] = []
+
+            for obj in insertedObjects {
+                obj._validateMandatoryProperties(changedKeysOnly: false, errors: &errors)
+                do { try obj.validateForInsert() } catch { errors.append(error) }
+            }
+            for obj in updatedObjects {
+                obj._validateMandatoryProperties(changedKeysOnly: true, errors: &errors)
+                do { try obj.validateForUpdate() } catch { errors.append(error) }
+            }
+            for obj in deletedObjects {
+                obj._validateDeleteRules(errors: &errors)
+                do { try obj.validateForDelete() } catch { errors.append(error) }
+            }
+
+            // A non-optional property that nobody fills (no code value, no
+            // DBDefaultFunction) is a modeling/data problem — but existing
+            // data sets predate this validation, so by default it warns
+            // instead of failing the save
+            if mandatoryValidationPolicy == .warning {
+                errors = errors.filter { error in
+                    if case NSManagedObjectValidationError.missingMandatoryProperty = error {
+                        Log.warning("Save validation: \(error.localizedDescription)")
+                        return false
+                    }
+                    return true
+                }
+            }
+
+            if errors.count == 1 { throw errors[0] }
+            if errors.count > 1 { throw NSManagedObjectValidationError.multiple(errors) }
+        }
+
+        // Keep the sets for the didSave hooks and the notification: the
+        // tracking properties are cleared before those run
+        let inserted = insertedObjects
+        let updated = updatedObjects
+        let deleted = deletedObjects
+
+        // 3. Save to persistent store
+        let store = persistentStoreCoordinator!.persistentStores[0]
+        try store.save(insertedObjects: insertedObjects, updatedObjects: updatedObjects, deletedObjects: deletedObjects, context: self)
+
+        // 4. Commit in-memory state
+        for obj in inserted {
+            obj._didCommit(inserted: true)
+            obj._setIsInserted(false)
+        }
+
+        for obj in updated {
+            obj._didCommit()
+            obj._setIsUpdated(false)
+        }
+
+        for obj in deleted {
+            obj._didCommit()
+            _unregisterObject(obj)
+        }
+
+        insertedObjects = Set()
+        updatedObjects = Set()
+        deletedObjects = Set()
+
+        // 5. didSave hooks and notification
+        for obj in inserted { obj.didSave() }
+        for obj in updated  { obj.didSave() }
+        for obj in deleted  { obj.didSave() }
+
+        #if os(WASI)
+        // wasm Foundation only ships the typed-message NotificationCenter API.
+        // TODO(wasm): replace with a WASI-compatible did-save event mechanism
+        #else
+        NotificationCenter.default.post(name: .NSManagedObjectContextDidSave, object: self, userInfo: [
+            NSInsertedObjectsKey: inserted,
+            NSUpdatedObjectsKey: updated,
+            NSDeletedObjectsKey: deleted,
+        ])
+        #endif
     }
     
     var objectsByEntityName: [ String: Set<NSManagedObject> ] = [:]
@@ -412,8 +603,32 @@ open class NSManagedObjectContext : NSObject
         }
     }
     
-    func rollback() {
-        //TODO
+    open func rollback() {
+        // Discard every pending change. Objects deleted in this session come
+        // back (their delete propagation lives in other objects' pending
+        // changes, which are discarded too); inserted objects leave the
+        // context entirely.
+        for obj in insertedObjects {
+            obj._changedValues = [:]
+            obj._setIsInserted(false)
+            _unregisterObject(obj)
+        }
+
+        for obj in updatedObjects {
+            obj._changedValues = [:]
+            obj._setIsUpdated(false)
+            obj.setIsFault(true)
+        }
+
+        for obj in deletedObjects {
+            obj._changedValues = [:]
+            obj._isDeleted = false
+            obj.setIsFault(true)
+        }
+
+        insertedObjects = Set()
+        updatedObjects = Set()
+        deletedObjects = Set()
     }
     
     

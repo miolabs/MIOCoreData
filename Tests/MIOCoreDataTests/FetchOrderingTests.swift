@@ -121,14 +121,16 @@ final class FetchOrderingTests: XCTestCase
         XCTAssertEqual(names(results), ["zebra", "apple", "mango"], "fetch must keep the store's row order")
     }
 
-    func testFetchExcludesUnsavedObjectsUntilSave() throws {
+    // MARK: includesPendingChanges == false (committed only)
+
+    func testCommittedOnlyFetchExcludesUnsavedObjectsUntilSave() throws {
         let pending = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDFetchOrderEntity", into: moc)
         pending.setValue("banana", forKey: "name")
 
         let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
+        request.includesPendingChanges = false
 
-        // Before save: fetch returns committed rows only — the unsaved object
-        // is not part of the results.
+        // Before save: committed rows only — the unsaved object is absent.
         XCTAssertEqual(names(try moc.fetch(request)), ["zebra", "apple", "mango"])
 
         try moc.save()
@@ -143,20 +145,78 @@ final class FetchOrderingTests: XCTestCase
         XCTAssertEqual(names(try moc.fetch(request)), ["zebra", "apple", "mango", "banana"])
     }
 
-    func testFetchReturnsStoreResultsVerbatim() throws {
-        // limit/offset/predicate belong to the store's SQL. The stub ignores
-        // them all — the context must return the store result untouched, not
-        // slice, filter or sort it a second time.
+    // MARK: includesPendingChanges == true (Apple default)
+
+    func testDefaultFetchIncludesPendingInsertedObjects() throws {
         let pending = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDFetchOrderEntity", into: moc)
-        pending.setValue("melon", forKey: "name")
+        pending.setValue("banana", forKey: "name")
 
         let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
-        request.fetchLimit = 2
-        request.predicate = MIOPredicateWithFormat(format: "name contains 'm'")
+        let results = try moc.fetch(request)
+
+        // Without sort descriptors the committed rows keep DB order and the
+        // pending insert joins the results.
+        XCTAssertEqual(Array(names(results).prefix(3)), ["zebra", "apple", "mango"])
+        XCTAssertTrue(names(results).contains("banana"))
+        XCTAssertEqual(results.count, 4)
+    }
+
+    func testPendingMergeResortsWhenSortDescriptorsPresent() throws {
+        let pending = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDFetchOrderEntity", into: moc)
+        pending.setValue("banana", forKey: "name")
+
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
+        request.sortDescriptors = [ MIOSortDescriptor(key: "name", ascending: true) ]
 
         let results = try moc.fetch(request)
 
-        XCTAssertEqual(names(results), ["zebra", "apple", "mango"])
+        // The merge changed the result set, so sort descriptors are applied
+        // in memory to keep pending objects in their sorted position.
+        XCTAssertEqual(names(results), ["apple", "banana", "mango", "zebra"])
+    }
+
+    func testPendingDeletedObjectsAreExcludedFromFetch() throws {
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
+        let zebra = try moc.fetch(request).first { ($0.value(forKey: "name") as? String) == "zebra" }!
+
+        moc.delete(zebra)
+
+        XCTAssertEqual(names(try moc.fetch(request)), ["apple", "mango"])
+
+        // Committed-only fetches still see the row until the delete is saved.
+        let committedOnly = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
+        committedOnly.includesPendingChanges = false
+        XCTAssertEqual(names(try moc.fetch(committedOnly)), ["zebra", "apple", "mango"])
+    }
+
+    func testUpdatedObjectNoLongerMatchingPredicateIsExcluded() throws {
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
+        let zebra = try moc.fetch(request).first { ($0.value(forKey: "name") as? String) == "zebra" }!
+
+        zebra.setValue("aaa", forKey: "name")
+
+        // The stub "DB" still matches the old value; the pending merge must
+        // re-evaluate the updated object against its in-memory value and drop it.
+        let filtered = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
+        filtered.predicate = MIOPredicateWithFormat(format: "name contains 'z'")
+        let results = try moc.fetch(filtered)
+
+        XCTAssertFalse(names(results).contains("aaa"))
+        XCTAssertFalse(names(results).contains("zebra"))
+    }
+
+    func testFetchLimitReappliedAfterPendingMerge() throws {
+        let pending = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDFetchOrderEntity", into: moc)
+        pending.setValue("aardvark", forKey: "name")
+
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFetchOrderEntity")
+        request.sortDescriptors = [ MIOSortDescriptor(key: "name", ascending: true) ]
+        request.fetchLimit = 2
+
+        // The stub ignores the SQL limit and returns 3 rows; after the merge
+        // (+1 pending) the limit must clamp the sorted results.
+        let results = try moc.fetch(request)
+        XCTAssertEqual(names(results), ["aardvark", "apple"])
     }
 }
 

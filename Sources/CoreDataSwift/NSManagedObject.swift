@@ -8,10 +8,11 @@
 #if !APPLE_CORE_DATA
 
 import Foundation
+import MIOCoreLogger
 
 open class NSManagedObject : NSObject
 {
-#if os(Linux)
+#if os(Linux) || os(WASI)
     open var className: String {
         return entity.name ?? "NSManagedObject"
     }
@@ -47,15 +48,17 @@ open class NSManagedObject : NSObject
         awakeFromFetch()
     }
     
+    // Idempotent and non-clobbering: insert() also applies defaults (for
+    // objects built with the plain init), and it must never overwrite values
+    // the caller already set.
     func _setDefaultValues() {
-        //let attributes = this.entity.attributesByName;
         for prop in entity.properties {
             if prop is NSRelationshipDescription { continue }
-            
-            let attr = prop as! NSAttributeDescription
-            let value = attr.defaultValue
 
-            if value == nil { continue }
+            let attr = prop as! NSAttributeDescription
+            guard let value = attr.defaultValue else { continue }
+            if _changedValues.keys.contains(prop.name) { continue }
+
             setValue(value, forKey: prop.name)
         }
     }
@@ -127,9 +130,21 @@ open class NSManagedObject : NSObject
     }
     
     // KVO change notification
-    #if os(Linux)
+    #if os(Linux) || os(WASI)
     open func willChangeValue(forKey key: String) {}
     open func didChangeValue(forKey key: String) {}
+    #endif
+
+    #if os(WASI)
+    // wasm Foundation has no KVC on NSObject: minimal key-path traversal over managed objects
+    open func value(forKeyPath keyPath: String) -> Any? {
+        var current: Any? = self
+        for component in keyPath.split(separator: ".") {
+            guard let mo = current as? NSManagedObject else { return nil }
+            current = mo.value(forKey: String(component))
+        }
+        return current
+    }
     #endif
     
     //    open func willChangeValue(forKey inKey: String, withSetMutation inMutationKind: NSKeyValueSetMutationKind, using inObjects: Set<AnyHashable>)
@@ -185,7 +200,7 @@ open class NSManagedObject : NSObject
     // value access (includes key-value coding methods)
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-    #if os(Linux)
+    #if os(Linux) || os(WASI)
     open func value(forKey key: String) -> Any? { return _value(forKey:key)}
     #else
     open override func value(forKey key: String) -> Any? { return _value(forKey:key) }
@@ -194,7 +209,7 @@ open class NSManagedObject : NSObject
     open func _value(forKey key: String) -> Any? {
         
         guard let property = entity.propertiesByName[key] else {
-            #if os(Linux)
+            #if os(Linux) || os(WASI)
             return nil
             #else
             return super.value(forKey:key)
@@ -247,7 +262,7 @@ open class NSManagedObject : NSObject
     
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-    #if os(Linux)
+    #if os(Linux) || os(WASI)
     open func setValue(_ value: Any?, forKey key: String) {
         var cache = Set<NSManagedObject>()
         _setValue(value, forKey: key, cache: &cache)
@@ -308,6 +323,13 @@ open class NSManagedObject : NSObject
             }
         }
         else {
+            // Tripwire for a recurring bug class: nil written into a mandatory
+            // attribute (often a deserializer returning nil on a failed
+            // conversion). This is the exact moment the value is lost — a
+            // breakpoint here catches the caller
+            if value == nil, let attr = property as? NSAttributeDescription, attr.isOptional == false, attr.isTransient == false {
+                Log.warning("Setting nil on non-optional attribute \(entity.name!).\(key) — save validation will reject this object (\(objectID.uriString))")
+            }
             _changedValues[key] = value ?? NSNull()
         }
 
@@ -436,15 +458,106 @@ open class NSManagedObject : NSObject
     //    }
     
     open func validateForDelete() throws {
-        
+
     }
-    
+
     open func validateForInsert() throws {
-        
+
     }
-    
+
     open func validateForUpdate() throws {
-        
+
+    }
+
+    //
+    // Save validation (invoked by NSManagedObjectContext.save before hitting the store)
+    //
+
+    // Inserted objects: every non-optional property must have a value in the
+    // pending changes (defaults were applied at init, so they are there too).
+    // Updated objects: only the changed keys are checked — an update cannot
+    // invalidate a property it did not touch, and checking them all would fire
+    // faults (a store round-trip per object on every save).
+    func _validateMandatoryProperties(changedKeysOnly: Bool, errors: inout [Error]) {
+
+        for (key, attr) in entity.attributesByName {
+            if attr.isOptional || attr.isTransient { continue }
+            if _isExternallyDefaulted(attr) { continue }
+            if changedKeysOnly && _changedValues.keys.contains(key) == false { continue }
+
+            let value = _changedValues[key]
+            if value == nil || value is NSNull {
+                // The detail distinguishes the two failure classes: a value
+                // that was never set (defaults not applied / discarded) versus
+                // one some code explicitly nulled
+                let detail = value == nil ? "value never set; \(_changedValues.count) pending changes; default \(attr.defaultValue == nil ? "missing from parsed model" : "present")"
+                                          : "explicitly set to nil"
+                errors.append( NSManagedObjectValidationError.missingMandatoryProperty(entity: entity.name!, property: key, objectID: objectID.uriString + " | " + detail) )
+            }
+        }
+
+        for (key, rel) in entity.relationshipsByName {
+            if _isExternallyDefaulted(rel) { continue }
+            if changedKeysOnly && _changedValues.keys.contains(key) == false { continue }
+
+            if rel.isToMany {
+                let count = (_changedValues[key] as? Set<NSManagedObjectID>)?.count ?? 0
+                if rel.isOptional == false && count == 0 {
+                    errors.append( NSManagedObjectValidationError.missingMandatoryProperty(entity: entity.name!, property: key, objectID: objectID.uriString) )
+                }
+                // Counts are only enforced on non-empty relationships (an
+                // optional relationship may legally hold zero objects)
+                if count > 0 && rel.minCount > 0 && count < rel.minCount {
+                    errors.append( NSManagedObjectValidationError.tooFewObjects(entity: entity.name!, property: key, minimum: rel.minCount, count: count) )
+                }
+                if count > 0 && rel.maxCount > 0 && count > rel.maxCount {
+                    errors.append( NSManagedObjectValidationError.tooManyObjects(entity: entity.name!, property: key, maximum: rel.maxCount, count: count) )
+                }
+            }
+            else if rel.isOptional == false {
+                let value = _changedValues[key]
+                if value == nil || value is NSNull {
+                    errors.append( NSManagedObjectValidationError.missingMandatoryProperty(entity: entity.name!, property: key, objectID: objectID.uriString) )
+                }
+            }
+        }
+    }
+
+    // Someone else fills the property when the client sends nothing, so a
+    // missing value is legal even though the property is non-optional (a value
+    // set by code still wins and is sent as-is):
+    //   DBDefaultValue = true -> the database populates it with its DEFAULT
+    //   DBDefaultFunction     -> a server-side code function computes it
+    //                            (e.g. request-scoped values like :appId)
+    func _isExternallyDefaulted(_ property: NSPropertyDescription) -> Bool {
+        guard let info = property.userInfo else { return false }
+
+        if info["DBDefaultFunction"] != nil { return true }
+        if let flag = info["DBDefaultValue"] {
+            let s = "\(flag)".lowercased()
+            return s == "true" || s == "yes" || s == "1"
+        }
+        return false
+    }
+
+    // Deny delete rule: the object cannot be deleted while the relationship
+    // still holds objects that are not themselves deleted in this save.
+    func _validateDeleteRules(errors: inout [Error]) {
+        for (key, rel) in entity.relationshipsByName {
+            guard rel.deleteRule == .denyDeleteRule else { continue }
+
+            let denied: Bool
+            if rel.isToMany {
+                denied = _currentToManyObjects(forKey: key).contains { $0.isDeleted == false }
+            }
+            else {
+                denied = _currentToOneObject(forKey: key)?.isDeleted == false
+            }
+
+            if denied {
+                errors.append( NSManagedObjectValidationError.deleteDenied(entity: entity.name!, relationship: key) )
+            }
+        }
     }
     
     //
@@ -496,12 +609,16 @@ open class NSManagedObject : NSObject
             }
         }
         else if let incremental_store = store as? NSIncrementalStore {
-            
+
             let node = try? incremental_store.newValuesForObject(with: objectID, with: managedObjectContext!)
             if node == nil { return }
-            
+
             for (key, attr) in entity.attributesByName {
-                let value = node!.value(for: attr)
+                var value = node!.value(for: attr)
+                // Same rule as the in-memory branch above: a mandatory
+                // attribute missing from the store row materializes its model
+                // default instead of reading as nil
+                if attr.isOptional == false && ( value == nil || value is NSNull ) { value = attr.defaultValue }
                 _storedValues[key] = value
             }
         }

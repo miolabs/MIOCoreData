@@ -28,7 +28,7 @@ open class NSPersistentContainer : NSObject
 
     open var persistentStoreDescriptions: [NSPersistentStoreDescription] = []
     
-#if DEBUG
+#if DEBUG && !os(WASI)
     private static var instanceCount = 0
     private static let countQueue = DispatchQueue(label: "context.count")
 #endif
@@ -40,7 +40,7 @@ open class NSPersistentContainer : NSObject
     }
 
     public init(name: String, managedObjectModel model: NSManagedObjectModel) {
-#if DEBUG
+#if DEBUG && !os(WASI)
         Self.countQueue.sync { Self.instanceCount += 1 }
 #endif
         _name = name
@@ -52,7 +52,7 @@ open class NSPersistentContainer : NSObject
     }
     
     deinit {
-#if DEBUG
+#if DEBUG && !os(WASI)
         Self.countQueue.sync { Self.instanceCount -= 1 }
         Log.debug("NSPersistentContainer deinit. Alive: \(Self.instanceCount)")
 #endif
