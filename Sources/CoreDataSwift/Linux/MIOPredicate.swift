@@ -119,6 +119,7 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
             switch expression.expressionType {
             case .keyPath: return object.value(forKeyPath: expression.keyPath)
             case .constantValue: return expression.constantValue
+            case .evaluatedObject: return object   // SELF
             default: return nil
             }
         }
@@ -331,6 +332,12 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
         let l = leftValue as! UUID
         if let r = rightValue as? UUID { return l == r }
         if let s = rightValue as? String { return l == UUID(uuidString: s) }
+    case is NSManagedObject:
+        // The standard Core Data idiom: "relationship == %@" with a managed
+        // object (or its objectID) as the argument — compared by identity
+        let l = (leftValue as! NSManagedObject).objectID
+        if let r = rightValue as? NSManagedObject { return l.uriString == r.objectID.uriString }
+        if let r = rightValue as? NSManagedObjectID { return l.uriString == r.uriString }
     case is Date:
         let l = leftValue as! Date
         if let s = rightValue as? String {
@@ -437,10 +444,32 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool
                         .components(separatedBy: ",")
                         .map { inferType( String( $0.trimmingCharacters(in: .whitespaces) ), leftValue! ) }
     }
-    else {
-        value = rightValue as? [Any] ?? []
+    else if let array = rightValue as? [Any] {
+        value = array
     }
-        
+    else if let set = rightValue as? Set<NSManagedObject> {
+        value = Array(set)
+    }
+    else if let set = rightValue as? Set<NSManagedObjectID> {
+        value = Array(set)
+    }
+    else if let set = rightValue as? Set<UUID> {
+        value = Array(set)
+    }
+    else if let set = rightValue as? Set<String> {
+        value = Array(set)
+    }
+
+    // "relationship IN %@" with a collection of managed objects or objectIDs
+    if let lv = leftValue as? NSManagedObject {
+        let uri = lv.objectID.uriString
+        return value.contains { element in
+            if let obj = element as? NSManagedObject { return obj.objectID.uriString == uri }
+            if let objID = element as? NSManagedObjectID { return objID.uriString == uri }
+            return false
+        }
+    }
+
     if let str_list = value as? [String] {
         if let lv = leftValue as? UUID {
             return str_list.contains( lv.uuidString )

@@ -168,6 +168,58 @@ final class MIOPredicateLanguageTests: XCTestCase
         XCTAssertEqual(Set(try moc.fetch(request).compactMap { $0.value(forKey: "name") as? String }), ["all-ready", "empty"])
     }
 
+    // MARK: Object arguments (the "relationship == %@" idiom)
+
+    func testRelationshipEqualsManagedObjectArgument() throws {
+        let parentA = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDLangParent", into: moc)
+        parentA.setValue("A", forKey: "name")
+        let parentB = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDLangParent", into: moc)
+        parentB.setValue("B", forKey: "name")
+
+        for (name, parent) in [("childA1", parentA), ("childA2", parentA), ("childB", parentB)] {
+            let child = CoreDataSwift.NSEntityDescription.insertNewObject(forEntityName: "CDLangChild", into: moc)
+            child.setValue(name, forKey: "name")
+            child.setValue(parent, forKey: "parent")
+        }
+
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDLangChild")
+
+        request.predicate = MIOPredicateWithFormat(format: "parent == %@", arguments: [parentA])
+        XCTAssertEqual(Set(try moc.fetch(request).compactMap { $0.value(forKey: "name") as? String }), ["childA1", "childA2"])
+
+        request.predicate = MIOPredicateWithFormat(format: "parent != %@", arguments: [parentA])
+        XCTAssertEqual(Set(try moc.fetch(request).compactMap { $0.value(forKey: "name") as? String }), ["childB"])
+
+        // objectID as the argument works the same way
+        request.predicate = MIOPredicateWithFormat(format: "parent == %@", arguments: [parentB.objectID])
+        XCTAssertEqual(Set(try moc.fetch(request).compactMap { $0.value(forKey: "name") as? String }), ["childB"])
+
+        // and IN with a collection of objects
+        request.predicate = MIOPredicateWithFormat(format: "parent IN %@", arguments: [[parentA, parentB]])
+        XCTAssertEqual(try moc.fetch(request).count, 3)
+    }
+
+    func testSelfEqualsObjectArgument() throws {
+        let target = insertEntity(name: "the-one")
+        insertEntity(name: "other")
+
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDLangEntity")
+
+        // Query-by-object, Apple style: SELF == %@ with the object or its ID
+        request.predicate = MIOPredicateWithFormat(format: "SELF == %@", arguments: [target])
+        var results = try moc.fetch(request)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertTrue(results.first === target)
+
+        request.predicate = MIOPredicateWithFormat(format: "SELF == %@", arguments: [target.objectID])
+        results = try moc.fetch(request)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertTrue(results.first === target)
+
+        request.predicate = MIOPredicateWithFormat(format: "SELF IN %@", arguments: [[target]])
+        XCTAssertEqual(try moc.fetch(request).count, 1)
+    }
+
     // MARK: Placeholders and whitespace
 
     func testKeyPathPlaceholder() throws {

@@ -26,7 +26,7 @@ enum MIOPredicateKeyword {
     case and, or, not
     case inOp, contains, like, matches, beginsWith, endsWith, between
     case any, all
-    case trueLiteral, falseLiteral, nullLiteral
+    case trueLiteral, falseLiteral, nullLiteral, selfLiteral
 }
 
 private let g_keywords: [String: MIOPredicateKeyword] = [
@@ -37,6 +37,7 @@ private let g_keywords: [String: MIOPredicateKeyword] = [
     "true": .trueLiteral, "yes": .trueLiteral,
     "false": .falseLiteral, "no": .falseLiteral,
     "null": .nullLiteral, "nil": .nullLiteral,
+    "self": .selfLiteral,
 ]
 
 enum MIOPredicateToken {
@@ -450,6 +451,7 @@ struct MIOPredicateParserState
         case .keyword(.trueLiteral):  return MIOExpression(forConstantValue: true as NSNumber)
         case .keyword(.falseLiteral): return MIOExpression(forConstantValue: false as NSNumber)
         case .keyword(.nullLiteral):  return MIOExpression(forConstantValue: nil)
+        case .keyword(.selfLiteral):  return MIOExpression(expressionType: .evaluatedObject)
 
         case .placeholderObject:
             guard argIndex < args.count else { throw MIOPredicateError.missingArgument(argIndex) }
