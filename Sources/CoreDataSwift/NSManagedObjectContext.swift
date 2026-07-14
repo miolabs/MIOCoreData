@@ -253,7 +253,14 @@ open class NSManagedObjectContext : NSObject
         }
 
         // Non-incremental stores (in-memory) have no ordered source: filter
-        // and sort the registered objects here.
+        // and sort the registered objects here. Flags this path does not
+        // implement are reported once instead of silently ignored.
+        if request.fetchBatchSize > 0 { Self._warnUnsupportedFetchFlagOnce("fetchBatchSize") }
+        if request.propertiesToFetch != nil { Self._warnUnsupportedFetchFlagOnce("propertiesToFetch") }
+        if request.propertiesToGroupBy != nil { Self._warnUnsupportedFetchFlagOnce("propertiesToGroupBy") }
+        if request.havingPredicate != nil { Self._warnUnsupportedFetchFlagOnce("havingPredicate") }
+        if request.returnsDistinctResults { Self._warnUnsupportedFetchFlagOnce("returnsDistinctResults") }
+
         let objs = objectsByEntityName[request.entityName!]
         if objs == nil { return [] }
 
@@ -348,6 +355,15 @@ open class NSManagedObjectContext : NSObject
         // Drop the snapshot so the next access reloads from the store; with
         // mergeChanges == true the pending changes stay applied on top.
         object.setIsFault(true)
+    }
+
+    private static var _warnedFetchFlags = Set<String>()
+    private static let _warnedFetchFlagsLock = NSLock()
+    static func _warnUnsupportedFetchFlagOnce(_ flag: String) {
+        _warnedFetchFlagsLock.lock(); defer { _warnedFetchFlagsLock.unlock() }
+        if _warnedFetchFlags.contains(flag) { return }
+        _warnedFetchFlags.insert(flag)
+        Log.warning("NSFetchRequest.\(flag) is not supported by the in-memory fetch path and is ignored")
     }
 
     // Track an object as dirty for the next save, without touching its

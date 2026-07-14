@@ -177,6 +177,24 @@ func MIOPredicateApplyOperator(_ leftValue: Any?, _ rightValue: Any?, _ op: MIOC
     }
 }
 
+// Three-way comparison used by sort descriptors. nil ordering follows the
+// production database (Postgres): ascending sorts put NULLs last, so nil
+// compares as GREATER than any value — descending then puts them first,
+// matching DESC NULLS FIRST. Incomparable values compare as equal.
+func MIOPredicateCompareValues(_ left: Any?, _ right: Any?) -> ComparisonResult
+{
+    let leftIsNull = left == nil || left is NSNull
+    let rightIsNull = right == nil || right is NSNull
+    if leftIsNull || rightIsNull {
+        if leftIsNull && rightIsNull { return .orderedSame }
+        return leftIsNull ? .orderedDescending : .orderedAscending
+    }
+
+    if MIOPredicateEvaluateLess(left, right) { return .orderedAscending }
+    if MIOPredicateEvaluateLess(right, left) { return .orderedDescending }
+    return .orderedSame
+}
+
 func MIOPredicateFold(_ value: String, _ options: MIOComparisonPredicate.Options) -> String
 {
     var result = value
