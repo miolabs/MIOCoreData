@@ -12,7 +12,7 @@ import MIOCore
 import MIOCoreLogger
 
 
-#if canImport(CoreFoundation)
+#if canImport(CoreFoundation) && !os(WASI)
 import CoreFoundation
 #endif
 
@@ -53,10 +53,8 @@ open class MIOPredicate: NSObject, NSCopying
 
 public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPredicate
 {
-    Log.debug("MIOPredicateWithFormat \(format), variadic args: \(args)")
-    let lexer = MIOPredicateTokenize(format)
     do {
-        return try MIOPredicateParseTokens(lexer: lexer, args)
+        return try MIOPredicateParse(format: format, args: args)
     }
     catch {
         // Keep the non-throwing contract: log loudly and return a predicate that matches nothing
@@ -67,10 +65,8 @@ public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> MIOPre
 
 public func MIOPredicateWithFormat(format: String, arguments: [Any]) -> MIOPredicate
 {
-    Log.debug("MIOPredicateWithFormat: \(format), array args: \(arguments)")
-    let lexer = MIOPredicateTokenize(format)
     do {
-        return try MIOPredicateParseTokens(lexer: lexer, arguments)
+        return try MIOPredicateParse(format: format, args: arguments)
     }
     catch {
         Log.critical("MIOPredicateWithFormat parse error in \"\(format)\": \(error.localizedDescription). Returning a match-nothing predicate")
@@ -91,441 +87,9 @@ public func MIOPredicateWithFormat(format: String, arguments: [Any]) -> MIOPredi
  }
  */
 
-public enum MIOPredicateTokenType: Int
-{
-    case identifier
-    
-    case uuidValue
-    case stringValue
-    case numberValue
-    case booleanValue
-    case nullValue
-    case propertyValue
-    
-    case minorOrEqualComparator
-    case minorComparator
-    case majorOrEqualComparator
-    case majorComparator
-    case equalComparator
-    case distinctComparator
-    case containsComparator
-    case inComparator
-    case notIntComparator
-    
-    case bitwiseAND
-    case bitwiseOR
-    case bitwiseXOR
-    
-    case plusOperation
-    case minusOperation
-    case multiplyOperation
-    case divisionOperation
-    
-    case arraySymbol
-    case openParenthesisSymbol
-    case closeParenthesisSymbol
-    case whitespace
-    
-    case and
-    case or
-    case not
-    
-    case any
-    case all
-    
-    case classValue
-}
-
-let g_tokens = [
-    ( MIOPredicateTokenType.uuidValue.rawValue,    try! NSRegularExpression(pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", options:.caseInsensitive) ),
-    ( MIOPredicateTokenType.stringValue.rawValue,  try! NSRegularExpression(pattern: "^\"([^\"]*)\"|^'([^']*)'") ),
-    ( MIOPredicateTokenType.numberValue.rawValue,  try! NSRegularExpression(pattern:"^-?\\d+(?:\\.\\d+)?(?:e[+\\-]?\\d+)?", options:.caseInsensitive) ),
-    ( MIOPredicateTokenType.booleanValue.rawValue, try! NSRegularExpression(pattern:"^(true|false)\\b", options:.caseInsensitive) ),
-    ( MIOPredicateTokenType.booleanValue.rawValue, try! NSRegularExpression(pattern:"^(yes|no)\\b", options:.caseInsensitive) ),
-    ( MIOPredicateTokenType.nullValue.rawValue,    try! NSRegularExpression(pattern:"^(null|nil)\\b", options:.caseInsensitive) ),
-    ( MIOPredicateTokenType.arraySymbol.rawValue,  try! NSRegularExpression(pattern: "^\\[([^\\]]*)\\]") ),
-    ( MIOPredicateTokenType.arraySymbol.rawValue,  try! NSRegularExpression(pattern: "^\\{([^\\}]*)\\}") ),
-    ( MIOPredicateTokenType.openParenthesisSymbol.rawValue,  try!  NSRegularExpression(pattern:"^\\(") ),
-    ( MIOPredicateTokenType.closeParenthesisSymbol.rawValue, try! NSRegularExpression(pattern:"^\\)") ),
-    ( MIOPredicateTokenType.minorOrEqualComparator.rawValue, try! NSRegularExpression(pattern:"^<=") ),
-    ( MIOPredicateTokenType.minorComparator.rawValue,        try! NSRegularExpression(pattern:"^<") ),
-    ( MIOPredicateTokenType.majorOrEqualComparator.rawValue, try! NSRegularExpression(pattern:"^>=") ),
-    ( MIOPredicateTokenType.majorComparator.rawValue,        try! NSRegularExpression(pattern:"^>") ),
-    ( MIOPredicateTokenType.equalComparator.rawValue,        try! NSRegularExpression(pattern:"^==?") ),
-    ( MIOPredicateTokenType.distinctComparator.rawValue,     try! NSRegularExpression(pattern:"^!=") ),
-    ( MIOPredicateTokenType.containsComparator.rawValue,     try! NSRegularExpression(pattern:"^contains ", options: .caseInsensitive) ),
-    // NOTE: "not in" must be matched before the plain "not" token below
-    ( MIOPredicateTokenType.notIntComparator.rawValue,       try! NSRegularExpression(pattern:"^not\\s+in ", options:.caseInsensitive) ),
-    ( MIOPredicateTokenType.inComparator.rawValue,           try! NSRegularExpression(pattern:"^in ", options:.caseInsensitive) ),
-    ( MIOPredicateTokenType.bitwiseAND.rawValue,             try! NSRegularExpression(pattern:"^& ", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.bitwiseOR.rawValue,              try! NSRegularExpression(pattern:"^\\| ", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.bitwiseXOR.rawValue,             try! NSRegularExpression(pattern:"^\\^", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.and.rawValue,                    try! NSRegularExpression(pattern:"^(and|&&) ", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.or.rawValue,                     try! NSRegularExpression(pattern:"^(or|\\|\\|) ", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.not.rawValue,                    try! NSRegularExpression(pattern:"^not ", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.any.rawValue,                    try! NSRegularExpression(pattern:"^any ", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.all.rawValue,                    try! NSRegularExpression(pattern:"^all ", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.whitespace.rawValue,             try! NSRegularExpression(pattern:"^\\s+", options: .caseInsensitive) ),
-    
-    ( MIOPredicateTokenType.classValue.rawValue,             try! NSRegularExpression(pattern:"^%@", options: .caseInsensitive) ),
-    ( MIOPredicateTokenType.identifier.rawValue,             try! NSRegularExpression(pattern:"^[a-zA-Z_][a-zA-Z0-9-_\\.]*") ),
-
-]
-
-func MIOPredicateTokenize(_ predicateFormat: String) -> MIOCoreLexer
-{
-    let lexer = MIOCoreLexer()
-    
-    // Values
-    for t in g_tokens {
-        lexer.addTokenType(t.0, regex: t.1)
-    }
-    lexer.ignoreTokenType(MIOPredicateTokenType.whitespace.rawValue)
-        
-//    lexer.addTokenType(MIOPredicateTokenType.stringValue.rawValue, regex: try! NSRegularExpression(pattern: "^\"([^\"]*)\"|^'([^']*)'"))
-//    lexer.addTokenType(MIOPredicateTokenType.numberValue.rawValue, regex: try! NSRegularExpression(pattern:"^-?\\d+(?:\\.\\d+)?(?:e[+\\-]?\\d+)?", options:.caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.booleanValue.rawValue, regex: try! NSRegularExpression(pattern:"^(true|false)", options:.caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.nullValue.rawValue, regex: try! NSRegularExpression(pattern:"^(null|nil)", options:.caseInsensitive))
-//
-//    // Symbols
-//    lexer.addTokenType(MIOPredicateTokenType.arraySymbol.rawValue, regex: try! NSRegularExpression(pattern: "^\\[([^\\]]*)\\]"))
-//    lexer.addTokenType(MIOPredicateTokenType.openParenthesisSymbol.rawValue, regex: try! NSRegularExpression(pattern:"^\\("))
-//    lexer.addTokenType(MIOPredicateTokenType.closeParenthesisSymbol.rawValue, regex: try! NSRegularExpression(pattern:"^\\)"))
-//
-//    // Comparators
-//    lexer.addTokenType(MIOPredicateTokenType.minorOrEqualComparator.rawValue, regex: try! NSRegularExpression(pattern:"^<="))
-//    lexer.addTokenType(MIOPredicateTokenType.minorComparator.rawValue, regex: try! NSRegularExpression(pattern:"^<"))
-//    lexer.addTokenType(MIOPredicateTokenType.majorOrEqualComparator.rawValue, regex: try! NSRegularExpression(pattern:"^>="))
-//    lexer.addTokenType(MIOPredicateTokenType.majorComparator.rawValue, regex: try! NSRegularExpression(pattern:"^>"))
-//    lexer.addTokenType(MIOPredicateTokenType.equalComparator.rawValue, regex: try! NSRegularExpression(pattern:"^==?"))
-//    lexer.addTokenType(MIOPredicateTokenType.distinctComparator.rawValue, regex: try! NSRegularExpression(pattern:"^!="))
-//    lexer.addTokenType(MIOPredicateTokenType.containsComparator.rawValue, regex: try! NSRegularExpression(pattern:"^contains ", options: .caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.inComparator.rawValue, regex: try! NSRegularExpression(pattern:"^in ", options:.caseInsensitive))
-//
-//    // Bitwise operators
-//    lexer.addTokenType(MIOPredicateTokenType.bitwiseAND.rawValue, regex: try! NSRegularExpression(pattern:"^& ", options: .caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.bitwiseOR.rawValue, regex: try! NSRegularExpression(pattern:"^\\| ", options: .caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.bitwiseXOR.rawValue, regex: try! NSRegularExpression(pattern:"^\\^", options: .caseInsensitive))
-//
-//    // Operations
-//    //this.lexer.addTokenType(MIOPredicateTokenType.MinusOperation, /^- /i);
-//    // Join operators
-//    lexer.addTokenType(MIOPredicateTokenType.and.rawValue, regex: try! NSRegularExpression(pattern:"^(and|&&) ", options: .caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.or.rawValue, regex: try! NSRegularExpression(pattern:"^(or|\\|\\|) ", options: .caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.not.rawValue, regex: try! NSRegularExpression(pattern:"^not ", options: .caseInsensitive))
-////    // Relationship operators
-//    lexer.addTokenType(MIOPredicateTokenType.any.rawValue, regex: try! NSRegularExpression(pattern:"^any ", options: .caseInsensitive))
-//    lexer.addTokenType(MIOPredicateTokenType.all.rawValue, regex: try! NSRegularExpression(pattern:"^all ", options: .caseInsensitive))
-//    // Extra
-//    lexer.addTokenType(MIOPredicateTokenType.whitespace.rawValue, regex: try! NSRegularExpression(pattern:"^\\s+", options: .caseInsensitive))
-//    lexer.ignoreTokenType(MIOPredicateTokenType.whitespace.rawValue)
-//
-//    // Placeholder
-//    lexer.addTokenType(MIOPredicateTokenType.classValue.rawValue, regex: try! NSRegularExpression(pattern:"^%@", options: .caseInsensitive))
-//
-//    // Identifiers - Has to be the last one
-//    lexer.addTokenType(MIOPredicateTokenType.identifier.rawValue, regex: try! NSRegularExpression(pattern:"^[a-zA-Z_][a-zA-Z0-9-_\\.]*"))
-    
-    lexer.tokenize(withString: predicateFormat)
-    return lexer
-}
-
-func MIOPredicateParseTokens(lexer: MIOCoreLexer, _ args: [Any]) throws -> MIOPredicate
-{
-    var token = lexer.nextToken()
-    let exit = false
-
-    var lastPredicate:MIOPredicate?
-    var lastCompoundPredicate:MIOCompoundPredicate?
-    var rootPredicate:MIOPredicate?
-    var compoundPredicateStack:[MIOCompoundPredicate] = []
-    // Placeholder (%@) argument cursor, shared across the whole parse session
-    var argIndex = 0
-
-    while (token != nil && exit == false) {
-
-        switch (token!.type) {
-
-        case MIOPredicateTokenType.identifier.rawValue:
-
-            var op:MIOComparisonPredicate.Operator? = nil
-            var functionType:MIOExpression.FunctionType? = nil
-            var negate = false
-            try MIOPredicateParseOperatorOrFunction(lexer, op: &op, functionType: &functionType, negate: &negate)
-            let leftExpression: NSExpression
-
-            if op != nil {
-                leftExpression = MIOExpression(forKeyPath: token!.value)
-            }
-            else {
-                switch functionType {
-                case .bitwiseAnd, .bitwiseOr, .bitwiseXor:
-                    let arg1 = MIOExpression(forKeyPath: token!.value)
-                    let arg2 = try MIOPredicateParseExpresion(lexer, args, &argIndex)
-                    leftExpression = MIOExpression(forFunction: functionType!.rawValue, arguments: [arg1, arg2])
-                    try MIOPredicateParseOperatorOrFunction(lexer, op: &op, functionType: &functionType, negate: &negate)
-
-                default:
-                    throw MIOPredicateError.invalidFunction(token?.value ?? "Unknown" )
-                }
-            }
-
-            guard let comparisonOp = op else {
-                throw MIOPredicateError.unexpectedToken(token?.value ?? "Unknown")
-            }
-
-            let rightExpression = try MIOPredicateParseExpresion(lexer, args, &argIndex)
-            var predicate:MIOPredicate = MIOComparisonPredicate(leftExpression: leftExpression, rightExpression: rightExpression, modifier: .direct, type: comparisonOp, options: [])
-            if negate {
-                // "NOT IN" is represented the same way Apple does it: NOT ( lhs IN rhs )
-                predicate = MIOCompoundPredicate(notPredicateWithSubpredicate: predicate)
-            }
-
-            if lastCompoundPredicate?.compoundPredicateType == .not {
-                lastCompoundPredicate!.append(predicate: predicate)
-                lastPredicate = nil
-            }
-            else {
-                lastPredicate = predicate
-            }
-            
-            //predicates.append(predicate)
-                    
-        case MIOPredicateTokenType.and.rawValue:
-                                                   
-            if lastCompoundPredicate?._compoundPredicateType == .and && lastPredicate != nil {
-                lastCompoundPredicate!.append(predicate: lastPredicate!)
-                lastPredicate = nil
-                break
-            }
-
-            let predicate = MIOCompoundPredicate(type: .and)
-            
-            if lastPredicate != nil {
-                predicate.append(predicate: lastPredicate!)
-                lastPredicate = nil
-            }
-            
-            if lastCompoundPredicate != nil && lastCompoundPredicate!.compoundPredicateType == .not {
-                predicate.append(predicate: lastCompoundPredicate!)
-            }
-            else if lastCompoundPredicate != nil {
-                lastCompoundPredicate!.append(predicate: predicate)
-            }
-            
-            lastCompoundPredicate = predicate
-            if rootPredicate == nil { rootPredicate = predicate }
-            
-        case MIOPredicateTokenType.or.rawValue:
-            if lastCompoundPredicate?._compoundPredicateType == .or && lastPredicate != nil {
-                lastCompoundPredicate!.append(predicate: lastPredicate!)
-                lastPredicate = nil
-                break
-            }
-                        
-            let predicate = MIOCompoundPredicate(type: .or)
-            
-            if lastPredicate != nil {
-                predicate.append(predicate: lastPredicate!)
-                lastPredicate = nil
-            }
-            
-            if lastCompoundPredicate != nil && lastCompoundPredicate!.compoundPredicateType == .not {
-                predicate.append(predicate: lastCompoundPredicate!)
-            }
-            else if lastCompoundPredicate != nil {
-                lastCompoundPredicate!.append(predicate: predicate)
-            }
-            
-            lastCompoundPredicate = predicate
-            if rootPredicate == nil { rootPredicate = predicate }
-
-        case MIOPredicateTokenType.not.rawValue:
-            lastCompoundPredicate = MIOCompoundPredicate(type: .not)
-                    
-
-        case MIOPredicateTokenType.openParenthesisSymbol.rawValue:
-            if lastCompoundPredicate != nil { compoundPredicateStack.append(lastCompoundPredicate!) }
-            lastCompoundPredicate = nil
-            
-        case MIOPredicateTokenType.closeParenthesisSymbol.rawValue:
-            if lastCompoundPredicate != nil && lastPredicate != nil {
-                lastCompoundPredicate!.append(predicate: lastPredicate!)
-                lastPredicate = nil
-            }
-            
-            let predicate = compoundPredicateStack.last
-            if predicate != nil && lastCompoundPredicate != nil { predicate!.append(predicate: lastCompoundPredicate!) }
-            else if predicate != nil && lastPredicate != nil { predicate!.append(predicate: lastPredicate!) }
-            lastCompoundPredicate = predicate
-            
-        /*
-         case MIOPredicateTokenType.ANY:
-         this.lexer.nextToken();
-         let anyPI = this.nextPredicateItem();
-         anyPI.relationshipOperation = MIOPredicateRelationshipOperatorType.ANY;
-         predicates.push(anyPI);
-         break;
-         
-         case MIOPredicateTokenType.ALL:
-         this.lexer.nextToken();
-         let allPI = this.nextPredicateItem();
-         anyPI.relationshipOperation = MIOPredicateRelationshipOperatorType.ALL;
-         predicates.push(anyPI);
-         break;
-         
-         case MIOPredicateTokenType.OpenParenthesisSymbol:
-         let pg = new MIOPredicateGroup();
-         pg.predicates = this.parsePredicates();
-         predicates.push(pg);
-         break;
-         
-         case MIOPredicateTokenType.CloseParenthesisSymbol:
-         exit = true;
-         break;*/
-        
-        default:
-            //throw new Error(`MIOPredicate: Error. Unexpected token. (${token.value})`);
-            break
-        }
-        
-        if exit != true {
-            token = lexer.nextToken()
-        }
-    }
-    
-    if compoundPredicateStack.count == 0 && lastCompoundPredicate == nil && lastPredicate != nil {
-        return lastPredicate!
-    }
-    
-    if lastCompoundPredicate != nil && lastPredicate != nil {
-        lastCompoundPredicate!.append(predicate: lastPredicate!)
-    }
-             
-    if rootPredicate == nil && lastCompoundPredicate != nil {
-        return lastCompoundPredicate!
-    }
-    
-    if rootPredicate == nil && compoundPredicateStack.count > 0 {
-        return compoundPredicateStack.first!
-    }
-
-    guard let root = rootPredicate else {
-        throw MIOPredicateError.invalidFormat("no predicate could be built from the format string")
-    }
-
-    return root
-}
-
-func MIOPredicateParseExpresion(_ lexer: MIOCoreLexer, _ args: [Any], _ argIndex: inout Int) throws -> NSExpression
-{
-    guard let token = lexer.nextToken() else {
-        throw MIOPredicateError.unexpectedEndOfFormat
-    }
-
-    switch token.type {
-
-    case MIOPredicateTokenType.uuidValue.rawValue:
-        return MIOExpression(forConstantValue: token.value)
-
-    case MIOPredicateTokenType.stringValue.rawValue:
-        let v = String(token.value.dropLast().dropFirst())
-        return MIOExpression(forConstantValue: v)
-
-    case MIOPredicateTokenType.numberValue.rawValue:
-        if token.value.contains(".") {
-            return MIOExpression(forConstantValue: Double(token.value))
-        }
-        else {
-            return MIOExpression(forConstantValue: Int(token.value))
-        }
-
-    case MIOPredicateTokenType.booleanValue.rawValue:
-        let v = ( token.value.lowercased() == "true" || token.value.lowercased() == "yes" ) ? (true as NSNumber) : (false as NSNumber)
-        return MIOExpression(forConstantValue: v)
-
-    case MIOPredicateTokenType.arraySymbol.rawValue:
-        // Convert to array of objects
-        let array = ( try? JSONSerialization.jsonObject(with: token.value.data(using: .utf8)!, options: .fragmentsAllowed ) ) ?? token.value
-        return MIOExpression( forConstantValue: array )
-
-    case MIOPredicateTokenType.nullValue.rawValue:
-        return MIOExpression(forConstantValue: nil)
-
-    case MIOPredicateTokenType.classValue.rawValue:
-        guard argIndex < args.count else {
-            throw MIOPredicateError.missingArgument(argIndex)
-        }
-        let v = args[argIndex]
-        argIndex += 1
-        return MIOExpression(forConstantValue: v)
-
-    case MIOPredicateTokenType.identifier.rawValue:
-        // A bare identifier in value position is a keyPath, e.g. "name == alias"
-        return MIOExpression(forKeyPath: token.value)
-
-    default:
-        //throw new Error(`MIOPredicate: Error. Unexpected comparator. (${token.value})`);
-        break
-    }
-
-    //TODO: Replace by a throw error
-    return NSExpression(expressionType: .anyKey)
-}
-
-func MIOPredicateParseOperatorOrFunction(_ lexer: MIOCoreLexer, op: inout NSComparisonPredicate.Operator?, functionType: inout MIOExpression.FunctionType?, negate: inout Bool) throws
-{
-    guard let token = lexer.nextToken() else {
-        throw MIOPredicateError.unexpectedEndOfFormat
-    }
-
-    switch token.type {
-
-    case MIOPredicateTokenType.equalComparator.rawValue:
-    op = NSComparisonPredicate.Operator.equalTo
-
-    case MIOPredicateTokenType.majorComparator.rawValue:
-    op = NSComparisonPredicate.Operator.greaterThan
-
-    case MIOPredicateTokenType.majorOrEqualComparator.rawValue:
-    op = NSComparisonPredicate.Operator.greaterThanOrEqualTo
-
-    case MIOPredicateTokenType.minorComparator.rawValue:
-    op = NSComparisonPredicate.Operator.lessThan
-
-    case MIOPredicateTokenType.minorOrEqualComparator.rawValue:
-    op = NSComparisonPredicate.Operator.lessThanOrEqualTo
-
-    case MIOPredicateTokenType.distinctComparator.rawValue:
-    op = NSComparisonPredicate.Operator.notEqualTo
-
-    case MIOPredicateTokenType.containsComparator.rawValue:
-    op = NSComparisonPredicate.Operator.contains
-
-    case MIOPredicateTokenType.inComparator.rawValue:
-    op = NSComparisonPredicate.Operator.in
-
-    case MIOPredicateTokenType.notIntComparator.rawValue:
-    op = NSComparisonPredicate.Operator.in
-    negate = true
-
-    case MIOPredicateTokenType.bitwiseAND.rawValue:
-    functionType = .bitwiseAnd
-
-    case MIOPredicateTokenType.bitwiseOR.rawValue:
-    functionType = .bitwiseOr
-
-    case MIOPredicateTokenType.bitwiseXOR.rawValue:
-    functionType = .bitwiseXor
-
-    case MIOPredicateTokenType.closeParenthesisSymbol.rawValue:
-        try MIOPredicateParseOperatorOrFunction(lexer, op: &op, functionType: &functionType, negate: &negate)
-
-    default: break
-        //throw new Error(`MIOPredicate: Error. Unexpected comparator. (${token.value})`);
-    }
-
-}
+// NOTE: tokenization and parsing live in MIOPredicateParser.swift — a
+// hand-written scanner and recursive-descent parser with a per-format token
+// cache. The regex lexer that lived here was O(n^2) per parse.
 
 func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: MIOPredicate) -> [NSManagedObject]
 {
@@ -545,6 +109,12 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
     if predicate is NSComparisonPredicate {
         let cmp = predicate as! NSComparisonPredicate
 
+        // ANY/ALL: evaluate the comparison per member of the to-many
+        // relationship named by the first keypath component
+        if cmp.comparisonPredicateModifier != .direct {
+            return MIOPredicateEvaluateToMany(object: object, using: cmp)
+        }
+
         func resolve(_ expression: MIOExpression) -> Any? {
             switch expression.expressionType {
             case .keyPath: return object.value(forKeyPath: expression.keyPath)
@@ -554,23 +124,9 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
         }
 
         let obj_value:Any? = resolve(cmp.leftExpression)
-        var value:Any? = resolve(cmp.rightExpression)
+        let value:Any? = resolve(cmp.rightExpression)
 
-        if obj_value is UUID { value = (try? MIOCoreUUIDValue( value )) ?? value }
-        
-        switch cmp.predicateOperatorType {
-            case .equalTo             : return  MIOPredicateEvaluateEqual    ( obj_value, value )
-            case .notEqualTo          : return !MIOPredicateEvaluateEqual    ( obj_value, value )
-            case .lessThan            : return  MIOPredicateEvaluateLess     ( obj_value, value )
-            case .lessThanOrEqualTo   : return  MIOPredicateEvaluateLessEqual( obj_value, value )
-            case .greaterThan         : return !MIOPredicateEvaluateLessEqual( obj_value, value )
-            case .greaterThanOrEqualTo: return !MIOPredicateEvaluateLess     ( obj_value, value )
-            case .in                  : return  MIOPredicateEvaluateIn       ( obj_value, value )
-            case .contains            : return  MIOPredicateEvaluateContains ( obj_value, value )
-            default:break
-        }
-
-        return false
+        return MIOPredicateApplyOperator(obj_value, value, cmp.predicateOperatorType, cmp.options)
     }
     else if predicate is NSCompoundPredicate {
         let compound = predicate as! NSCompoundPredicate
@@ -590,6 +146,144 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
     return false
 }
 
+
+// One operator dispatcher shared by direct evaluation and the ANY/ALL walker
+func MIOPredicateApplyOperator(_ leftValue: Any?, _ rightValue: Any?, _ op: MIOComparisonPredicate.Operator, _ options: MIOComparisonPredicate.Options) -> Bool
+{
+    var left = leftValue
+    var right = rightValue
+    if left is UUID { right = (try? MIOCoreUUIDValue( right )) ?? right }
+
+    // Case/diacritic options apply to string-vs-string comparisons
+    if options.isEmpty == false, let l = left as? String, let r = right as? String {
+        left = MIOPredicateFold(l, options)
+        right = MIOPredicateFold(r, options)
+    }
+
+    switch op {
+        case .equalTo             : return  MIOPredicateEvaluateEqual     ( left, right )
+        case .notEqualTo          : return !MIOPredicateEvaluateEqual     ( left, right )
+        case .lessThan            : return  MIOPredicateEvaluateLess      ( left, right )
+        case .lessThanOrEqualTo   : return  MIOPredicateEvaluateLessEqual ( left, right )
+        case .greaterThan         : return !MIOPredicateEvaluateLessEqual ( left, right )
+        case .greaterThanOrEqualTo: return !MIOPredicateEvaluateLess      ( left, right )
+        case .in                  : return  MIOPredicateEvaluateIn        ( left, right )
+        case .contains            : return  MIOPredicateEvaluateContains  ( left, right )
+        case .beginsWith          : return  MIOPredicateEvaluateBeginsWith( left, right )
+        case .endsWith            : return  MIOPredicateEvaluateEndsWith  ( left, right )
+        case .like                : return  MIOPredicateEvaluateLike      ( left, right )
+        case .matches             : return  MIOPredicateEvaluateMatches   ( left, right )
+        case .between             : return  MIOPredicateEvaluateBetween   ( left, right )
+    }
+}
+
+func MIOPredicateFold(_ value: String, _ options: MIOComparisonPredicate.Options) -> String
+{
+    var result = value
+    if options.contains(.caseInsensitive) { result = result.lowercased() }
+    if options.contains(.diacriticInsensitive) { result = result.folding(options: .diacriticInsensitive, locale: nil) }
+    return result
+}
+
+// ANY items.name == 'x' / ALL items.done == true — evaluates over the members
+// of the to-many relationship named by the first keypath component. ALL over
+// an empty collection is vacuously true, like Apple.
+func MIOPredicateEvaluateToMany(object: NSManagedObject, using cmp: NSComparisonPredicate) -> Bool
+{
+    guard cmp.leftExpression.expressionType == .keyPath else { return false }
+
+    let keyPath = cmp.leftExpression.keyPath
+    let parts = keyPath.split(separator: ".", maxSplits: 1)
+    let relationshipName = String(parts[0])
+    let remainder = parts.count > 1 ? String(parts[1]) : nil
+
+    guard let relationship = object.entity.relationshipsByName[relationshipName], relationship.isToMany,
+          let members = object.value(forKey: relationshipName) as? Set<NSManagedObject> else {
+        return false
+    }
+
+    let rightValue = cmp.rightExpression.expressionType == .constantValue ? cmp.rightExpression.constantValue : nil
+
+    if cmp.comparisonPredicateModifier == .any {
+        return members.contains { member in
+            let leftValue = remainder != nil ? member.value(forKeyPath: remainder!) : member
+            return MIOPredicateApplyOperator(leftValue, rightValue, cmp.predicateOperatorType, cmp.options)
+        }
+    }
+
+    // .all
+    return members.allSatisfy { member in
+        let leftValue = remainder != nil ? member.value(forKeyPath: remainder!) : member
+        return MIOPredicateApplyOperator(leftValue, rightValue, cmp.predicateOperatorType, cmp.options)
+    }
+}
+
+func MIOPredicateEvaluateBeginsWith( _ leftValue: Any?, _ rightValue: Any? ) -> Bool
+{
+    guard let l = leftValue as? String, let r = rightValue as? String else { return false }
+    return l.hasPrefix(r)
+}
+
+func MIOPredicateEvaluateEndsWith( _ leftValue: Any?, _ rightValue: Any? ) -> Bool
+{
+    guard let l = leftValue as? String, let r = rightValue as? String else { return false }
+    return l.hasSuffix(r)
+}
+
+// LIKE: ? matches one character, * matches any run — classic iterative
+// wildcard matcher, no regex involved
+func MIOPredicateEvaluateLike( _ leftValue: Any?, _ rightValue: Any? ) -> Bool
+{
+    guard let l = leftValue as? String, let r = rightValue as? String else { return false }
+
+    let text = Array(l)
+    let pattern = Array(r)
+    var t = 0, p = 0
+    var starIndex = -1, starMark = 0
+
+    while t < text.count {
+        if p < pattern.count && (pattern[p] == "?" || pattern[p] == text[t]) {
+            t += 1; p += 1
+        }
+        else if p < pattern.count && pattern[p] == "*" {
+            starIndex = p; starMark = t
+            p += 1
+        }
+        else if starIndex >= 0 {
+            p = starIndex + 1
+            starMark += 1
+            t = starMark
+        }
+        else {
+            return false
+        }
+    }
+    while p < pattern.count && pattern[p] == "*" { p += 1 }
+    return p == pattern.count
+}
+
+func MIOPredicateEvaluateMatches( _ leftValue: Any?, _ rightValue: Any? ) -> Bool
+{
+    guard let l = leftValue as? String, let r = rightValue as? String else { return false }
+    #if os(WASI)
+    Log.warning("MATCHES is not supported on WASI (no NSRegularExpression)")
+    return false
+    #else
+    guard let regex = try? NSRegularExpression(pattern: r) else {
+        Log.warning("MATCHES pattern is not a valid regular expression: \(r)")
+        return false
+    }
+    let range = NSRange(l.startIndex..., in: l)
+    // MATCHES is a full-string match, like Apple
+    return regex.firstMatch(in: l, options: [], range: range).map { $0.range == range } ?? false
+    #endif
+}
+
+func MIOPredicateEvaluateBetween( _ leftValue: Any?, _ rightValue: Any? ) -> Bool
+{
+    guard let bounds = rightValue as? [Any], bounds.count >= 2 else { return false }
+    return MIOPredicateEvaluateLessEqual(bounds[0], leftValue) && MIOPredicateEvaluateLessEqual(leftValue, bounds[1])
+}
 
 func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
 
