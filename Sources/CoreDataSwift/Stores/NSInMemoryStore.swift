@@ -18,26 +18,35 @@ class NSInMemoryStore : NSPersistentStore
     override func save (insertedObjects: Set<NSManagedObject>, updatedObjects: Set<NSManagedObject>, deletedObjects: Set <NSManagedObject>, context:NSManagedObjectContext) throws {
         
         for o in insertedObjects {
+            // The URI is the registry key in the context, so re-register around
+            // the ID mutation — otherwise the object stays keyed by its old
+            // temporary URI and existingObject(with:) duplicates it.
+            context._unregisterObject(o, notifyStore: false)
             o.objectID._isTemporaryID = false
             o.objectID._persistentStore = self
+            context._registerObject(o, notifyStore: false)
 
             var objects = objectsByEntityName[ o.entity.name! ] ?? [:]
-            let id = o.objectID.uriRepresentation().absoluteString
-            objects[id] = o.changedValues()
+            let id = o.objectID.uriString
+            // _changedValues carries relationships as NSManagedObjectID /
+            // Set<NSManagedObjectID> — persisting changedValues() stored LIVE
+            // NSManagedObject references, which the unfault path could not
+            // read back (relationships came back empty after a refault)
+            objects[id] = o._changedValues
             objectsByEntityName[ o.entity.name! ] = objects
         }
-        
+
         for o in updatedObjects {
             var objects = objectsByEntityName[ o.entity.name! ]!
-            let id = o.objectID.uriRepresentation().absoluteString
+            let id = o.objectID.uriString
             let values = objects[ id ]!
-            objects[ id ] = values.merging( o.changedValues() ) { (_, new) in new }
+            objects[ id ] = values.merging( o._changedValues ) { (_, new) in new }
             objectsByEntityName[ o.entity.name! ] = objects
         }
         
         for o in deletedObjects {
             var objects = objectsByEntityName[ o.entity.name! ]!
-            let id = o.objectID.uriRepresentation().absoluteString
+            let id = o.objectID.uriString
             objects.removeValue(forKey: id)
             objectsByEntityName[ o.entity.name! ] = objects
         }

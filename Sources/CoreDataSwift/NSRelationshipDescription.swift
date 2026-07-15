@@ -40,7 +40,10 @@ public class NSRelationshipDescription : NSPropertyDescription
     }
     
     init(name:String, destinationEntityName:String, toMany:Bool, optional: Bool, inverseName:String?, inverseEntityName:String?){
-        self.maxCount = toMany ? 2 : 1
+        // 0 = unbounded (Apple semantics). Any value != 1 makes isToMany true,
+        // and a real model maxCount can overwrite this without being mistaken
+        // for the to-many marker.
+        self.maxCount = toMany ? 0 : 1
         _destinationEntityName = destinationEntityName
         self.inverseName = inverseName
         self.inverseEntityName = inverseEntityName

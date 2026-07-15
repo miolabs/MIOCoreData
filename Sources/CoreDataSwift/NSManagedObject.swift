@@ -8,10 +8,11 @@
 #if !APPLE_CORE_DATA
 
 import Foundation
+import MIOCoreLogger
 
 open class NSManagedObject : NSObject
 {
-#if os(Linux)
+#if os(Linux) || os(WASI)
     open var className: String {
         return entity.name ?? "NSManagedObject"
     }
@@ -47,15 +48,17 @@ open class NSManagedObject : NSObject
         awakeFromFetch()
     }
     
+    // Idempotent and non-clobbering: insert() also applies defaults (for
+    // objects built with the plain init), and it must never overwrite values
+    // the caller already set.
     func _setDefaultValues() {
-        //let attributes = this.entity.attributesByName;
         for prop in entity.properties {
             if prop is NSRelationshipDescription { continue }
-            
-            let attr = prop as! NSAttributeDescription
-            let value = attr.defaultValue
 
-            if value == nil { continue }
+            let attr = prop as! NSAttributeDescription
+            guard let value = attr.defaultValue else { continue }
+            if _changedValues.keys.contains(prop.name) { continue }
+
             setValue(value, forKey: prop.name)
         }
     }
@@ -127,9 +130,21 @@ open class NSManagedObject : NSObject
     }
     
     // KVO change notification
-    #if os(Linux)
+    #if os(Linux) || os(WASI)
     open func willChangeValue(forKey key: String) {}
     open func didChangeValue(forKey key: String) {}
+    #endif
+
+    #if os(WASI)
+    // wasm Foundation has no KVC on NSObject: minimal key-path traversal over managed objects
+    open func value(forKeyPath keyPath: String) -> Any? {
+        var current: Any? = self
+        for component in keyPath.split(separator: ".") {
+            guard let mo = current as? NSManagedObject else { return nil }
+            current = mo.value(forKey: String(component))
+        }
+        return current
+    }
     #endif
     
     //    open func willChangeValue(forKey inKey: String, withSetMutation inMutationKind: NSKeyValueSetMutationKind, using inObjects: Set<AnyHashable>)
@@ -185,7 +200,7 @@ open class NSManagedObject : NSObject
     // value access (includes key-value coding methods)
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-    #if os(Linux)
+    #if os(Linux) || os(WASI)
     open func value(forKey key: String) -> Any? { return _value(forKey:key)}
     #else
     open override func value(forKey key: String) -> Any? { return _value(forKey:key) }
@@ -194,7 +209,7 @@ open class NSManagedObject : NSObject
     open func _value(forKey key: String) -> Any? {
         
         guard let property = entity.propertiesByName[key] else {
-            #if os(Linux)
+            #if os(Linux) || os(WASI)
             return nil
             #else
             return super.value(forKey:key)
@@ -247,7 +262,7 @@ open class NSManagedObject : NSObject
     
     
     // KVC - overridden to access generic dictionary storage unless subclasses explicitly provide accessors
-    #if os(Linux)
+    #if os(Linux) || os(WASI)
     open func setValue(_ value: Any?, forKey key: String) {
         var cache = Set<NSManagedObject>()
         _setValue(value, forKey: key, cache: &cache)
@@ -274,27 +289,10 @@ open class NSManagedObject : NSObject
         if property is NSRelationshipDescription {
             let relationship = property as! NSRelationshipDescription
             if relationship.isToMany == false {
-//                let last_obj = self.committedValues(forKeys: [key] )[ key ] as? NSManagedObject
-//                let obj = value as? NSManagedObject
-                
-//                if last_obj == nil && obj == nil {
-//                    _changedValues[key] = NSNull()
-//                }
-//                else if last_obj == nil && obj != nil {
-//                    _changedValues[key] = obj!.objectID
-//                    addInverseRelationship( relationship, obj!, cache: &cache )
-//                }
-//                else if last_obj != nil && obj == nil {
-//                    removeInverseRelationship(relationship, last_obj!, cache: &cache)
-//                    _changedValues[key] = NSNull()
-//                }
-//                else if last_obj != nil && obj != nil && last_obj!.objectID != obj!.objectID {
-//                    removeInverseRelationship(relationship, last_obj!, cache: &cache)
-//                    _changedValues[key] = obj!.objectID
-//                    addInverseRelationship( relationship, obj!, cache: &cache )
-//                }
-                                
-                if let last_obj = self.committedValues(forKeys: [key] )[ key ] as? NSManagedObject {
+                // Undo the inverse of the CURRENT value (pending change first,
+                // committed otherwise) — and only when an inverse exists, so a
+                // plain to-one set does not force a store round-trip.
+                if relationship.inverseRelationship != nil, let last_obj = _currentToOneObject(forKey: key) {
                     removeInverseRelationship(relationship, last_obj, cache: &cache)
                 }
 
@@ -307,10 +305,10 @@ open class NSManagedObject : NSObject
                 }
             }
             else {
-                if let objects = self.committedValues(forKeys: [key] )[ key ] as? Set<NSManagedObject> {
-                    for obj in objects { removeInverseRelationship( relationship, obj, cache: &cache ) }
+                if relationship.inverseRelationship != nil {
+                    for obj in _currentToManyObjects(forKey: key) { removeInverseRelationship( relationship, obj, cache: &cache ) }
                 }
-                
+
                 if let objects = value as? Set<NSManagedObject> {
                     var objIDs:Set<NSManagedObjectID> = Set( )
                     for obj in objects {
@@ -325,26 +323,70 @@ open class NSManagedObject : NSObject
             }
         }
         else {
+            // Tripwire for a recurring bug class: nil written into a mandatory
+            // attribute (often a deserializer returning nil on a failed
+            // conversion). This is the exact moment the value is lost — a
+            // breakpoint here catches the caller
+            if value == nil, let attr = property as? NSAttributeDescription, attr.isOptional == false, attr.isTransient == false {
+                Log.warning("Setting nil on non-optional attribute \(entity.name!).\(key) — save validation will reject this object (\(objectID.uriString))")
+            }
             _changedValues[key] = value ?? NSNull()
         }
 
         didChangeValue(forKey: key)
 
-        managedObjectContext?.refresh(self, mergeChanges: false)
-        
+        // Mark dirty without refaulting: the old refresh() here wiped the
+        // snapshot, so writing one attribute forced the next read of any other
+        // attribute to reload the whole object from the store.
+        managedObjectContext?._markUpdated(self)
+
         cache.remove( self )
+    }
+
+    // Current (pending-first) relationship values, used for inverse maintenance.
+    // Falls back to committedValues — which may fire the relationship fault —
+    // only when there is no pending change for the key.
+    func _currentToOneObject(forKey key: String) -> NSManagedObject? {
+        if _changedValues.keys.contains(key) {
+            guard let moc = managedObjectContext, let objID = _changedValues[key] as? NSManagedObjectID else { return nil }
+            return try? moc.existingObject(with: objID)
+        }
+        return committedValues(forKeys: [key])[key] as? NSManagedObject
+    }
+
+    func _currentToManyObjects(forKey key: String) -> Set<NSManagedObject> {
+        if _changedValues.keys.contains(key) {
+            guard let moc = managedObjectContext, let objIDs = _changedValues[key] as? Set<NSManagedObjectID> else { return [] }
+            return Set( objIDs.compactMap { try? moc.existingObject(with: $0) } )
+        }
+        return committedValues(forKeys: [key])[key] as? Set<NSManagedObject> ?? []
     }
     
     // primitive methods give access to the generic dictionary storage from subclasses that implement explicit accessors like -setName/-name to add custom document logic
     open func primitiveValue(forKey key: String) -> Any? {
+        // Pending changes ARE the current primitive state: after setValue or
+        // setPrimitiveValue the primitive must return the new value, and unsaved
+        // objects (temporary ID, empty snapshot) must read their values back.
+        if _changedValues.keys.contains(key) {
+            let value = _changedValues[key]
+            return value is NSNull ? nil : value
+        }
         if hasFault(forRelationshipNamed: key) && objectID.persistentStore != nil {
             unfaultRelationshipNamed( key, fromStore: objectID.persistentStore! )
         }
-        return storedValues[key]
+        let value = storedValues[key]
+        return value is NSNull ? nil : value
     }
-    
+
+    // NOTE: this deviates from Apple on purpose — the change IS tracked (shows
+    // up in changedValues() and gets saved) so that values written from
+    // awakeFromInsert/awakeFromFetch survive; what it skips versus setValue is
+    // the will/didChange observers and the inverse-relationship maintenance.
+    // Writing the old _storedValues dictionary lost the value whenever the
+    // object refaulted, and never persisted it for unsaved objects.
     open func setPrimitiveValue(_ value: Any?, forKey key: String) {
-        _storedValues[key] = value
+        _changedValues[key] = value ?? NSNull()
+        managedObjectContext?._markUpdated(self)
     }
     
     // returns a dictionary of the last fetched or saved keys and values of this object.  Pass nil to get all persistent modeled properties.
@@ -416,15 +458,106 @@ open class NSManagedObject : NSObject
     //    }
     
     open func validateForDelete() throws {
-        
+
     }
-    
+
     open func validateForInsert() throws {
-        
+
     }
-    
+
     open func validateForUpdate() throws {
-        
+
+    }
+
+    //
+    // Save validation (invoked by NSManagedObjectContext.save before hitting the store)
+    //
+
+    // Inserted objects: every non-optional property must have a value in the
+    // pending changes (defaults were applied at init, so they are there too).
+    // Updated objects: only the changed keys are checked — an update cannot
+    // invalidate a property it did not touch, and checking them all would fire
+    // faults (a store round-trip per object on every save).
+    func _validateMandatoryProperties(changedKeysOnly: Bool, errors: inout [Error]) {
+
+        for (key, attr) in entity.attributesByName {
+            if attr.isOptional || attr.isTransient { continue }
+            if _isExternallyDefaulted(attr) { continue }
+            if changedKeysOnly && _changedValues.keys.contains(key) == false { continue }
+
+            let value = _changedValues[key]
+            if value == nil || value is NSNull {
+                // The detail distinguishes the two failure classes: a value
+                // that was never set (defaults not applied / discarded) versus
+                // one some code explicitly nulled
+                let detail = value == nil ? "value never set; \(_changedValues.count) pending changes; default \(attr.defaultValue == nil ? "missing from parsed model" : "present")"
+                                          : "explicitly set to nil"
+                errors.append( NSManagedObjectValidationError.missingMandatoryProperty(entity: entity.name!, property: key, objectID: objectID.uriString + " | " + detail) )
+            }
+        }
+
+        for (key, rel) in entity.relationshipsByName {
+            if _isExternallyDefaulted(rel) { continue }
+            if changedKeysOnly && _changedValues.keys.contains(key) == false { continue }
+
+            if rel.isToMany {
+                let count = (_changedValues[key] as? Set<NSManagedObjectID>)?.count ?? 0
+                if rel.isOptional == false && count == 0 {
+                    errors.append( NSManagedObjectValidationError.missingMandatoryProperty(entity: entity.name!, property: key, objectID: objectID.uriString) )
+                }
+                // Counts are only enforced on non-empty relationships (an
+                // optional relationship may legally hold zero objects)
+                if count > 0 && rel.minCount > 0 && count < rel.minCount {
+                    errors.append( NSManagedObjectValidationError.tooFewObjects(entity: entity.name!, property: key, minimum: rel.minCount, count: count) )
+                }
+                if count > 0 && rel.maxCount > 0 && count > rel.maxCount {
+                    errors.append( NSManagedObjectValidationError.tooManyObjects(entity: entity.name!, property: key, maximum: rel.maxCount, count: count) )
+                }
+            }
+            else if rel.isOptional == false {
+                let value = _changedValues[key]
+                if value == nil || value is NSNull {
+                    errors.append( NSManagedObjectValidationError.missingMandatoryProperty(entity: entity.name!, property: key, objectID: objectID.uriString) )
+                }
+            }
+        }
+    }
+
+    // Someone else fills the property when the client sends nothing, so a
+    // missing value is legal even though the property is non-optional (a value
+    // set by code still wins and is sent as-is):
+    //   DBDefaultValue = true -> the database populates it with its DEFAULT
+    //   DBDefaultFunction     -> a server-side code function computes it
+    //                            (e.g. request-scoped values like :appId)
+    func _isExternallyDefaulted(_ property: NSPropertyDescription) -> Bool {
+        guard let info = property.userInfo else { return false }
+
+        if info["DBDefaultFunction"] != nil { return true }
+        if let flag = info["DBDefaultValue"] {
+            let s = "\(flag)".lowercased()
+            return s == "true" || s == "yes" || s == "1"
+        }
+        return false
+    }
+
+    // Deny delete rule: the object cannot be deleted while the relationship
+    // still holds objects that are not themselves deleted in this save.
+    func _validateDeleteRules(errors: inout [Error]) {
+        for (key, rel) in entity.relationshipsByName {
+            guard rel.deleteRule == .denyDeleteRule else { continue }
+
+            let denied: Bool
+            if rel.isToMany {
+                denied = _currentToManyObjects(forKey: key).contains { $0.isDeleted == false }
+            }
+            else {
+                denied = _currentToOneObject(forKey: key)?.isDeleted == false
+            }
+
+            if denied {
+                errors.append( NSManagedObjectValidationError.deleteDenied(entity: entity.name!, relationship: key) )
+            }
+        }
     }
     
     //
@@ -467,7 +600,7 @@ open class NSManagedObject : NSObject
         
         if let memory_store = store as? NSInMemoryStore {
             let objects = memory_store.objectsByEntityName[ objectID.entity.name! ]
-            let values = objects?[objectID.uriRepresentation().absoluteString] as? [String:Any] ?? [:]
+            let values = objects?[objectID.uriString] as? [String:Any] ?? [:]
 
             for (key, attr) in entity.attributesByName {
                 var v = values[ key ]
@@ -476,12 +609,16 @@ open class NSManagedObject : NSObject
             }
         }
         else if let incremental_store = store as? NSIncrementalStore {
-            
+
             let node = try? incremental_store.newValuesForObject(with: objectID, with: managedObjectContext!)
             if node == nil { return }
-            
+
             for (key, attr) in entity.attributesByName {
-                let value = node!.value(for: attr)
+                var value = node!.value(for: attr)
+                // Same rule as the in-memory branch above: a mandatory
+                // attribute missing from the store row materializes its model
+                // default instead of reading as nil
+                if attr.isOptional == false && ( value == nil || value is NSNull ) { value = attr.defaultValue }
                 _storedValues[key] = value
             }
         }
@@ -498,20 +635,41 @@ open class NSManagedObject : NSObject
         if isFault { unfaultAttributes(fromStore: store! ) }
         
         relationShipsNamedNotFault.insert(key)
-        
+
         guard let relation = entity.relationshipsByName[key] else { return }
+
+        // In-memory store rows carry relationships as object IDs directly
+        if let memory_store = store as? NSInMemoryStore {
+            let values = memory_store.objectsByEntityName[ objectID.entity.name! ]?[ objectID.uriString ]
+            if let value = values?[key], (value is NSNull) == false {
+                _storedValues[relation.name] = value
+            }
+            return
+        }
+
         guard let incrementalStore = store as? NSIncrementalStore else { return }
-        
+
         let value = try? incrementalStore.newValue(forRelationship: relation, forObjectWith: objectID, with: managedObjectContext)
         if value == nil { return }
 
         _storedValues[relation.name] = relation.isToMany ? Set( value! as! [NSManagedObjectID] ) : value!
     }
     
-    func _didCommit() {
-//        _storedValues = _storedValues.merging(_changedValues) { (_, new) in new }
+    func _didCommit( inserted: Bool = false ) {
+        // Merge the committed changes into the snapshot and stay realized:
+        // refaulting here forced a store round-trip on the next attribute read
+        // after every save. Inserted objects carry every meaningful value in
+        // _changedValues, so their merged snapshot is complete even though they
+        // were never unfaulted from a store. An updated object that is still a
+        // fault keeps refaulting (its snapshot is incomplete).
+        if inserted || _isFault == false {
+            _storedValues.merge(_changedValues) { (_, new) in new }
+            for key in _changedValues.keys where entity.relationshipsByName[key] != nil {
+                relationShipsNamedNotFault.insert(key)
+            }
+            _isFault = false
+        }
         _changedValues = [:]
-        setIsFault(true)
     }
     
     func _setIsInserted(_ value:Bool) {
@@ -558,8 +716,8 @@ open class NSManagedObject : NSObject
         
         objIDs.insert(object.objectID)
         _changedValues[key] = objIDs
-        managedObjectContext?.refresh(self, mergeChanges: false)
-        
+        managedObjectContext?._markUpdated(self)
+
         cache.remove( self )
     }
 
@@ -582,8 +740,8 @@ open class NSManagedObject : NSObject
         objIDs.remove( object.objectID )
 
         _changedValues[key] = objIDs
-        if refresh { managedObjectContext?.refresh(self, mergeChanges: false) }
-        
+        if refresh { managedObjectContext?._markUpdated(self) }
+
         cache.remove( self )
     }
 
@@ -666,7 +824,7 @@ open class NSManagedObject : NSObject
                 if obj.isDeleted == false { managedObjectContext?._delete(obj, cache: &cache) }
                 _removeObject(obj, forKey: relationship.name, cache: &cache, refresh: false)
             }
-            managedObjectContext?.refresh(self, mergeChanges: true)
+            managedObjectContext?._markUpdated(self)
         }
     }
     
@@ -688,7 +846,24 @@ open class NSManagedObject : NSObject
     }
     
     public func printAsJSON() throws -> String? {
-        let data = try JSONSerialization.data(withJSONObject: self)
+        // JSONSerialization cannot serialize a managed object (or Date/UUID/Decimal
+        // values) directly, so build a JSON-safe dictionary from the attributes.
+        var json:[String:Any] = [:]
+        for key in entity.attributesByName.keys {
+            switch value(forKey: key) {
+            case nil:                json[key] = NSNull()
+            case is NSNull:          json[key] = NSNull()
+            case let v as String:    json[key] = v
+            case let v as Bool:      json[key] = v
+            case let v as Date:      json[key] = ISO8601DateFormatter().string(from: v)
+            case let v as UUID:      json[key] = v.uuidString
+            case let v as Decimal:   json[key] = "\(v)"
+            case let v as Data:      json[key] = v.base64EncodedString()
+            case let v as NSNumber:  json[key] = v
+            case let v?:             json[key] = "\(v)"
+            }
+        }
+        let data = try JSONSerialization.data(withJSONObject: json)
         return String(data: data, encoding: .utf8)
     }
 }

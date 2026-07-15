@@ -17,9 +17,14 @@ open class NSManagedObjectModel : NSObject
         let parser = MIOManagedObjectModelParser(url: url, model: self)
 
         // Make the xml deserialization synchronous
+        #if os(WASI)
+        // WASI is single-threaded: XMLParser completes synchronously, no semaphore needed
+        parser.parse { _ in }
+        #else
         let semaphore = DispatchSemaphore(value: 0)
         parser.parse { error in semaphore.signal() }
         _ = semaphore.wait(timeout: .distantFuture)
+        #endif
     }
         
     var _entitiesByName: [String : NSEntityDescription]?

@@ -136,10 +136,14 @@ open class NSEntityDescription : NSObject
         isBuilt = true
         
         if let parentEntityName = parentEntityName {
-            let parentEntity = managedObjectModel.entitiesByName[parentEntityName]
+            guard let parentEntity = managedObjectModel.entitiesByName[parentEntityName] else {
+                // A missing parent used to crash the whole model load with an
+                // anonymous force-unwrap; name the offender instead
+                fatalError("NSEntityDescription: entity '\(name ?? "?")' declares parentEntity '\(parentEntityName)' which does not exist in the model")
+            }
             _superentity = parentEntity
-            parentEntity!.subentities.append(self)
-            parentEntity!.build()
+            parentEntity.subentities.append(self)
+            parentEntity.build()
             
             // NOTE: We don't want to progate the user info configuration to it's own children.
             // For example if the base class has the property TableHasiTownTable... we dont want every children
@@ -148,7 +152,7 @@ open class NSEntityDescription : NSObject
 //               userInfo!.merge( parentEntity!.userInfo ?? [:] ){ (old,_new) in old }
 //            }
             
-            for (_, prop) in parentEntity!.propertiesByName {
+            for (_, prop) in parentEntity.propertiesByName {
 
                 if prop is NSAttributeDescription {
                     let attr = prop as! NSAttributeDescription
@@ -159,6 +163,8 @@ open class NSEntityDescription : NSObject
                     let rel = prop as! NSRelationshipDescription
                     let new_rel = addRelationship(name: rel.name, destinationEntityName: rel.destinationEntityName, toMany: rel.isToMany, optional: rel.isOptional, inverseName: rel.inverseName, inverseEntityName: rel.inverseEntityName, deleteRule: rel.deleteRule)
                     new_rel.userInfo = rel.userInfo
+                    new_rel.minCount = rel.minCount
+                    new_rel.maxCount = rel.maxCount
                 }
             }
         }
@@ -215,7 +221,7 @@ open class NSEntityDescription : NSObject
 
 #endif
 
-#if os(Linux)
+#if os(Linux) || os(WASI)
 extension NSEntityDescription
 {
     open var toManyRelationshipKeys: [ String ] { get { return _toManyRelationshipKeys } }
