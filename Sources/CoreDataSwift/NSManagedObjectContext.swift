@@ -64,6 +64,15 @@ public let NSInsertedObjectsKey = "inserted"
 public let NSUpdatedObjectsKey = "updated"
 public let NSDeletedObjectsKey = "deleted"
 
+/// Carries a non-Sendable value across a @Sendable boundary. Used for perform
+/// blocks: corelibs-libdispatch marks DispatchQueue.async's closure @Sendable,
+/// but a perform block legitimately captures non-Sendable state (the context,
+/// managed objects) — thread safety comes from the serial queue, not from
+/// Sendable checking.
+private struct MIOUncheckedSendable<T>: @unchecked Sendable {
+    let value: T
+}
+
 /// Registry slot for one managed object. Holds the object weakly always, and
 /// strongly only while the context retains registered objects — flipping
 /// `retainsRegisteredObjects` just drops or restores the strong reference.
@@ -142,7 +151,8 @@ open class NSManagedObjectContext : NSObject
 #if os(WASI)
         block()   // wasm is single-threaded: run inline
 #else
-        _queue.async { block() }
+        let boxed = MIOUncheckedSendable(value: block)
+        _queue.async { boxed.value() }
 #endif
     }
 
