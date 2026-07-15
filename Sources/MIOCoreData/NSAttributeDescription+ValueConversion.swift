@@ -29,12 +29,14 @@ import MIOCore
 
 public enum NSAttributeValueConversionError: Error, LocalizedError
 {
-    case cannotConvert(entity: String, attribute: String, type: NSAttributeType, value: Any)
+    // The offending value travels as a pre-formatted String: Error implies
+    // Sendable in Swift 6 and an Any payload cannot satisfy it
+    case cannotConvert(entity: String, attribute: String, type: NSAttributeType, value: String)
 
     public var errorDescription: String? {
         switch self {
         case let .cannotConvert(entity, attribute, type, value):
-            return "Cannot convert value \(value) (\(Swift.type(of: value))) to attribute type \(type) for \(entity).\(attribute)."
+            return "Cannot convert value \(value) to attribute type \(type) for \(entity).\(attribute)."
         }
     }
 }
@@ -51,7 +53,7 @@ extension NSAttributeDescription
         let v = value!
 
         func fail() -> NSAttributeValueConversionError {
-            return .cannotConvert(entity: entity.name ?? "?", attribute: name, type: attributeType, value: v)
+            return .cannotConvert(entity: entity.name ?? "?", attribute: name, type: attributeType, value: "\(v) (\(Swift.type(of: v)))")
         }
 
         switch attributeType {
