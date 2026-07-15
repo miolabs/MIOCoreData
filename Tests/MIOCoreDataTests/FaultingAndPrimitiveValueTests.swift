@@ -33,7 +33,7 @@ class CountingIncrementalStore: CoreDataSwift.NSIncrementalStore
 {
     static let storeType = "CountingIncrementalStore"
 
-    var rows: [String:[String:Any]] = [:]      // object URI -> attribute values
+    nonisolated(unsafe) var rows: [String:[String:Any]] = [:]      // object URI -> attribute values
     var newValuesCount = 0                     // store round-trips for object data
 
     override func loadMetadata() throws {

@@ -21,7 +21,7 @@ func model_path() -> String
     return document_path().appending("/TestModel/TestModel.xcdatamodeld/TestModel.xcdatamodel/contents")
 }
 
-fileprivate var _in_memory_persistent_container: NSPersistentContainer? = nil
+nonisolated(unsafe) fileprivate var _in_memory_persistent_container: NSPersistentContainer? = nil
 
 public func InMemoryStoreMOCTest () -> NSManagedObjectContext
 {
@@ -64,7 +64,7 @@ public func InMemoryStoreMOCTest () -> NSManagedObjectContext
     return _in_memory_persistent_container!.viewContext
 }
 
-fileprivate var _incremental_persistent_container: NSPersistentContainer? = nil
+nonisolated(unsafe) fileprivate var _incremental_persistent_container: NSPersistentContainer? = nil
 
 public func IncrementalStoreMOCTest () -> NSManagedObjectContext
 {

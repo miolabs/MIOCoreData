@@ -33,7 +33,7 @@ class CDSaveValMember: CoreDataSwift.NSManagedObject {}
 class CDSaveValDBDefault: CoreDataSwift.NSManagedObject {}
 
 class CDSaveValHooked: CoreDataSwift.NSManagedObject {
-    static var didSaveCount = 0
+    nonisolated(unsafe) static var didSaveCount = 0
 
     override func willSave() {
         if value(forKey: "note") == nil { setValue("stamped", forKey: "note") }

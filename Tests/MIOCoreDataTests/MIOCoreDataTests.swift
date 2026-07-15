@@ -8,8 +8,4 @@ final class MIOCoreDataTests: XCTestCase {
         // results.
         //XCTAssertEqual(MIOCoreData().text, "Hello, World!")
     }
-
-    static var allTests = [
-        ("testExample", testExample),
-    ]
 }

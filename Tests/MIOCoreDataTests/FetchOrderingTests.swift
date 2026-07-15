@@ -58,7 +58,7 @@ class OrderedStubStore: CoreDataSwift.NSIncrementalStore
     static let storeType = "OrderedStubStore"
 
     /// Rows in "DB order". Deliberately NOT sorted by name.
-    static var rows: [StubRow] = []
+    nonisolated(unsafe) static var rows: [StubRow] = []
 
     override func loadMetadata() throws {
         self.metadata = [CoreDataSwift.NSStoreUUIDKey: UUID().uuidString, CoreDataSwift.NSStoreTypeKey: OrderedStubStore.storeType]

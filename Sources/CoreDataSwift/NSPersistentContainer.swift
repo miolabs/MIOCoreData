@@ -29,7 +29,7 @@ open class NSPersistentContainer : NSObject
     open var persistentStoreDescriptions: [NSPersistentStoreDescription] = []
     
 #if DEBUG && !os(WASI)
-    private static var instanceCount = 0
+    nonisolated(unsafe) private static var instanceCount = 0
     private static let countQueue = DispatchQueue(label: "context.count")
 #endif
 

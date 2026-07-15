@@ -210,7 +210,7 @@ func MIOPredicateScan(_ format: String) throws -> [MIOPredicateToken] {
 
 // MARK: - Token cache
 
-final class MIOPredicateTokenCache
+final class MIOPredicateTokenCache: @unchecked Sendable   // all mutable state is lock-protected
 {
     static let shared = MIOPredicateTokenCache()
 

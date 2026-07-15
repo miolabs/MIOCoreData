@@ -100,7 +100,7 @@ open class NSManagedObjectContext : NSObject
     var mergePolicy = NSMergePolicy.none
     
 #if DEBUG && !os(WASI)
-    private static var instanceCount = 0
+    nonisolated(unsafe) private static var instanceCount = 0
     private static let countQueue = DispatchQueue(label: "context.count")
 #endif
 
@@ -418,7 +418,7 @@ open class NSManagedObjectContext : NSObject
         object.setIsFault(true)
     }
 
-    private static var _warnedFetchFlags = Set<String>()
+    nonisolated(unsafe) private static var _warnedFetchFlags = Set<String>()
     private static let _warnedFetchFlagsLock = NSLock()
     static func _warnUnsupportedFetchFlagOnce(_ flag: String) {
         _warnedFetchFlagsLock.lock(); defer { _warnedFetchFlagsLock.unlock() }

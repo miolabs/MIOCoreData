@@ -36,7 +36,7 @@ open class MIOComparisonPredicate : MIOPredicate
     var _options:Options
     open var options: Options { return _options }
 
-    public struct Options : OptionSet {
+    public struct Options : OptionSet, Sendable {
         public let rawValue : UInt
         public init(rawValue: UInt) { self.rawValue = rawValue }
         

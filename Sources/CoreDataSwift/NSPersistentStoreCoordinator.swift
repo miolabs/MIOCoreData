@@ -94,7 +94,7 @@ open class NSPersistentStoreCoordinator : NSObject
 #else
     static let _store_queue = DispatchQueue(label: "com.miocoredata.store_queue")
 #endif
-    static var _registeredStoreTypes:[String:Any] = [NSSQLiteStoreType: NSSQLiteStore.self, NSBinaryStoreType: NSBinaryStore.self, NSInMemoryStoreType: NSInMemoryStore.self]
+    nonisolated(unsafe) static var _registeredStoreTypes:[String:Any] = [NSSQLiteStoreType: NSSQLiteStore.self, NSBinaryStoreType: NSBinaryStore.self, NSInMemoryStoreType: NSInMemoryStore.self]
     open class var registeredStoreTypes: [String : Any] { get {
         var types:[String:Any] = [:]
         _store_queue.sync {

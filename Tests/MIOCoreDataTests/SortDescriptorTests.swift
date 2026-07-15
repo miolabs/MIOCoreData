@@ -22,7 +22,7 @@ import MIOCore
 // MARK: - Runtime classes
 
 class CDSortEntity: CoreDataSwift.NSManagedObject {
-    static var kvcReads = 0
+    nonisolated(unsafe) static var kvcReads = 0
 
     override func value(forKey key: String) -> Any? {
         CDSortEntity.kvcReads += 1

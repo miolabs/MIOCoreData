@@ -19,7 +19,7 @@ import CoreData
 
 @objc(PHooked)
 final class PHooked: NSManagedObject {
-    static var didSaveCount = 0
+    nonisolated(unsafe) static var didSaveCount = 0
 
     override func willSave() {
         // Guarded: Apple re-invokes willSave after changes made inside it
