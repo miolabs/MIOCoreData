@@ -254,8 +254,10 @@ open class NSManagedObjectContext : NSObject
             // The store executed the entire request in SQL (predicate,
             // ORDER BY, limit, offset), so its result is the committed truth
             // in DB order — never re-filtered or re-sorted here.
+            Log.trace( "Fetch: \(request.entityName!)" )
             let store_objs = try store.execute(request, with: self) as! [T]
-
+            Log.trace( "Fetched: \(store_objs.count)" )
+            
             // includesPendingChanges == false: committed rows only (Apple
             // parity for the non-default flag value).
             if request.includesPendingChanges == false { return store_objs }
