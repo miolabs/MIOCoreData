@@ -529,13 +529,18 @@ open class NSManagedObject : NSObject
     //   DBDefaultValue = true -> the database populates it with its DEFAULT
     //   DBDefaultFunction     -> a server-side code function computes it
     //                            (e.g. request-scoped values like :appId)
+    //   DBType = autoinc      -> the server generates an autoincrement value
+    //                            ("autoinc" is the only supported DBType for now)
     func _isExternallyDefaulted(_ property: NSPropertyDescription) -> Bool {
         guard let info = property.userInfo else { return false }
 
         if info["DBDefaultFunction"] != nil { return true }
         if let flag = info["DBDefaultValue"] {
             let s = "\(flag)".lowercased()
-            return s == "true" || s == "yes" || s == "1"
+            if s == "true" || s == "yes" || s == "1" { return true }
+        }
+        if let dbType = info["DBType"] {
+            if "\(dbType)".lowercased() == "autoinc" { return true }
         }
         return false
     }

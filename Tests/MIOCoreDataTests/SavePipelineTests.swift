@@ -91,6 +91,11 @@ private let savePipelineModelXML = """
                 <entry key="DBDefaultValue" value="true"/>
             </userInfo>
         </attribute>
+        <attribute name="autoIndex" attributeType="Integer 64">
+            <userInfo>
+                <entry key="DBType" value="autoinc"/>
+            </userInfo>
+        </attribute>
     </entity>
 </model>
 """
@@ -202,9 +207,10 @@ final class SavePipelineTests: XCTestCase
     }
 
     func testExternallyDefaultedPropertiesAreExemptFromMandatoryCheck() {
-        // Both mandatory attributes are filled by someone else — "stamp" by a
-        // server-side function (DBDefaultFunction) and "seq" by the database
-        // itself (DBDefaultValue = true) — so saving without values must pass
+        // All three mandatory attributes are filled by someone else — "stamp"
+        // by a server-side function (DBDefaultFunction), "seq" by the database
+        // itself (DBDefaultValue = true), and "autoIndex" by the server as an
+        // autoincrement (DBType = autoinc) — so saving without values must pass
         insert("CDSaveValDBDefault", name: "db-defaulted")
 
         XCTAssertNoThrow(try moc.save())
