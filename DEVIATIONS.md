@@ -33,10 +33,11 @@ differently is a bug.
   **`validatesOnSave`** have no Apple equivalent — rollout levers for data
   sets that predate validation.
 
-- **`DBDefaultValue` / `DBDefaultFunction` userInfo keys** exempt properties
-  from the mandatory check: the database (DEFAULT expressions) or the server
-  framework (request-scoped functions like `:appId`) fills them. Apple has no
-  such concept.
+- **`DBDefaultValue` / `DBDefaultFunction` / `DBType = autoinc` userInfo keys**
+  exempt properties from the mandatory check: the database (DEFAULT
+  expressions), the server framework (request-scoped functions like
+  `:appId`), or a server-generated autoincrement (`DBType = autoinc`, the only
+  supported `DBType` for now) fills them. Apple has no such concept.
 
 - **Parent/child contexts are unsupported** — `save()` on a child context
   throws `parentContextsUnsupported` instead of propagating (Apple) or

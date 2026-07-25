@@ -34,7 +34,9 @@ class CountingIncrementalStore: CoreDataSwift.NSIncrementalStore
     static let storeType = "CountingIncrementalStore"
 
     nonisolated(unsafe) var rows: [String:[String:Any]] = [:]      // object URI -> attribute values
+    nonisolated(unsafe) var rowIDs: [String: CoreDataSwift.NSManagedObjectID] = [:]
     var newValuesCount = 0                     // store round-trips for object data
+    var failNextSave = false                   // simulate a DB error on the next save
 
     override func loadMetadata() throws {
         self.metadata = [CoreDataSwift.NSStoreUUIDKey: UUID().uuidString, CoreDataSwift.NSStoreTypeKey: CountingIncrementalStore.storeType]
@@ -42,16 +44,39 @@ class CountingIncrementalStore: CoreDataSwift.NSIncrementalStore
 
     override func execute(_ request: CoreDataSwift.NSPersistentStoreRequest, with context: CoreDataSwift.NSManagedObjectContext?) throws -> Any {
         if let save = request as? CoreDataSwift.NSSaveChangesRequest {
+            if failNextSave {
+                failNextSave = false
+                throw NSIncrementalStoreError.unimplemented()
+            }
             for obj in save.insertedObjects ?? [] {
                 rows[obj.objectID.uriString] = obj.changedValues()
+                rowIDs[obj.objectID.uriString] = obj.objectID
             }
             for obj in save.updatedObjects ?? [] {
                 rows[obj.objectID.uriString, default: [:]].merge(obj.changedValues()) { (_, new) in new }
             }
             for obj in save.deletedObjects ?? [] {
                 rows.removeValue(forKey: obj.objectID.uriString)
+                rowIDs.removeValue(forKey: obj.objectID.uriString)
             }
+            return []
         }
+
+        // Minimal fetch support so tests can observe store-backed results
+        if let fetch = request as? CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject> {
+            var results: [CoreDataSwift.NSManagedObject] = []
+            for (_, objID) in rowIDs where objID.entity.name == fetch.entityName {
+                let obj = try context!.existingObject(with: objID)
+                if let predicate = fetch.predicate {
+                    if MIOPredicateEvaluate(object: obj, using: predicate) { results.append(obj) }
+                }
+                else {
+                    results.append(obj)
+                }
+            }
+            return results
+        }
+
         return []
     }
 
@@ -185,6 +210,39 @@ final class FaultingAndPrimitiveValueTests: XCTestCase
         // Survives a refault: the value went to the store, not to a cache that gets wiped
         moc.refresh(obj, mergeChanges: true)
         XCTAssertEqual(obj.value(forKey: "counter") as? Int32, 9)
+    }
+
+    // MARK: Failed saves on persistent contexts
+
+    // Mirrors a production incident: a long-lived context updated payment
+    // transactions (status 0 -> 1), the save failed but the error was
+    // swallowed upstream, and the pending changes then SHADOWED the database —
+    // the next "status == 0" fetch returned nothing (pending-updated objects
+    // no longer match), nothing was ever written, and only a restart cleared
+    // it. This pins the mechanism and the recovery.
+    func testFailedSaveLeavesPendingChangesShadowingTheStore() throws {
+        let tx = insertEntity(name: "tx", counter: 0)
+        try moc.save()
+
+        let request = CoreDataSwift.NSFetchRequest<CoreDataSwift.NSManagedObject>(entityName: "CDFaultingEntity")
+        request.predicate = MIOPredicateWithFormat(format: "counter == 0")
+        XCTAssertEqual(try moc.fetch(request).count, 1, "baseline: the transaction is pending work")
+
+        // Process: flip the status, then the save fails (DB error)
+        tx.setValue(Int32(1), forKey: "counter")
+        store.failNextSave = true
+        XCTAssertThrowsError(try moc.save())
+
+        // The store row is untouched...
+        XCTAssertEqual(store.rows[tx.objectID.uriString]?["counter"] as? Int32, 0)
+        // ...but the context's pending change shadows it: the phantom state
+        XCTAssertEqual(try moc.fetch(request).count, 0, "pending status=1 excludes the row from a status=0 fetch — the incident symptom")
+        XCTAssertTrue(moc.hasChanges, "the poisoned state IS detectable: the context still has pending changes")
+
+        // Recovery without a restart: rollback restores reality
+        moc.rollback()
+        XCTAssertFalse(moc.hasChanges)
+        XCTAssertEqual(tx.value(forKey: "counter") as? Int32, 0, "rollback reloads the committed value from the store")
     }
 
     // MARK: refresh semantics
