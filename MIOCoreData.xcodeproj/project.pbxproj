@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		148A8D5F2C8F977500198836 /* FetchedResultsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148A8D5E2C8F976400198836 /* FetchedResultsController.swift */; };
+		D7C0000000000000000000B1 /* NSAttributeDescription+ValueConversion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C0000000000000000000A1 /* NSAttributeDescription+ValueConversion.swift */; };
 		14F0E7062B34C69000359FD1 /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */; };
 		14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */; };
 		14F0E72A2B34C83800359FD1 /* MIOManagedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E7252B34C83800359FD1 /* MIOManagedTests.swift */; };
@@ -29,6 +30,7 @@
 
 /* Begin PBXFileReference section */
 		148A8D5E2C8F976400198836 /* FetchedResultsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchedResultsController.swift; sourceTree = "<group>"; };
+		D7C0000000000000000000A1 /* NSAttributeDescription+ValueConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSAttributeDescription+ValueConversion.swift"; sourceTree = "<group>"; };
 		14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MIOCoreData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		14F0E7052B34C69000359FD1 /* MIOCoreDataTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MIOCoreDataTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "MIOCoreData+Context.swift"; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				148A8D5E2C8F976400198836 /* FetchedResultsController.swift */,
+				D7C0000000000000000000A1 /* NSAttributeDescription+ValueConversion.swift */,
 				873053CA2C86FAA900117645 /* MIOCoreData.swift */,
 				14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */,
 			);
@@ -199,6 +202,7 @@
 				873053CB2C86FAA900117645 /* MIOCoreData.swift in Sources */,
 				14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */,
 				148A8D5F2C8F977500198836 /* FetchedResultsController.swift in Sources */,
+				D7C0000000000000000000B1 /* NSAttributeDescription+ValueConversion.swift in Sources */,
 			);
 		};
 		14F0E7012B34C69000359FD1 /* Sources */ = {
@@ -362,7 +366,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
@@ -401,7 +405,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
