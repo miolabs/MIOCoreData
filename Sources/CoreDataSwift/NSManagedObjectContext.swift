@@ -392,7 +392,10 @@ open class NSManagedObjectContext : NSObject
         if updatedObjects.contains(object) { updatedObjects.remove(object) }
 
         insertedObjects.insert(object)
-        _registerObject(object)
+        // Apple contract (NSIncrementalStore): the store is never notified
+        // about temporary IDs — didRegister fires with the permanent ID after
+        // the save request (see NSIncrementalStore.save).
+        _registerObject(object, notifyStore: object.objectID.isTemporaryID == false)
         object._setIsInserted(true)
 
         if object._managedObjectContext == nil { object._managedObjectContext = self }
