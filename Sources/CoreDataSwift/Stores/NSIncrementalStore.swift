@@ -109,9 +109,18 @@ open class NSIncrementalStore : NSPersistentStore
     override func save (insertedObjects: Set<NSManagedObject>, updatedObjects: Set<NSManagedObject>, deletedObjects: Set <NSManagedObject>, context:NSManagedObjectContext) throws {
         
         let saveRequest = NSSaveChangesRequest(inserted: insertedObjects, updated: updatedObjects, deleted: deletedObjects, locked: nil)
-                                
+
         try _obtainPermanentIDs(for: Array(insertedObjects), context: context)
         _ = try execute(saveRequest, with: context)
+
+        // Apple contract: registration is only ever notified with permanent
+        // IDs, and for inserted objects it happens after the save request has
+        // let the store populate its row cache. The re-registration inside
+        // _obtainPermanentIDs is deliberately silent — this is the one and
+        // only notification for a newly inserted object.
+        if insertedObjects.isEmpty == false {
+            managedObjectContextDidRegisterObjects(with: insertedObjects.map { $0.objectID })
+        }
     }
     
     func _obtainPermanentIDs(for objects: [NSManagedObject], context:NSManagedObjectContext) throws {
