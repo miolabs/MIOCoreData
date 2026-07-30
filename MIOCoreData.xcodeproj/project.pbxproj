@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		148A8D5F2C8F977500198836 /* FetchedResultsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148A8D5E2C8F976400198836 /* FetchedResultsController.swift */; };
+		D7E0000000000000000000B1 /* MIOCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7E0000000000000000000A1 /* MIOCore.framework */; };
 		D7C0000000000000000000B1 /* NSAttributeDescription+ValueConversion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C0000000000000000000A1 /* NSAttributeDescription+ValueConversion.swift */; };
 		14F0E7062B34C69000359FD1 /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */; };
 		14F0E7232B34C82100359FD1 /* MIOCoreData+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0E71F2B34C82100359FD1 /* MIOCoreData+Context.swift */; };
@@ -30,6 +31,7 @@
 
 /* Begin PBXFileReference section */
 		148A8D5E2C8F976400198836 /* FetchedResultsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchedResultsController.swift; sourceTree = "<group>"; };
+		D7E0000000000000000000A1 /* MIOCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7C0000000000000000000A1 /* NSAttributeDescription+ValueConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSAttributeDescription+ValueConversion.swift"; sourceTree = "<group>"; };
 		14F0E6FB2B34C69000359FD1 /* MIOCoreData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MIOCoreData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		14F0E7052B34C69000359FD1 /* MIOCoreDataTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MIOCoreDataTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -45,6 +47,7 @@
 		14F0E6F82B34C69000359FD1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				D7E0000000000000000000B1 /* MIOCore.framework in Frameworks */,
 			);
 		};
 		14F0E7022B34C69000359FD1 /* Frameworks */ = {
