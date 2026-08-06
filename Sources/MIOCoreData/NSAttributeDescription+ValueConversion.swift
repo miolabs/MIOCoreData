@@ -67,7 +67,12 @@ extension NSAttributeDescription
 
         case .UUIDAttributeType:
             if let uuid = v as? UUID { return uuid }
-            if let string = v as? String, let uuid = UUID(uuidString: string) { return uuid }
+            if let string = v as? String {
+                // Legacy String columns converted to UUID hold '' where they
+                // meant "no value" — treat it like nil, not a failed conversion.
+                if string.isEmpty { return defaultValue }
+                if let uuid = UUID(uuidString: string) { return uuid }
+            }
             throw fail()
 
         case .stringAttributeType:
