@@ -487,18 +487,39 @@ open class NSManagedObjectContext : NSObject
     public var updatedObjects: Set<NSManagedObject> = Set()
     public var deletedObjects: Set<NSManagedObject> = Set()
     
+    /* Process-wide defaults for the two validation switches below, read once
+       from the environment so a deployment can relax validation without a
+       code change. Unset or unrecognized values keep the strict defaults.
+         CORE_DATA_VALIDATES_ON_SAVE=false             -> skip save validation
+         CORE_DATA_MANDATORY_VALIDATION_POLICY=warning -> log mandatory-property
+                                                          failures instead of
+                                                          failing the save */
+    static let validatesOnSaveDefault: Bool = {
+        guard let value = MCEnvironmentVar("CORE_DATA_VALIDATES_ON_SAVE")?.lowercased() else { return true }
+        let disabled = value == "false" || value == "no" || value == "0"
+        if disabled { Log.warning("CORE_DATA_VALIDATES_ON_SAVE=\(value): save validation is DISABLED for every context") }
+        return !disabled
+    }()
+
+    static let mandatoryValidationPolicyDefault: MIOMandatoryValidationPolicy = {
+        guard let value = MCEnvironmentVar("CORE_DATA_MANDATORY_VALIDATION_POLICY")?.lowercased() else { return .error }
+        let warning = value == "warning"
+        if warning { Log.warning("CORE_DATA_MANDATORY_VALIDATION_POLICY=warning: mandatory-property failures will be logged, not thrown") }
+        return warning ? .warning : .error
+    }()
+
     /* When false, save() skips the mandatory-property / delete-rule validation.
        Escape hatch for existing data sets that predate validation — prefer
        fixing the data over disabling the checks. */
-    open var validatesOnSave = true
+    open var validatesOnSave = NSManagedObjectContext.validatesOnSaveDefault
 
     /* How save() reacts to a non-optional property that has no value and no
        DBDefaultFunction to fill it: fail the save (default), or downgrade to
        a logged warning — an escape hatch for data sets that predate this
        validation. Count limits, deny delete rules and the validateFor* hooks
        always fail regardless of this policy. */
-    public enum MIOMandatoryValidationPolicy { case error, warning }
-    open var mandatoryValidationPolicy = MIOMandatoryValidationPolicy.error
+    public enum MIOMandatoryValidationPolicy : Sendable{ case error, warning }
+    open var mandatoryValidationPolicy = NSManagedObjectContext.mandatoryValidationPolicyDefault
 
     open func save() throws {
 
