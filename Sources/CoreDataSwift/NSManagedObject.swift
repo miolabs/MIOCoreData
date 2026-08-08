@@ -231,14 +231,16 @@ open class NSManagedObject : NSObject
         else if property is NSRelationshipDescription {
             let relationship = property as! NSRelationshipDescription
             if relationship.isToMany == false {
+                // try?: a target that can no longer be materialized (annihilated
+                // insert holding a temporary ID) reads as nil, not a hollow ghost.
                 if _changedValues.keys.contains(key) {
                     if let objID = _changedValues[key] as? NSManagedObjectID {
-                        value = try! managedObjectContext!.existingObject(with: objID)
+                        value = try? managedObjectContext!.existingObject(with: objID)
                     }
                 }
                 else {
                     if let objID = primitiveValue(forKey:key) as? NSManagedObjectID {
-                        value = try! managedObjectContext!.existingObject(with: objID)
+                        value = try? managedObjectContext!.existingObject(with: objID)
                     }
                 }
             }
@@ -246,12 +248,12 @@ open class NSManagedObject : NSObject
                 let values:Set<NSManagedObjectID>?
                 if _changedValues.keys.contains(key) {
                     values = _changedValues[key] as? Set<NSManagedObjectID>
-                } 
+                }
                 else {
                     values = primitiveValue(forKey:key) as? Set<NSManagedObjectID>
                 }
-                
-                value = Set( (values ?? Set()).map{ try! managedObjectContext!.existingObject(with: $0 ) } )
+
+                value = Set( (values ?? Set()).compactMap{ try? managedObjectContext!.existingObject(with: $0 ) } )
             }
         }
         
@@ -441,7 +443,13 @@ open class NSManagedObject : NSObject
                     return (k, Set( (v as! Set<NSManagedObjectID>).map{ try? managedObjectContext!.existingObject(with: $0 ) } ) )
                 } else {
                     if v is NSNull { return ( k, v ) }
-                    return (k, try! managedObjectContext!.existingObject(with: v as! NSManagedObjectID) )
+                    // A to-one target that cannot be materialized anymore (an
+                    // annihilated insert: temporary ID, object gone) reads as a
+                    // clear — the target never reached the store and never will.
+                    if let obj = try? managedObjectContext!.existingObject(with: v as! NSManagedObjectID) {
+                        return (k, obj)
+                    }
+                    return (k, NSNull())
                 }
             } else {
                 return (k,v)

@@ -16,6 +16,7 @@ enum NSManagedObjectContextError: Error
 {
     case fetchRequestEntityInvalid(_ entityName: String, functionName: String = #function)
     case parentContextsUnsupported
+    case temporaryObjectUnavailable(_ uri: String)
 }
 
 extension NSManagedObjectContextError: LocalizedError {
@@ -25,6 +26,8 @@ extension NSManagedObjectContextError: LocalizedError {
             return "NSManagedObjectContextError.fetchRequestEntityInvalid:\(entityName) \(functionName)."
         case .parentContextsUnsupported:
             return "NSManagedObjectContextError.parentContextsUnsupported: saving a child context is not implemented — the changes would be silently lost."
+        case let .temporaryObjectUnavailable(uri):
+            return "NSManagedObjectContextError.temporaryObjectUnavailable: \(uri) — the object of a temporary ID left the context (annihilated insert) and has no store row to fault from."
         }
     }
 }
@@ -221,6 +224,15 @@ open class NSManagedObjectContext : NSObject
         var obj = objectsByID[objectID.uriString]?.object
 
         if obj == nil {
+            // A temporary ID has no store row by definition: when its object is
+            // no longer registered (an annihilated insert), there is nothing to
+            // fault from. Re-creating it here minted hollow "ghosts" — objects
+            // whose every attribute reads nil — that poisoned delete propagation
+            // and changelog serialization downstream.
+            if objectID.isTemporaryID {
+                throw NSManagedObjectContextError.temporaryObjectUnavailable(objectID.uriString)
+            }
+
             //FIX: let objectClass = NSClassFromString(objectID.entity.name!) as! NSManagedObject.Type -> Doesn't work on Linux
             let objectClass = _MIOCoreClassFromString(objectID.entity.name!) as! NSManagedObject.Type
             obj = objectClass.init()
@@ -445,6 +457,12 @@ open class NSManagedObjectContext : NSObject
     // Track an object as dirty for the next save, without touching its
     // in-memory state. This is what setValue and friends call.
     func _markUpdated(_ object: NSManagedObject) {
+        // The set check alone misses annihilated inserts: deleted flag set but
+        // tracked in NO set. Delete propagation (deleteByCascade's trailing
+        // _markUpdated, a sibling's inverse write) must not revive a deleted
+        // object into updatedObjects — the revived ghost serialized as a bogus
+        // UPDATE of a row that never existed.
+        if object.isDeleted { return }
         if insertedObjects.contains(object) { return }
         if deletedObjects.contains(object) { return }
 
