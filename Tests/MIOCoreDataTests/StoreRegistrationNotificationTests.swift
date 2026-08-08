@@ -28,6 +28,13 @@ class RecordingIncrementalStore: CoreDataSwift.NSIncrementalStore
     // tests reset it in setUp and read it after acting.
     nonisolated(unsafe) static var events: [String] = []
 
+    /// When set, the next save request throws after permanent IDs have been
+    /// assigned — reproducing a backend failure mid-save (the context keeps
+    /// its pending sets, the inserted objects keep their permanent IDs).
+    nonisolated(unsafe) static var failNextSave = false
+
+    enum RecError: Error { case saveFailed }
+
     var nodesByURI: [String: CoreDataSwift.NSIncrementalStoreNode] = [:]
 
     public override func loadMetadata() throws {
@@ -44,6 +51,11 @@ class RecordingIncrementalStore: CoreDataSwift.NSIncrementalStore
         let upd = saveRequest.updatedObjects ?? Set()
         let del = saveRequest.deletedObjects ?? Set()
         RecordingIncrementalStore.events.append("execute(SAVE i=\(ins.count) u=\(upd.count) d=\(del.count))")
+
+        if RecordingIncrementalStore.failNextSave {
+            RecordingIncrementalStore.failNextSave = false
+            throw RecError.saveFailed
+        }
 
         for obj in ins {
             nodesByURI[obj.objectID.uriRepresentation().absoluteString] =
@@ -169,6 +181,50 @@ final class StoreRegistrationNotificationTests: XCTestCase
         XCTAssertEqual(RecordingIncrementalStore.events.filter { $0.hasPrefix("didUnregister") },
                        ["didUnregister(temp:false)"],
                        "reset unregisters the object with its permanent ID, got: \(RecordingIncrementalStore.events)")
+    }
+
+    // MARK: Insert + delete annihilation (Apple semantics)
+
+    func testInsertThenDeleteBeforeSaveNeverReachesStore() throws {
+        // An object inserted and deleted in the same save cycle never existed
+        // as far as the store is concerned. Its objectID is still temporary —
+        // the reference object is a String the store never minted, so letting
+        // it into a save request crashes any store that expects its own
+        // reference type (MIOPersistentStore forced-cast it to UUID).
+        let obj = insertSimpleEntity(name: "ephemeral")
+        moc.delete(obj)
+
+        XCTAssertTrue(moc.insertedObjects.isEmpty)
+        XCTAssertTrue(moc.deletedObjects.isEmpty,
+                      "a pending insert annihilates on delete instead of becoming a deletion")
+        XCTAssertFalse(moc.registeredObjects.contains(obj), "the object is gone from the context")
+
+        try moc.save()
+
+        XCTAssertTrue(RecordingIncrementalStore.events.filter { $0.hasPrefix("execute(SAVE") }.isEmpty,
+                      "nothing to save — the store must not be called, got: \(RecordingIncrementalStore.events)")
+    }
+
+    func testDeleteAfterFailedSaveDropsThePendingInsert() throws {
+        // Production sequence behind the DLHookServer crash: a save fails in
+        // the backend AFTER permanent IDs were assigned, the context stays
+        // dirty, and cleanup code then deletes the never-persisted object.
+        // That object's row does not exist in the store, so the retry save
+        // must not ask the store to delete it.
+        let obj = insertSimpleEntity(name: "doomed")
+        RecordingIncrementalStore.failNextSave = true
+        XCTAssertThrowsError(try moc.save())
+
+        XCTAssertTrue(moc.insertedObjects.contains(obj), "a failed save keeps the insert pending")
+
+        moc.delete(obj)
+        XCTAssertTrue(moc.deletedObjects.isEmpty,
+                      "the never-persisted object annihilates instead of becoming a deletion")
+
+        RecordingIncrementalStore.events = []
+        try moc.save()
+        XCTAssertTrue(RecordingIncrementalStore.events.filter { $0.hasPrefix("execute(SAVE") }.isEmpty,
+                      "the store must never see a delete for a row it never had, got: \(RecordingIncrementalStore.events)")
     }
 }
 
