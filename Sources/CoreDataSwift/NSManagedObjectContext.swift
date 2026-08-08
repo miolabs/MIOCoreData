@@ -473,13 +473,28 @@ open class NSManagedObjectContext : NSObject
         // propagation tears the relationships down
         object.prepareForDeletion()
 
+        // Apple semantics: an object whose insert was never saved annihilates
+        // on delete — it must not reach the store as a deletion. Its row does
+        // not exist there, and its objectID may still be temporary, carrying
+        // a String reference the store never minted (an incremental store
+        // force-casting that reference would crash).
+        let pendingInsert = insertedObjects.contains(object)
+
         insertedObjects.remove(object)
         object._setIsInserted(false)
         updatedObjects.remove(object)
         object._setIsUpdated(false)
-        deletedObjects.insert(object)
+        if pendingInsert == false {
+            deletedObjects.insert(object)
+        }
 
+        // Delete propagation still runs either way so inverse relationships
+        // on surviving objects are cleaned up
         object._setIsDeleted(true, cache: &cache)
+
+        if pendingInsert {
+            _unregisterObject(object)
+        }
     }
 
             
