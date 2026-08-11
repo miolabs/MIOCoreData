@@ -91,7 +91,7 @@ public func MIOPredicateWithFormat(format: String, arguments: [Any]) -> MIOPredi
 // hand-written scanner and recursive-descent parser with a per-format token
 // cache. The regex lexer that lived here was O(n^2) per parse.
 
-func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: MIOPredicate) -> [NSManagedObject]
+public func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: MIOPredicate) -> [NSManagedObject]
 {
     var results:[NSManagedObject] = []
     for obj in objects {
@@ -104,7 +104,7 @@ func MIOPredicateEvaluateObjects(_ objects: [NSManagedObject], using predicate: 
 }
 
 
-func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate) -> Bool
+public func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate) -> Bool
 {
     if predicate is NSComparisonPredicate {
         let cmp = predicate as! NSComparisonPredicate
@@ -147,6 +147,97 @@ func MIOPredicateEvaluate(object: NSManagedObject, using predicate: MIOPredicate
     return false
 }
 
+
+// Evaluation against a plain values dictionary — same comparison semantics as
+// the managed-object path, with dictionary[keyPath] taking the place of
+// object.value(forKeyPath:). Missing keys and NSNull both resolve to nil, so
+// "key == null" matches either.
+public func MIOPredicateEvaluate(values: [String:Any], using predicate: MIOPredicate) -> Bool
+{
+    if predicate is NSComparisonPredicate {
+        let cmp = predicate as! NSComparisonPredicate
+
+        if cmp.comparisonPredicateModifier != .direct {
+            return MIOPredicateEvaluateToMany(values: values, using: cmp)
+        }
+
+        func resolve(_ expression: MIOExpression) -> Any? {
+            switch expression.expressionType {
+            case .keyPath: return MIOPredicateDictionaryValue(values, forKeyPath: expression.keyPath)
+            case .constantValue: return expression.constantValue
+            case .evaluatedObject: return values   // SELF
+            default: return nil
+            }
+        }
+
+        return MIOPredicateApplyOperator(resolve(cmp.leftExpression), resolve(cmp.rightExpression), cmp.predicateOperatorType, cmp.options)
+    }
+    else if predicate is NSCompoundPredicate {
+        let compound = predicate as! NSCompoundPredicate
+
+        switch ( compound.compoundPredicateType ) {
+        case .not: return !MIOPredicateEvaluate( values: values, using: compound.subpredicates[ 0 ] )
+        case .and: return compound.subpredicates.reduce(true) { result, predicate in
+                result && MIOPredicateEvaluate(values: values, using: predicate)
+            }
+        case .or : return compound.subpredicates.reduce(false) { result, predicate in
+                result || MIOPredicateEvaluate(values: values, using: predicate)
+            }
+        }
+    }
+
+    return false
+}
+
+public func MIOPredicateEvaluateItems(_ items: [[String:Any]], using predicate: MIOPredicate) -> [[String:Any]]
+{
+    return items.filter { MIOPredicateEvaluate(values: $0, using: predicate) }
+}
+
+// Keys containing dots win over nested traversal; otherwise each dot descends
+// into a nested [String:Any]
+func MIOPredicateDictionaryValue(_ values: [String:Any], forKeyPath keyPath: String) -> Any?
+{
+    func normalize(_ value: Any?) -> Any? { return value is NSNull ? nil : value }
+
+    if let value = values[keyPath] { return normalize(value) }
+
+    var current: Any? = values
+    for component in keyPath.split(separator: ".") {
+        guard let dict = current as? [String:Any] else { return nil }
+        current = dict[String(component)]
+    }
+    return normalize(current)
+}
+
+// ANY items.name == 'x' / ALL items.done == true over an array value — the
+// dictionary counterpart of the to-many relationship walker below
+func MIOPredicateEvaluateToMany(values: [String:Any], using cmp: NSComparisonPredicate) -> Bool
+{
+    guard cmp.leftExpression.expressionType == .keyPath else { return false }
+
+    let keyPath = cmp.leftExpression.keyPath
+    let parts = keyPath.split(separator: ".", maxSplits: 1)
+    let collectionName = String(parts[0])
+    let remainder = parts.count > 1 ? String(parts[1]) : nil
+
+    guard let members = values[collectionName] as? [Any] else { return false }
+
+    let rightValue = cmp.rightExpression.expressionType == .constantValue ? cmp.rightExpression.constantValue : nil
+
+    func leftValue(_ member: Any) -> Any? {
+        guard let remainder = remainder else { return member }
+        guard let dict = member as? [String:Any] else { return nil }
+        return MIOPredicateDictionaryValue(dict, forKeyPath: remainder)
+    }
+
+    if cmp.comparisonPredicateModifier == .any {
+        return members.contains { MIOPredicateApplyOperator(leftValue($0), rightValue, cmp.predicateOperatorType, cmp.options) }
+    }
+
+    // .all
+    return members.allSatisfy { MIOPredicateApplyOperator(leftValue($0), rightValue, cmp.predicateOperatorType, cmp.options) }
+}
 
 // One operator dispatcher shared by direct evaluation and the ANY/ALL walker
 func MIOPredicateApplyOperator(_ leftValue: Any?, _ rightValue: Any?, _ op: MIOComparisonPredicate.Operator, _ options: MIOComparisonPredicate.Options) -> Bool
