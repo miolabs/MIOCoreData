@@ -266,6 +266,12 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         case "Transformable":
             attrType = NSAttributeType.transformableAttributeType
             
+        case "Binary", "Binary Data":
+            attrType = NSAttributeType.binaryDataAttributeType
+            
+        case "URI":
+            attrType = NSAttributeType.URIAttributeType
+            
         default:
             print("MIOManagedObjectModel: Unknown class type: " + type);
         }

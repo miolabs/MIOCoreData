@@ -12,6 +12,7 @@ let package = Package(
     products: [
         .library(name: "CoreDataSwift", targets: ["CoreDataSwift"]),
         .library(name: "MIOCoreData", targets: ["MIOCoreData"]),
+        .library(name: "MIOCoreDataSerialization", targets: ["MIOCoreDataSerialization"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -39,6 +40,13 @@ let package = Package(
     //        swiftSettings: [ .define( "APPLE_CORE_DATA" ) ]
         ),
         .target(
+            name: "MIOCoreDataSerialization",
+            dependencies: [
+                "MIOCoreData",
+                .product(name: "MIOCore", package: "MIOCore"),
+            ]
+        ),
+        .target(
             name: "TestModel",
             dependencies: ["MIOCoreData"],
             path: "Tests/TestModel",
@@ -47,6 +55,10 @@ let package = Package(
         .testTarget(
             name: "MIOCoreDataTests",
             dependencies: ["MIOCoreData", "TestModel"]
+        ),
+        .testTarget(
+            name: "MIOCoreDataSerializationTests",
+            dependencies: ["MIOCoreDataSerialization"]
         ),
         .testTarget(
             name: "AppleCoreDataTests"
