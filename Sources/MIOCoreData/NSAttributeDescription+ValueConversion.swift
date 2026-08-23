@@ -61,6 +61,10 @@ extension NSAttributeDescription
         case .dateAttributeType:
             if let date = v as? Date { return date }
             if let string = v as? String {
+                // Wire timestamps without an offset are UTC (same contract as the DB layer):
+                // parse in GMT0 first so a server outside UTC doesn't shift them, then fall
+                // back to the lenient parser for other shapes (milliseconds, explicit offsets...).
+                if let date = MCDateGMT0Parser( string ) { return date }
                 if let date = MIOCoreDate(fromString: string) { return date }
             }
             throw fail()
