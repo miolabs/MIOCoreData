@@ -19,7 +19,8 @@ let package = Package(
         // TEMP-LOCAL: wasm spike — local MIOCore has WASI gates; restore the github URL before committing
         .package( url: "https://github.com/miolabs/MIOCore.git", branch: "master" ),
         .package( url: "https://github.com/apple/swift-argument-parser", from: "1.5.0" ),
-        .package( url: "https://github.com/miolabs/MIOCoreDataTools.git", branch: "main" )
+        .package( url: "https://github.com/miolabs/MIOCoreDataTools.git", branch: "main" ),
+        .package( url: "https://github.com/miolabs/MIOEntityCore.git", branch: "main" )
     ],
     targets: [
         .target(
@@ -35,6 +36,7 @@ let package = Package(
                 "CoreDataSwift",
                 .product(name: "MIOCore", package: "MIOCore"),
                 .product(name: "MIOCoreLogger", package: "MIOCore"),
+                .product(name: "MIOEntityCore", package: "MIOEntityCore"),
             ]
     //        swiftSettings: [ .define( "APPLE_CORE_DATA" ) ]
         ),
