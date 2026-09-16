@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.1
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -16,9 +16,10 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package( url: "https://github.com/miolabs/MIOCore.git", branch:"master" ),
+        // TEMP-LOCAL: wasm spike — local MIOCore has WASI gates; restore the github URL before committing
+        .package( url: "https://github.com/miolabs/MIOCore.git", from: "2.0.0" ),
         .package( url: "https://github.com/apple/swift-argument-parser", from: "1.5.0" ),
-        .package(url: "https://github.com/miolabs/MIOCoreDataTools.git", branch: "main")
+        .package( url: "https://github.com/miolabs/MIOCoreDataTools.git", branch: "main" )
     ],
     targets: [
         .target(

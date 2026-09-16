@@ -23,24 +23,30 @@ class TestIncrementalStore: NSIncrementalStore
     }
     
     public override func execute(_ request: NSPersistentStoreRequest, with context: NSManagedObjectContext?) throws -> Any {
-        
-        switch request {
-            
-        case let fetchRequest as NSFetchRequest<NSManagedObject>:
-            return try fetch_objects( request: fetchRequest, with: context! )
-            
-        case let saveRequest as NSSaveChangesRequest:
+
+        if let saveRequest = request as? NSSaveChangesRequest {
             try save_objects( request: saveRequest, with: context! )
             return []
-            
-        default: return try super.execute(request, with: context)
         }
+
+        // Anything else is a fetch. NOTE: a typed NSFetchRequest<SimpleEntity>
+        // does not cast to NSFetchRequest<NSManagedObject> (generics are
+        // invariant), so the request type cannot be switched on here. The
+        // store returns committed objects only — unsaved context objects are
+        // not part of any fetch result.
+        return try fetch_objects( with: context! )
     }
-    
+
     var _objects_by_entity_name:[String:[String:NSIncrementalStoreNode]] = [:]
-    
-    func fetch_objects( request:NSFetchRequest<NSManagedObject>, with context:NSManagedObjectContext ) throws -> [Any] {
-        throw TestIncrementalStoreError.uninplemented
+
+    func fetch_objects( with context:NSManagedObjectContext ) throws -> [Any] {
+        var results:[NSManagedObject] = []
+        for (_, nodes) in _objects_by_entity_name {
+            for (_, node) in nodes {
+                results.append( try context.existingObject(with: node.objectID) )
+            }
+        }
+        return results
     }
     
     func save_objects( request:NSSaveChangesRequest, with context:NSManagedObjectContext ) throws {

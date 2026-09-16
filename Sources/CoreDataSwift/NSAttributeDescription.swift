@@ -9,7 +9,7 @@
 
 import Foundation
 
-public enum NSAttributeType : UInt
+public enum NSAttributeType : UInt, Sendable
 {
     case undefinedAttributeType = 0
     case integer16AttributeType = 100

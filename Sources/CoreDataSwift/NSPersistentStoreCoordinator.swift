@@ -85,8 +85,16 @@ open class NSPersistentStoreCoordinator : NSObject
 //
 //    }
     
+#if os(WASI)
+    // WASI is single-threaded: no Dispatch available, execute bodies inline
+    struct _StoreQueueShim {
+        func sync<T>(execute body: () -> T) -> T { body() }
+    }
+    static let _store_queue = _StoreQueueShim()
+#else
     static let _store_queue = DispatchQueue(label: "com.miocoredata.store_queue")
-    static var _registeredStoreTypes:[String:Any] = [NSSQLiteStoreType: NSSQLiteStore.self, NSBinaryStoreType: NSBinaryStore.self, NSInMemoryStoreType: NSInMemoryStore.self]
+#endif
+    nonisolated(unsafe) static var _registeredStoreTypes:[String:Any] = [NSSQLiteStoreType: NSSQLiteStore.self, NSBinaryStoreType: NSBinaryStore.self, NSInMemoryStoreType: NSInMemoryStore.self]
     open class var registeredStoreTypes: [String : Any] { get {
         var types:[String:Any] = [:]
         _store_queue.sync {

@@ -12,7 +12,9 @@ enum MIOCoreDataContextError : Error
     case entityDescriptionNotFound( _ name: String )
 }
 
+#if canImport(ObjectiveC)
 @objc
+#endif
 public protocol MIOCoreDataContextProtocol
 {
     var mom: NSManagedObjectModel { get }

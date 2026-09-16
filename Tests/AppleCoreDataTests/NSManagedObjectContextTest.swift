@@ -8,7 +8,7 @@
 import Foundation
 import CoreData
 
-fileprivate var _persistentContainer: NSPersistentContainer? = nil
+nonisolated(unsafe) fileprivate var _persistentContainer: NSPersistentContainer? = nil
 
 func NSManagedObjectContextTest () -> NSManagedObjectContext
 {

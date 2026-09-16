@@ -89,7 +89,9 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
             let syncable = attributeDict["syncable"]
             let use_scalar = attributeDict[ "usesScalarValueType" ] != nil ? attributeDict[ "usesScalarValueType" ]!.lowercased() == "yes" : false
             let is_transient = attributeDict[ "transient" ] != nil ? attributeDict[ "transient" ]!.lowercased() == "yes" : false
-            let defaultValueString = attributeDict["defaultValueString"] ?? attributeDict["defaultDateTimeInterval"]
+            // "defaultValueString" is Xcode's spelling; tool-generated model
+            // files (DLDBManager exports) write "defaultValue" — accept both
+            let defaultValueString = attributeDict["defaultValueString"] ?? attributeDict["defaultValue"] ?? attributeDict["defaultDateTimeInterval"]
             
             addAttribute(name: name!, type: type!, optional: optional, syncable: syncable, defaultValueString: defaultValueString, useScalar: use_scalar, isTransient: is_transient )
         }
@@ -102,8 +104,8 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
             let inverseName = attributeDict["inverseName"]
             let inverseEntityName = attributeDict["inverseEntity"]
             let deletionRule = attributeDict["deletionRule"]
-            
-            addRelationship(name:name!, destinationEntityName:destinationEntityName!, toMany:toMany, inverseName:inverseName, inverseEntityName:inverseEntityName, optional:optional, deleteRuleString: deletionRule)
+
+            addRelationship(name:name!, destinationEntityName:destinationEntityName!, toMany:toMany, inverseName:inverseName, inverseEntityName:inverseEntityName, optional:optional, deleteRuleString: deletionRule, minCount: attributeDict["minCount"], maxCount: attributeDict["maxCount"])
         }
         else if elementName == "userInfo" {
             currentUserInfo = [:]
@@ -187,7 +189,9 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         #endif
         
         Log.debug("Model parser finished")
+        #if !os(WASI) // wasm Foundation lacks the legacy Notification.Name post API
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "MIOManagedObjectModelDidParseDataModel") , object: nil)
+        #endif
     }
     
     func buildGraph(){
@@ -273,20 +277,28 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         currentAttribute?.useScalar = useScalar
     }
     
-    func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String, deleteRuleString:String?){
-                        
+    func addRelationship(name:String, destinationEntityName:String, toMany:String?, inverseName:String?, inverseEntityName:String?, optional:String, deleteRuleString:String?, minCount:String? = nil, maxCount:String? = nil){
+
         let isToMany = (toMany != nil && toMany?.lowercased() == "yes") ? true : false
         let opt = optional.lowercased() == "yes" ? true : false
-        
+
         //NSLog("ManagedObjectModelParser:addRelationship: \(name) \(destinationEntityName) toMany:\(isToMany ? "YES" : "NO")")
         var deleteRule = NSDeleteRule.noActionDeleteRule
         switch deleteRuleString {
         case "Nullify": deleteRule = .nullifyDeleteRule
         case "Cascade": deleteRule = .cascadeDeleteRule
+        case "Deny":    deleteRule = .denyDeleteRule
         default:break
         }
-                
+
         currentRelationship = currentEntity!.addRelationship(name: name, destinationEntityName: destinationEntityName, toMany: isToMany, optional: opt, inverseName: inverseName, inverseEntityName: inverseEntityName, deleteRule: deleteRule)
+
+        // Cardinality limits, only meaningful for to-many (a to-one keeps
+        // maxCount == 1, which is also the isToMany marker)
+        if isToMany {
+            if let minC = MIOCoreIntValue(minCount), minC > 0 { currentRelationship!.minCount = minC }
+            if let maxC = MIOCoreIntValue(maxCount), maxC > 1 { currentRelationship!.maxCount = maxC }
+        }
     }
 }
 

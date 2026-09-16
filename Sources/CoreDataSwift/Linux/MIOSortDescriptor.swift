@@ -71,24 +71,33 @@ extension NSSet {
 extension Array
 {
     public func sortedArray(using sortDescriptors: [NSSortDescriptor]) -> [Element] {
-        let results = sorted { a, b in
-            
-            for sd in sortDescriptors {
-                let key = sd.key!
-                
-                let lv = a is NSManagedObject ? (a as! NSManagedObject).value(forKeyPath: key) : a
-                let rv = b is NSManagedObject ? (b as! NSManagedObject).value(forKeyPath: key) : b
+        if sortDescriptors.isEmpty || count < 2 { return self }
 
-                if MIOPredicateEvaluateLess(lv, rv) { return sd.ascending }
-                else if !MIOPredicateEvaluateLessEqual(lv, rv) { return !sd.ascending }
+        // Decorate-sort-undecorate: extract every sort key ONCE per element.
+        // The old comparator ran value(forKeyPath:) inside the sort — that is
+        // O(n log n * k) trips through the KVC/faulting machinery instead of
+        // O(n * k), and it double-evaluated (Less + LessEqual) per descriptor.
+        let keys: [[Any?]] = map { element in
+            sortDescriptors.map { descriptor -> Any? in
+                guard let key = descriptor.key else { return nil }
+                guard let object = element as? NSManagedObject else { return element }
+                return object.value(forKeyPath: key)
             }
-                       
+        }
+
+        let sortedIndices = Array<Int>(indices).sorted { a, b in
+            for (i, descriptor) in sortDescriptors.enumerated() {
+                switch MIOPredicateCompareValues(keys[a][i], keys[b][i]) {
+                case .orderedSame: continue
+                case .orderedAscending: return descriptor.ascending
+                case .orderedDescending: return !descriptor.ascending
+                }
+            }
             return false
         }
-     
-        return results
+
+        return sortedIndices.map { self[$0] }
     }
-   
 }
 
 #endif
