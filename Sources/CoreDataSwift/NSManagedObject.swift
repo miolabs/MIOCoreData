@@ -641,15 +641,26 @@ open class NSManagedObject : NSObject
         // relationShipsNamedNotFault = Set()
     }
     
+    // Pulls one relationship from the store into the snapshot. The key is
+    // marked resolved only once the store answered: a thrown store error (a
+    // delegate/DB failure, a destination row the store could not fetch)
+    // leaves the relationship faulted, so the next access asks the store
+    // again. The old `try?` swallowed the error and still marked the key
+    // resolved, so one failed fetch read as nil for the rest of the object's
+    // life — a mandatory to-one crashing its force-unwrapping accessor with
+    // the row perfectly valid in the DB — and nothing in the log said why.
     func unfaultRelationshipNamed(_ key:String, fromStore store:NSPersistentStore?) {
         //if _isDeleted == true { return }
-        
+
         if store == nil { return }
         if isFault { unfaultAttributes(fromStore: store! ) }
-        
-        relationShipsNamedNotFault.insert(key)
 
-        guard let relation = entity.relationshipsByName[key] else { return }
+        // Attributes also land here through primitiveValue: nothing to
+        // resolve, just skip the lookup next time.
+        guard let relation = entity.relationshipsByName[key] else {
+            relationShipsNamedNotFault.insert(key)
+            return
+        }
 
         // In-memory store rows carry relationships as object IDs directly
         if let memory_store = store as? NSInMemoryStore {
@@ -657,15 +668,26 @@ open class NSManagedObject : NSObject
             if let value = values?[key], (value is NSNull) == false {
                 _storedValues[relation.name] = value
             }
+            relationShipsNamedNotFault.insert(key)
             return
         }
 
-        guard let incrementalStore = store as? NSIncrementalStore else { return }
+        guard let incrementalStore = store as? NSIncrementalStore else {
+            relationShipsNamedNotFault.insert(key)
+            return
+        }
 
-        let value = try? incrementalStore.newValue(forRelationship: relation, forObjectWith: objectID, with: managedObjectContext)
-        if value == nil { return }
+        let value:Any
+        do {
+            value = try incrementalStore.newValue(forRelationship: relation, forObjectWith: objectID, with: managedObjectContext)
+        }
+        catch {
+            Log.error( "Could not fulfill fault for \(entity.name ?? "?").\(key) of \(objectID.uriString): \(error)" )
+            return
+        }
 
-        _storedValues[relation.name] = relation.isToMany ? Set( value! as! [NSManagedObjectID] ) : value!
+        _storedValues[relation.name] = relation.isToMany ? Set( value as! [NSManagedObjectID] ) : value
+        relationShipsNamedNotFault.insert(key)
     }
     
     func _didCommit( inserted: Bool = false ) {
