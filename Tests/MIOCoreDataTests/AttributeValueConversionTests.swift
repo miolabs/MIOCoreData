@@ -64,6 +64,27 @@ final class AttributeValueConversionTests: XCTestCase
         assertThrows(attr, "not a date")
     }
 
+    /// The forced-zone escape hatch: a caller-chosen zone (e.g. GMT+0) overrides the
+    /// wall-clock default, independent of the process time zone. Not used in production
+    /// today, but the library keeps the option open.
+    func testDateConversionInAForcedTimeZone() throws {
+        let attr = attribute(.dateAttributeType)
+        let utc = TimeZone(secondsFromGMT: 0)!
+
+        let d = try attr.coreDataValue(from: "2026-08-13 16:00:00", dateTimeZone: utc) as? Date
+        XCTAssertEqual(d?.timeIntervalSince1970, 1_786_636_800)  // 2026-08-13T16:00:00Z, whatever the host zone
+
+        let dubai = TimeZone(identifier: "Asia/Dubai")!
+        let d2 = try attr.coreDataValue(from: "2026-08-13 16:00:00", dateTimeZone: dubai) as? Date
+        XCTAssertEqual(d2?.timeIntervalSince1970, 1_786_636_800 - 4 * 3600)
+
+        // A Date value passes through untouched, zone or not.
+        let instant = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertEqual(try attr.coreDataValue(from: instant, dateTimeZone: utc) as? Date, instant)
+
+        XCTAssertThrowsError(try attr.coreDataValue(from: "not a date", dateTimeZone: utc))
+    }
+
     // MARK: UUID
 
     func testUUIDConversions() throws {
