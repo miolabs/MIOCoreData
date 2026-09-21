@@ -45,7 +45,14 @@ extension NSAttributeDescription
 {
     /// Converts an untyped transport value into the Core Data value class for
     /// this attribute's type. See the header comment for the exact semantics.
-    public func coreDataValue(from value: Any?) throws -> Any? {
+    ///
+    /// - Parameters:
+    ///   - value: The untyped transport value.
+    ///   - dateTimeZone: By default (`nil`) date strings follow the wall-clock contract —
+    ///     they are read in the process time zone, as-is. A caller that needs a fixed frame
+    ///     can force one, e.g. `TimeZone(secondsFromGMT: 0)` to convert in GMT+0. The zone
+    ///     only affects `.dateAttributeType` values arriving as strings.
+    public func coreDataValue(from value: Any?, dateTimeZone: TimeZone? = nil) throws -> Any? {
 
         if value == nil || value is NSNull {
             return defaultValue
@@ -61,11 +68,18 @@ extension NSAttributeDescription
         case .dateAttributeType:
             if let date = v as? Date { return date }
             if let string = v as? String {
-                // Wire timestamps without an offset are UTC (same contract as the DB layer):
-                // parse in GMT0 first so a server outside UTC doesn't shift them, then fall
-                // back to the lenient parser for other shapes (milliseconds, explicit offsets...).
-                if let date = MCDateGMT0Parser( string ) { return date }
-                if let date = MIOCoreDate(fromString: string) { return date }
+                // A caller-chosen zone is the deliberate opt-out from the wall-clock
+                // default: the text is read in that zone, markers still ignored.
+                if let tz = dateTimeZone {
+                    if let date = MCDate.parseOrNil( string, in: tz ) { return date }
+                    throw fail()
+                }
+                // Wire timestamps are the local wall clock with no offset (the DualLinkDB
+                // contract, same as the DB layer): parse with the wall-clock engine, which
+                // also ignores embedded zone markers. The explicit-UTC parser is only a
+                // last resort for ISO shapes the wall-clock engine cannot read.
+                if let date = MCDate.parseOrNil( string ) { return date }
+                if let date = MCDate.parseUTC( string ) { return date }
             }
             throw fail()
 
