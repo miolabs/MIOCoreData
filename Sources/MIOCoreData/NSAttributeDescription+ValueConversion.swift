@@ -150,8 +150,19 @@ extension NSAttributeDescription
             if let string = v as? String, let data = Data(base64Encoded: string) { return data }
             throw fail()
 
+        case .URIAttributeType:
+            // Apple Core Data holds a URL in memory; the store carries it as its
+            // absolute string when the database has no URI type of its own.
+            if let url = v as? URL { return url }
+            if let string = v as? String {
+                // Same precedent as UUID: a legacy text column re-typed as URI holds '' for "no value".
+                if string.isEmpty { return defaultValue }
+                if let url = URL(string: string) { return url }
+            }
+            throw fail()
+
         default:
-            // undefined, objectID, URI, composite (Apple builds): no
+            // undefined, objectID, composite (Apple builds): no
             // conversion defined — pass through untouched
             return v
         }

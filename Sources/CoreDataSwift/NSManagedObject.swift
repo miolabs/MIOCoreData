@@ -894,6 +894,7 @@ open class NSManagedObject : NSObject
             case let v as UUID:      json[key] = v.uuidString
             case let v as Decimal:   json[key] = "\(v)"
             case let v as Data:      json[key] = v.base64EncodedString()
+            case let v as URL:       json[key] = v.absoluteString
             case let v as NSNumber:  json[key] = v
             case let v?:             json[key] = "\(v)"
             }
