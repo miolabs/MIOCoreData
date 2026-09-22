@@ -22,6 +22,12 @@ import Foundation
 import MIOCore
 @testable import CoreDataSwift
 
+#if !canImport(ObjectiveC)
+// Linux has no autorelease pools; the body runs as-is so the lifetime
+// assertions below read the same on both platforms.
+private func autoreleasepool<T>(_ body: () throws -> T) rethrows -> T { try body() }
+#endif
+
 // MARK: - Runtime classes
 
 class CDLifeEntity: CoreDataSwift.NSManagedObject {}

@@ -5,6 +5,9 @@
 //  Created by Javier Segura Perez on 22/09/2020.
 //
 
+// CoreDataSwift-only: exercises MIO* predicate/model types that the Apple build does not vend.
+#if !APPLE_CORE_DATA
+
 import Foundation
 import XCTest
 import MIOCoreData
@@ -59,7 +62,7 @@ final class MIOPredicateTests: XCTestCase {
         XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.contains, "MIOComparisonPredicate operator type is not 'contains'" )
         
         let array = ["1", "2"]
-        predicate = MIOPredicateWithFormat(format: "value in %@", array) as! MIOComparisonPredicate
+        predicate = MIOPredicateWithFormat(format: "value in %@", arguments: [array]) as! MIOComparisonPredicate
         XCTAssertTrue( predicate.predicateOperatorType == MIOComparisonPredicate.Operator.in, "NSComparisionPredicate operator type is not 'in'" )
     }
     
@@ -111,7 +114,7 @@ final class MIOPredicateTests: XCTestCase {
         XCTAssertTrue( predicate.rightExpression.constantValue == nil, "Null value conversion fails. Value is wrong: \(String(describing: predicate.rightExpression.constantValue))")
         
         let array = ["1", "2"]
-        predicate = MIOPredicateWithFormat(format: "value in %@", array) as! MIOComparisonPredicate
+        predicate = MIOPredicateWithFormat(format: "value in %@", arguments: [array]) as! MIOComparisonPredicate
         if let v = predicate.rightExpression.constantValue as? [String] {
             XCTAssertTrue( true, "String value conversion fails. Value is wrong: \(v)")
         }
@@ -629,3 +632,5 @@ final class MIOPredicateTests: XCTestCase {
         XCTAssertTrue( ( value as? [String] ) == ["pepe", "otilio"], "MIOComparisonPredicate rigth expression constant value is wrong" )
     }
 }
+
+#endif

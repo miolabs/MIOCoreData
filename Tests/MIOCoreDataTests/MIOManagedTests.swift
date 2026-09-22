@@ -5,6 +5,9 @@
 //  Created by Javier Segura Perez on 5/4/21.
 //
 
+// CoreDataSwift-only: exercises MIO* predicate/model types that the Apple build does not vend.
+#if !APPLE_CORE_DATA
+
 import Foundation
 import XCTest
 import MIOCoreData
@@ -122,3 +125,5 @@ class MIOManagedTests: XCTestCase
  
 }
         
+
+#endif

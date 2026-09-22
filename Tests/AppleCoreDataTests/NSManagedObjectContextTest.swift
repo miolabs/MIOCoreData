@@ -5,6 +5,9 @@
 //  Created by Javier Segura Perez on 5/4/21.
 //
 
+// Apple Core Data only: this target has no Linux counterpart.
+#if canImport(CoreData) && !os(Linux)
+
 import Foundation
 import CoreData
 
@@ -57,3 +60,5 @@ func NSManagedObjectContextTest () -> NSManagedObjectContext
     
     return _persistentContainer!.viewContext
 }
+
+#endif

@@ -15,12 +15,15 @@ public typealias NSSortDescriptor = MIOSortDescriptor
 
 @_exported import CoreData
 
+// Each element of `args` binds ONE placeholder, exactly like CoreDataSwift's parser.
+// `NSPredicate(format:_:)` must not receive the array as a single vararg: `%K` would
+// then get an NSArray and Foundation throws `-[NSArray rangeOfString:]` while parsing.
 public func MIOPredicateWithFormat(format: String, _ args: CVarArg...) -> NSPredicate {
-    return NSPredicate(format: format, args )
+    return NSPredicate(format: format, argumentArray: args )
 }
 
 public func MIOPredicateWithFormat(format: String, arguments: [Any]) -> NSPredicate {
-    return NSPredicate(format: format, arguments )
+    return NSPredicate(format: format, argumentArray: arguments )
 }
 
 #endif
