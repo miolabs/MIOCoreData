@@ -5,6 +5,9 @@
 //  Created by Javier Segura Perez on 22/09/2020.
 //
 
+// Apple Core Data only: this target has no Linux counterpart.
+#if canImport(CoreData) && !os(Linux)
+
 import XCTest
 import Foundation
 import CoreData
@@ -613,4 +616,4 @@ final class NSPredicateTests: XCTestCase
     }
 }
 
-
+#endif

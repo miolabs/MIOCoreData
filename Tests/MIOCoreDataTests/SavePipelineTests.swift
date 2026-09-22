@@ -327,23 +327,28 @@ final class SavePipelineTests: XCTestCase
     // MARK: DidSave notification
 
     func testDidSaveNotificationCarriesChangeSets() throws {
-        var insertedCount = -1
-        var updatedCount = -1
-        var deletedCount = -1
+        // A reference box: the observer closure is @Sendable on Linux, so it
+        // cannot mutate captured locals there.
+        final class ChangeCounts: @unchecked Sendable {
+            var inserted = -1
+            var updated = -1
+            var deleted = -1
+        }
+        let counts = ChangeCounts()
 
         let observer = NotificationCenter.default.addObserver(forName: Notification.Name("NSManagedObjectContextDidSaveNotification"), object: moc, queue: nil) { (note: Notification) in
-            insertedCount = (note.userInfo?[CoreDataSwift.NSInsertedObjectsKey] as? Set<CoreDataSwift.NSManagedObject>)?.count ?? -1
-            updatedCount = (note.userInfo?[CoreDataSwift.NSUpdatedObjectsKey] as? Set<CoreDataSwift.NSManagedObject>)?.count ?? -1
-            deletedCount = (note.userInfo?[CoreDataSwift.NSDeletedObjectsKey] as? Set<CoreDataSwift.NSManagedObject>)?.count ?? -1
+            counts.inserted = (note.userInfo?[CoreDataSwift.NSInsertedObjectsKey] as? Set<CoreDataSwift.NSManagedObject>)?.count ?? -1
+            counts.updated = (note.userInfo?[CoreDataSwift.NSUpdatedObjectsKey] as? Set<CoreDataSwift.NSManagedObject>)?.count ?? -1
+            counts.deleted = (note.userInfo?[CoreDataSwift.NSDeletedObjectsKey] as? Set<CoreDataSwift.NSManagedObject>)?.count ?? -1
         }
         defer { NotificationCenter.default.removeObserver(observer) }
 
         insert("CDSaveValEntity", name: "notified")
         try moc.save()
 
-        XCTAssertEqual(insertedCount, 1)
-        XCTAssertEqual(updatedCount, 0)
-        XCTAssertEqual(deletedCount, 0)
+        XCTAssertEqual(counts.inserted, 1)
+        XCTAssertEqual(counts.updated, 0)
+        XCTAssertEqual(counts.deleted, 0)
     }
 
     // MARK: rollback

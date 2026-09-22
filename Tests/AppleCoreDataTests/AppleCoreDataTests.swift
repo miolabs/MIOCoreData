@@ -1,3 +1,6 @@
+// Apple Core Data only: this target has no Linux counterpart.
+#if canImport(CoreData) && !os(Linux)
+
 import XCTest
 
 final class AppleCoreDataTests: XCTestCase {
@@ -9,3 +12,5 @@ final class AppleCoreDataTests: XCTestCase {
         //XCTAssertEqual(MIOCoreData().text, "Hello, World!")
     }
 }
+
+#endif

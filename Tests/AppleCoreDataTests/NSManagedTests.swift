@@ -5,6 +5,9 @@
 //  Created by Javier Segura Perez on 5/4/21.
 //
 
+// Apple Core Data only: this target has no Linux counterpart.
+#if canImport(CoreData) && !os(Linux)
+
 import Foundation
 import XCTest
 import CoreData
@@ -70,3 +73,5 @@ final class NSManagedTests: XCTestCase
     
 }
         
+
+#endif
