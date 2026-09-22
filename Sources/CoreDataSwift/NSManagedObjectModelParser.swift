@@ -266,11 +266,13 @@ class MIOManagedObjectModelParser : NSObject, XMLParserDelegate
         case "Transformable":
             attrType = NSAttributeType.transformableAttributeType
             
-        case "Binary", "Binary Data":
+        case "Binary":
             attrType = NSAttributeType.binaryDataAttributeType
             
         case "URI":
+            // Apple Core Data: a URI attribute holds a URL, and so does its default.
             attrType = NSAttributeType.URIAttributeType
+            defaultValue = defaultValueString == nil ? nil : URL( string: defaultValueString! )
             
         default:
             print("MIOManagedObjectModel: Unknown class type: " + type);
