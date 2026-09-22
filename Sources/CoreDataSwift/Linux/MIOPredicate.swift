@@ -423,6 +423,11 @@ func MIOPredicateEvaluateEqual( _ leftValue: Any?, _ rightValue:Any?) -> Bool {
         let l = leftValue as! UUID
         if let r = rightValue as? UUID { return l == r }
         if let s = rightValue as? String { return l == UUID(uuidString: s) }
+    case is URL    :
+        // A URI attribute holds a URL in memory; a literal on the right is its string form.
+        let l = leftValue as! URL
+        if let r = rightValue as? URL { return l == r }
+        if let s = rightValue as? String { return l.absoluteString == s }
     case is NSManagedObject:
         // The standard Core Data idiom: "relationship == %@" with a managed
         // object (or its objectID) as the argument — compared by identity
@@ -565,10 +570,23 @@ func MIOPredicateEvaluateIn( _ leftValue: Any?, _ rightValue:Any?) -> Bool
         if let lv = leftValue as? UUID {
             return str_list.contains( lv.uuidString )
         }
+        if let lv = leftValue as? URL {
+            return str_list.contains( lv.absoluteString )
+        }
         if let lv = leftValue as? String {
             return str_list.contains( lv )
         }
         Log.critical ( "MIOPredicateEvaluate in cannot compare \(leftValue ?? "nil") with string list" )
+        return false
+    }
+    else if let url_list = value as? [URL] {
+        if let lv = leftValue as? URL {
+            return url_list.contains( lv )
+        }
+        if let s = leftValue as? String, let lv = URL(string: s) {
+            return url_list.contains( lv )
+        }
+        Log.critical ( "MIOPredicateEvaluate in cannot compare \(leftValue ?? "nil") with URL list" )
         return false
     }
     else if let uuid_list = value as? [UUID] {
@@ -611,6 +629,7 @@ func inferType ( _ value: String, _ obj_value: Any ) -> Any {
     }
         
     if obj_value is UUID  { return UUID(uuidString: v)    ?? v }
+    if obj_value is URL   { return URL(string: v)         ?? v }
     if obj_value is Int   { return MIOCoreIntValue( v )   ?? v }
     if obj_value is Int8  { return MIOCoreInt8Value( v )  ?? v }
     if obj_value is Int16 { return MIOCoreInt16Value( v ) ?? v }

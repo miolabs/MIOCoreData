@@ -12,6 +12,7 @@
 import XCTest
 import Foundation
 import MIOCore
+import MIOCoreData
 @testable import CoreDataSwift
 
 // MARK: - Runtime classes

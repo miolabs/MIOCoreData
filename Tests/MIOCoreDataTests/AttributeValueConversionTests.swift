@@ -186,7 +186,8 @@ final class AttributeValueConversionTests: XCTestCase
         XCTAssertEqual(try attr.coreDataValue(from: url) as? URL, url, "a URL stays a URL")
         XCTAssertEqual(try attr.coreDataValue(from: url.absoluteString) as? URL, url, "the store's string form comes back as a URL")
         XCTAssertNil(try attr.coreDataValue(from: nil))
-        assertThrows(attr, "")
+        XCTAssertNil(try attr.coreDataValue(from: ""), "'' is 'no value', as for UUID: a legacy text column re-typed as URI")
+        XCTAssertEqual(try attribute(.URIAttributeType, default: url).coreDataValue(from: "") as? URL, url)
         assertThrows(attr, 42)
     }
 
