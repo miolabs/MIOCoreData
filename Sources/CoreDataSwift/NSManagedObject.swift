@@ -375,6 +375,9 @@ open class NSManagedObject : NSObject
         }
         if hasFault(forRelationshipNamed: key) && objectID.persistentStore != nil {
             unfaultRelationshipNamed( key, fromStore: objectID.persistentStore! )
+            // Load failed (already logged): nil for this read, no second
+            // store round-trip through storedValues
+            if _isFault { return nil }
         }
         let value = storedValues[key]
         return value is NSNull ? nil : value
@@ -600,14 +603,22 @@ open class NSManagedObject : NSObject
             
             if _isFault == false { return _storedValues }
             
-            unfaultAttributes(fromStore: objectID.persistentStore!)
-            setIsFault(false)
+            // A failed load stays a fault: empty for THIS read, the next
+            // access asks the store again
+            if unfaultAttributes(fromStore: objectID.persistentStore!) { setIsFault(false) }
             
             return _storedValues
         }
     }
     
-    func unfaultAttributes(fromStore store:NSPersistentStore?) {
+    // Loads the attribute snapshot from the store. Returns false when the
+    // store could not produce the row (a delegate/DB failure, a row the query
+    // could not return): the error is logged and the object STAYS a fault, so
+    // the next access retries. The old `try?` swallowed the error and the
+    // storedValues getter cleared the fault anyway, so one failed load read
+    // every attribute as nil for the rest of the object's life, silently.
+    @discardableResult
+    func unfaultAttributes(fromStore store:NSPersistentStore?) -> Bool {
         //if _isDeleted == true { return }
         _storedValues = [:]
         
@@ -623,11 +634,17 @@ open class NSManagedObject : NSObject
         }
         else if let incremental_store = store as? NSIncrementalStore {
 
-            let node = try? incremental_store.newValuesForObject(with: objectID, with: managedObjectContext!)
-            if node == nil { return }
+            let node:NSIncrementalStoreNode
+            do {
+                node = try incremental_store.newValuesForObject(with: objectID, with: managedObjectContext!)
+            }
+            catch {
+                Log.error( "Could not fulfill fault for \(entity.name ?? "?") \(objectID.uriString): \(error)" )
+                return false
+            }
 
             for (key, attr) in entity.attributesByName {
-                var value = node!.value(for: attr)
+                var value = node.value(for: attr)
                 // Same rule as the in-memory branch above: a mandatory
                 // attribute missing from the store row materializes its model
                 // default instead of reading as nil
@@ -639,6 +656,7 @@ open class NSManagedObject : NSObject
         _isFault = false
         // Force to unfault all relationships
         // relationShipsNamedNotFault = Set()
+        return true
     }
     
     // Pulls one relationship from the store into the snapshot. The key is
@@ -653,7 +671,10 @@ open class NSManagedObject : NSObject
         //if _isDeleted == true { return }
 
         if store == nil { return }
-        if isFault { unfaultAttributes(fromStore: store! ) }
+        // The object's own load failed: leave the relationship faulted. A
+        // value resolved now would be wiped by the next load's fresh snapshot
+        // while its key stayed marked resolved — a permanent nil again.
+        if isFault && unfaultAttributes(fromStore: store! ) == false { return }
 
         // Attributes also land here through primitiveValue: nothing to
         // resolve, just skip the lookup next time.
