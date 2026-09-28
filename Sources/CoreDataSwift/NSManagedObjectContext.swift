@@ -38,6 +38,7 @@ public enum NSManagedObjectValidationError: Error, LocalizedError
     case tooFewObjects(entity: String, property: String, minimum: Int, count: Int)
     case tooManyObjects(entity: String, property: String, maximum: Int, count: Int)
     case deleteDenied(entity: String, relationship: String)
+    case relationshipNotLoaded(entity: String, relationship: String, objectID: String)
     case multiple([Error])
 
     public var errorDescription: String? {
@@ -50,6 +51,8 @@ public enum NSManagedObjectValidationError: Error, LocalizedError
             return "\(entity).\(property) allows at most \(maximum) objects, has \(count)."
         case let .deleteDenied(entity, relationship):
             return "\(entity) cannot be deleted while \(relationship) still contains objects (deny delete rule)."
+        case let .relationshipNotLoaded(entity, relationship, objectID):
+            return "\(entity).\(relationship) was changed or deleted through while the store could not load it; saving would write a wrong relationship (object: \(objectID))."
         case let .multiple(errors):
             return "Multiple validation errors:\n" + errors.map { "  - \($0.localizedDescription)" }.joined(separator: "\n")
         }
@@ -433,6 +436,7 @@ open class NSManagedObjectContext : NSObject
             // object. They keep their values.
             if insertedObjects.contains(object) == false {
                 object._changedValues = [:]
+                object._unresolvedRelationshipKeys = Set()
                 if updatedObjects.contains(object) {
                     updatedObjects.remove(object)
                     object._setIsUpdated(false)
@@ -584,9 +588,16 @@ open class NSManagedObjectContext : NSObject
 
         // 2. Validation — collect every failure instead of stopping at the
         //    first one, then fail before anything reaches the store.
-        if validatesOnSave {
-            var errors: [Error] = []
+        var errors: [Error] = []
 
+        // Changes built on relationships the store could not load. Not model
+        // validation, so CORE_DATA_VALIDATES_ON_SAVE=false does not skip it:
+        // the store would diff the partial set and drop stored members.
+        for obj in updatedObjects.union(deletedObjects) {
+            obj._validateResolvedRelationships(errors: &errors)
+        }
+
+        if validatesOnSave {
             for obj in insertedObjects {
                 obj._validateMandatoryProperties(changedKeysOnly: false, errors: &errors)
                 do { try obj.validateForInsert() } catch { errors.append(error) }
@@ -613,10 +624,10 @@ open class NSManagedObjectContext : NSObject
                     return true
                 }
             }
-
-            if errors.count == 1 { throw errors[0] }
-            if errors.count > 1 { throw NSManagedObjectValidationError.multiple(errors) }
         }
+
+        if errors.count == 1 { throw errors[0] }
+        if errors.count > 1 { throw NSManagedObjectValidationError.multiple(errors) }
 
         // Keep the sets for the didSave hooks and the notification: the
         // tracking properties are cleared before those run
@@ -781,12 +792,14 @@ open class NSManagedObjectContext : NSObject
 
         for obj in updatedObjects {
             obj._changedValues = [:]
+            obj._unresolvedRelationshipKeys = Set()
             obj._setIsUpdated(false)
             obj.setIsFault(true)
         }
 
         for obj in deletedObjects {
             obj._changedValues = [:]
+            obj._unresolvedRelationshipKeys = Set()
             obj._isDeleted = false
             obj.setIsFault(true)
         }

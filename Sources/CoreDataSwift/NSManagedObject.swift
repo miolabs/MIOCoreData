@@ -109,6 +109,14 @@ open class NSManagedObject : NSObject
     // returns a Boolean indicating if the relationship for the specified key is a fault.  If a value of NO is returned, the resulting relationship is a realized object;  otherwise the relationship is a fault.  If the specified relationship is a fault, calling this method does not result in the fault firing.
     var relationShipsNamedNotFault:Set<String> = Set()
     open func hasFault(forRelationshipNamed key: String) -> Bool { return !relationShipsNamedNotFault.contains(key) }
+
+    // Relationship keys whose pending change (an add/remove, a delete-rule
+    // walk) was built on a read the store could not answer: the base set was
+    // empty instead of the stored one. Saving would write a wrong relationship
+    // (the store diffs the pending set against the stored row and drops every
+    // member the object never saw), so save() refuses while any is set.
+    // Cleared with the pending changes (commit, refresh, rollback).
+    var _unresolvedRelationshipKeys:Set<String> = Set()
     
     
     /* returns an array of objectIDs for the contents of a relationship.  to-one relationships will return an NSArray with a single NSManagedObjectID.  Optional relationships may return an empty NSArray.  The objectIDs will be returned in an NSArray regardless of the type of the relationship.  */
@@ -556,6 +564,41 @@ open class NSManagedObject : NSObject
         return false
     }
 
+    // True when `key` of a stored object is still a fault the store did not
+    // answer and no pending change provides its current value.
+    func _isUnresolvedRelationship(_ key:String) -> Bool {
+        if objectID.isTemporaryID || objectID.persistentStore == nil { return false }
+        if _changedValues.keys.contains(key) { return false }
+        return hasFault(forRelationshipNamed: key)
+    }
+
+    func _markUnresolvedRelationship(_ key:String, _ action:String) {
+        if _unresolvedRelationshipKeys.insert(key).inserted {
+            Log.error( "\(action) \(entity.name ?? "?").\(key) of \(objectID.uriString), which the store could not load: the save will be refused" )
+        }
+    }
+
+    // A delete-rule walk that could not read a relationship left its targets
+    // untouched: cascade children stay alive, nullified inverses keep pointing
+    // at the deleted object.
+    func _markUnresolvedDeleteRules() {
+        for (key, rel) in entity.relationshipsByName {
+            switch rel.deleteRule {
+            case .cascadeDeleteRule: break
+            case .nullifyDeleteRule: if rel.inverseRelationship == nil { continue }
+            default: continue
+            }
+            if _isUnresolvedRelationship(key) { _markUnresolvedRelationship(key, "Deleting through") }
+        }
+    }
+
+    // Not model validation: save() runs this whatever validatesOnSave says.
+    func _validateResolvedRelationships(errors: inout [Error]) {
+        for key in _unresolvedRelationshipKeys.sorted() {
+            errors.append( NSManagedObjectValidationError.relationshipNotLoaded(entity: entity.name!, relationship: key, objectID: objectID.uriString) )
+        }
+    }
+
     // Deny delete rule: the object cannot be deleted while the relationship
     // still holds objects that are not themselves deleted in this save.
     func _validateDeleteRules(errors: inout [Error]) {
@@ -568,6 +611,13 @@ open class NSManagedObject : NSObject
             }
             else {
                 denied = _currentToOneObject(forKey: key)?.isDeleted == false
+            }
+
+            // An unreadable relationship reads empty, which would let the
+            // delete through
+            if _isUnresolvedRelationship(key) {
+                errors.append( NSManagedObjectValidationError.relationshipNotLoaded(entity: entity.name!, relationship: key, objectID: objectID.uriString) )
+                continue
             }
 
             if denied {
@@ -726,6 +776,7 @@ open class NSManagedObject : NSObject
             _isFault = false
         }
         _changedValues = [:]
+        _unresolvedRelationshipKeys = Set()
     }
     
     func _setIsInserted(_ value:Bool) {
@@ -749,6 +800,7 @@ open class NSManagedObject : NSObject
         willChangeValue(forKey: "isDeleted")
         _isDeleted = value
         deleteInverseRelationships(cache: &cache)
+        if value { _markUnresolvedDeleteRules() }
         _isDeleted = value
         didChangeValue(forKey: "isDeleted")
         didChangeValue(forKey: "hasChanges")
@@ -763,6 +815,7 @@ open class NSManagedObject : NSObject
         cache.insert( self )
         
         if hasFault(forRelationshipNamed: key) == true { unfaultRelationshipNamed(key, fromStore: objectID.persistentStore) }
+        if _isUnresolvedRelationship(key) { _markUnresolvedRelationship(key, "Adding to") }
         
         var objIDs:Set<NSManagedObjectID> = _changedValues[key] as? Set<NSManagedObjectID> ??
                                             storedValues[key] as? Set<NSManagedObjectID> ??
@@ -786,6 +839,7 @@ open class NSManagedObject : NSObject
         cache.insert( self )
         
         if hasFault(forRelationshipNamed: key) == true { unfaultRelationshipNamed(key, fromStore: objectID.persistentStore) }
+        if _isUnresolvedRelationship(key) { _markUnresolvedRelationship(key, "Removing from") }
         
         var objIDs:Set<NSManagedObjectID> = _changedValues[key] as? Set<NSManagedObjectID> ??
                                             storedValues[key] as? Set<NSManagedObjectID> ??
